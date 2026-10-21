@@ -1,0 +1,13 @@
+# user-session agents
+gui com.apple.photoanalysisd
+gui com.apple.mediaanalysisd
+gui com.apple.suggestd
+gui com.apple.knowledge-agent
+gui com.apple.parsecd
+gui com.apple.assistantd
+gui com.apple.Siri.agent
+gui com.apple.siriknowledged
+gui com.apple.helpd
+gui com.apple.tipsd
+# system daemons
+system com.apple.analyticsd
