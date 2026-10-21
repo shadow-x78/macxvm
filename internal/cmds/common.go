@@ -1,0 +1,115 @@
+// MacXVM - Command Helpers (MIT)
+// https://github.com/shadow-x78/macxvm
+
+package cmds
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+
+	"github.com/shadow-x78/macxvm/internal/config"
+	"github.com/shadow-x78/macxvm/internal/exitcode"
+	"github.com/shadow-x78/macxvm/internal/names"
+	"github.com/shadow-x78/macxvm/internal/runstate"
+	"github.com/shadow-x78/macxvm/internal/sshx"
+)
+
+// vmJSON is the JSON representation of a virtual machine.
+type vmJSON struct {
+	Name    string `json:"name"`
+	Profile string `json:"profile"`
+	State   string `json:"state"`
+	CPUs    int    `json:"cpus"`
+	RAMMiB  int    `json:"ramMiB"`
+	DiskGiB int    `json:"diskGiB"`
+	SSHPort int    `json:"sshPort"`
+	MacOS   string `json:"macos"`
+}
+
+func toJSON(cfg *config.VMConfig) vmJSON {
+	return vmJSON{
+		Name:    cfg.Name,
+		Profile: cfg.Profile,
+		State:   runstate.State(cfg),
+		CPUs:    cfg.CPUs,
+		RAMMiB:  cfg.MemoryMiB,
+		DiskGiB: cfg.DiskGiB,
+		SSHPort: cfg.SSHPort,
+		MacOS:   cfg.MacOSVersion,
+	}
+}
+
+// stateOf returns the state of a virtual machine.
+func stateOf(cfg *config.VMConfig) string {
+	return runstate.State(cfg)
+}
+
+// requireName returns the name of the virtual machine a command works on.
+func requireName(positional []string) (string, error) {
+	if len(positional) == 0 {
+		return "", exitcode.New(exitcode.Usage, "no virtual machine given (see: macxvm list)")
+	}
+	if len(positional) > 1 {
+		return "", exitcode.New(exitcode.Usage, "too many arguments: %v", positional[1:])
+	}
+	if err := names.Validate(positional[0]); err != nil {
+		return "", err
+	}
+	return positional[0], nil
+}
+
+// remoteError turns the result of a remote command into an error that keeps
+// the exit code of that command.
+func remoteError(err error) error {
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return exitcode.Exit(exitErr.ExitCode())
+	}
+	return exitcode.New(exitcode.Generic, "%v", err)
+}
+
+// joinCommand quotes every argument and joins them into one command line.
+func joinCommand(args []string) string {
+	parts := make([]string, 0, len(args))
+	for _, a := range args {
+		parts = append(parts, sshx.ShellQuote(a))
+	}
+	return strings.Join(parts, " ")
+}
+
+// ensureRunning starts the virtual machine when it is stopped and reports
+// whether it did, so that the caller can stop it again afterwards.
+func ensureRunning(cfg *config.VMConfig) (bool, error) {
+	if err := ensureSSHKey(); err != nil {
+		return false, err
+	}
+	if runstate.IsRunning(cfg) {
+		return false, nil
+	}
+	if err := startVM(cfg, false, false, false); err != nil {
+		return false, err
+	}
+	if err := sshx.WaitForSSH(cfg, sshx.DefaultTimeout); err != nil {
+		return true, err
+	}
+	return true, nil
+}
+
+// ensureSSHKey creates the shared SSH key when it does not exist yet.
+func ensureSSHKey() error {
+	_, err := sshx.EnsureKey(nil)
+	return err
+}
+
+// stopIfStarted stops the virtual machine when the command started it.
+func stopIfStarted(cfg *config.VMConfig, started bool) {
+	if !started {
+		return
+	}
+	if _, err := stopVM(cfg, false, 90); err != nil {
+		fmt.Fprintf(os.Stderr, "macxvm: warning: %v\n", err)
+	}
+}
