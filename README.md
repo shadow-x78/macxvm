@@ -43,6 +43,7 @@ Run slim macOS guests with Xcode on a Linux host.
 - [Overview](#overview)
 - [Legal and limits](#legal)
 - [Requirements](#requirements)
+- [Installation](#installation)
 - [Features](#features)
 - [The args file](#args-file)
 - [Quick start](#quick-start)
@@ -109,6 +110,27 @@ Check everything with:
 ```bash
 macxvm doctor
 ```
+
+<a id="installation"></a>
+## Installation
+
+**From source:**
+
+```bash
+git clone https://github.com/shadow-x78/macxvm.git ~/MacXVM
+cd ~/MacXVM && ./scripts/install.sh
+```
+
+**With the Makefile:**
+
+```bash
+git clone https://github.com/shadow-x78/macxvm.git && cd macxvm
+make build
+make install          # installs ~/.local/bin/macxvm
+```
+
+The binary is about 4 MB, static and built for `linux/amd64`. It needs no daemon and no service.
+The full guide, including the state directory and the removal, is in [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 <a id="features"></a>
 ## Features
@@ -346,6 +368,7 @@ macxvm/
 | Document | Description |
 |----------|-------------|
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | The packages, the lifecycle, the state layout, the process supervision |
+| [INSTALLATION.md](docs/INSTALLATION.md) | The requirements, the build, the state directory, the removal |
 | [ARGS_FILE.md](docs/ARGS_FILE.md) | The machine definition: format, placeholders, forbidden flags, upstream scripts |
 | [SLIM.md](docs/SLIM.md) | The slimming levels, the deny list, the restore, the measurement |
 | [BUILDING.md](docs/BUILDING.md) | The build workflow, the project file, the sync, the ephemeral builds |

@@ -43,6 +43,7 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 - [نظرة عامة](#overview)
 - [الإطار القانوني والحدود](#legal)
 - [المتطلبات](#requirements)
+- [التثبيت](#installation)
 - [المزايا](#features)
 - [ملف الوسائط](#args-file)
 - [البدء السريع](#quick-start)
@@ -109,6 +110,26 @@ macxvm build --project . --scheme App
 ```bash
 macxvm doctor
 ```
+
+<a id="installation"></a>
+## التثبيت
+
+**من المصدر:**
+
+```bash
+git clone https://github.com/shadow-x78/macxvm.git ~/MacXVM
+cd ~/MacXVM && ./scripts/install.sh
+```
+
+**بـ Makefile:**
+
+```bash
+git clone https://github.com/shadow-x78/macxvm.git && cd macxvm
+make build
+make install          # يثبّت في ~/.local/bin/macxvm
+```
+
+الملف التنفيذي بحجم نحو 4 ميغابايت، ثابت ومبني لـ `linux/amd64`. لا يحتاج خادمًا دائمًا ولا خدمة. الدليل الكامل، بما فيه مجلد الحالة والحذف، في [docs/INSTALLATION_AR.md](docs/INSTALLATION_AR.md).
 
 <a id="features"></a>
 ## المزايا
@@ -346,6 +367,7 @@ macxvm/
 | المستند | الوصف |
 |---------|-------|
 | [ARCHITECTURE_AR.md](docs/ARCHITECTURE_AR.md) | الحزم ودورة الحياة وتخزين الحالة وإدارة العملية |
+| [INSTALLATION_AR.md](docs/INSTALLATION_AR.md) | المتطلبات والبناء ومجلد الحالة والحذف |
 | [ARGS_FILE_AR.md](docs/ARGS_FILE_AR.md) | تعريف الجهاز: الصيغة والعناصر النائبة والأعلام الممنوعة والسكربتات الجاهزة |
 | [SLIM_AR.md](docs/SLIM_AR.md) | مستويات التخفيف وقائمة المنع والاستعادة والقياس |
 | [BUILDING_AR.md](docs/BUILDING_AR.md) | سير عمل البناء وملف المشروع والمزامنة والبناء المؤقت |
