@@ -1,0 +1,19 @@
+# ─────────────────────────────────────────────
+# MacXVM - Issue Template Configuration
+# https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Community Discussions & Questions
+    url: https://github.com/shadow-x78/macxvm/discussions
+    about: Ask questions, get help, or discuss features with the community.
+  - name: 📖 Documentation & Architecture
+    url: https://github.com/shadow-x78/macxvm/tree/main/docs
+    about: Explore the architecture, the args file, the slimming and the build workflow.
+  - name: 🔧 Troubleshooting & Diagnostics
+    url: https://github.com/shadow-x78/macxvm/blob/main/docs/TROUBLESHOOTING.md
+    about: Review solutions for common host, guest and build problems.
+  - name: 🛡️ Security Vulnerability Reporting
+    url: https://github.com/shadow-x78/macxvm/security/policy
+    about: Privately disclose sensitive security vulnerabilities.

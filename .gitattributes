@@ -1,0 +1,9 @@
+# ─────────────────────────────────────────────
+# MacXVM - Git Attributes
+# https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+
+go.sum        linguist-generated=true
+*.md          linguist-detectable=true
+*.sh          linguist-detectable=true
+*.svg         linguist-detectable=true

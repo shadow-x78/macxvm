@@ -1,0 +1,32 @@
+# ─────────────────────────────────────────────
+# MacXVM - Editor Configuration
+# https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+
+# ── Root ──
+root = true
+
+# ── Defaults ──
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+
+# ── Go ──
+[*.go]
+indent_style = tab
+
+# ── YAML ──
+[*.{yml,yaml}]
+indent_size = 2
+
+# ── Makefile ──
+[Makefile]
+indent_style = tab
+
+# ── Markdown ──
+[*.md]
+trim_trailing_whitespace = false
