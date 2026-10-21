@@ -1,0 +1,4 @@
+bin/
+/macxvm
+*.tmp
+.DS_Store
