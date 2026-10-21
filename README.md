@@ -1,0 +1,382 @@
+<a id="credits"></a>
+# Credits
+
+MacXVM stands on the shoulders of the people who made running macOS on QEMU possible in the first place. It ships no Apple software, no firmware, no boot loader and no keys, and it launches only what you provide.
+
+- **[OSX-KVM](https://github.com/kholia/OSX-KVM)** by *kholia* — the original guide and boot script for running macOS on QEMU/KVM, and the reference for the machine definition that the args file adapts.
+- **[ultimate-macOS-KVM](https://github.com/Coopydood/ultimate-macOS-KVM)** by *Coopydood* — the maintained guide that turns the boot script into a complete, reproducible installation.
+- **[QEMU](https://www.qemu.org)** — the emulator that runs the guest.
+- **[OpenCore](https://github.com/acidanthera/OpenCorePkg)** — the boot loader used by those guides, installed and configured by you.
+- **[Apple](https://www.apple.com)** — macOS, Xcode and iOS, which are trademarks of Apple Inc. and are neither distributed nor endorsed by this project.
+
+MacXVM is an independent open-source project, not affiliated with or endorsed by Apple Inc.
+
+---
+
+<div align="center">
+
+<a href="https://github.com/shadow-x78/macxvm">
+  <img src="https://raw.githubusercontent.com/shadow-x78/macxvm/main/assets/logo/macxvm-banner.png" alt="MacXVM banner" width="100%" />
+</a>
+
+# MacXVM
+
+Run slim macOS guests with Xcode on a Linux host.
+
+[![Version](https://img.shields.io/badge/version-0.1.0-007AFF?style=flat-square&logo=semver)](CHANGELOG.md)
+[![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](LICENSE)
+![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
+![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
+
+</div>
+
+---
+
+## Language
+
+<a href="README.md">🇬🇧 English</a> · <a href="README_AR.md">🇸🇦 العربية</a>
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Legal and limits](#legal)
+- [Requirements](#requirements)
+- [Features](#features)
+- [The args file](#args-file)
+- [Quick start](#quick-start)
+- [Profiles](#profiles)
+- [Slimming](#slimming)
+- [Building projects](#building)
+- [Command reference](#commands)
+- [Speed](#speed)
+- [Project structure](#project-structure)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+<a id="overview"></a>
+## Overview
+
+MacXVM turns a Linux machine into a build farm for macOS. It registers macOS guests, starts them under QEMU/KVM, trims them down so that they idle quietly, installs Xcode inside them and builds your projects from Linux with `rsync` and `ssh`.
+
+The tool is a single static binary of about 4 MB with no daemon. QEMU itself is the only long-lived process, so an idle host carries nothing at all.
+
+```
+macxvm create demo --args-file ./args.txt --assets ./assets
+macxvm start demo --install --vnc
+macxvm slim demo --level 1
+macxvm tools install demo clt
+macxvm xcode install demo --xip ./Xcode.xip
+macxvm base seal demo
+macxvm build --project . --scheme App
+```
+
+A sealed base image plus qcow2 overlays is what makes this fast: a fresh machine costs a few hundred kilobytes and a second, not a copy of a hundred gigabytes. Overlays disappear with `macxvm run`, which starts a throwaway machine, runs one command in it and removes it again.
+
+MacXVM never describes a macOS machine itself. The machine definition lives in an args file that you write, MacXVM substitutes a few placeholders into it and starts QEMU with the result.
+
+<a id="legal"></a>
+## Legal and Limits
+
+> MacXVM is an independent open-source project, not affiliated with or endorsed by Apple Inc. macOS, Xcode and iOS are trademarks of Apple Inc. MacXVM does not distribute any Apple software; the user supplies and is responsible for all Apple software and for complying with Apple's license terms.
+
+Read this before you install anything:
+
+1. **Apple's macOS license permits macOS in a virtual machine only on Apple-branded hardware.** Running macOS under QEMU/KVM on a PC violates that license, and Apple has enforced it in court. MacXVM is a *launcher*: it ships no Apple software, firmware, keys or boot loaders and only starts what you provide. **You are responsible for compliance.** The compliant alternatives are a Mac (use the Apple-hardware specification) or a rented Mac in the cloud.
+2. **x86_64 only.** The guest is an x86_64 macOS. Apple supports Intel Macs up to macOS 26, so the guest is limited to macOS ≤ 26 and therefore to the Xcode versions that run on it. Pick the macOS version and the Xcode version together, using the release notes of Xcode. This project never hardcodes version pairs.
+3. **Host.** Linux x86_64 with hardware virtualisation (Intel VT-x or AMD-V), a `/dev/kvm` that your user may use, and QEMU 6.0 or newer. ARM Linux hosts are not supported.
+4. **No GPU acceleration.** The user interface and the iOS Simulator are software rendered. Builds are fine, the Simulator is slow.
+5. **Fragility.** A macOS system update inside such a virtual machine can break booting. The slim level 1 switches the automatic updates off, and you should not run system updates in the guest.
+6. **The boot assets are your job.** The machine definition, the bootloader, the firmware files and the macOS installer image come from you, for example by following the documentation of the open-source projects listed in the [credits](#credits). MacXVM copies none of their content, fetches no Apple installers and does not automate the macOS installation.
+
+<a id="requirements"></a>
+## Requirements
+
+| Requirement | Detail |
+|-------------|--------|
+| Host | Linux x86_64, hardware virtualisation, `/dev/kvm` usable by your user |
+| QEMU | `qemu-system-x86_64` and `qemu-img`, version 6.0 or newer |
+| Host tools | `ssh`, `scp`, `rsync`, `ssh-keygen` |
+| Guest | x86_64 macOS ≤ 26, installed by you, with Remote Login enabled |
+| Go | 1.22 or newer, only to build MacXVM |
+
+Check everything with:
+
+```bash
+macxvm doctor
+```
+
+<a id="features"></a>
+## Features
+
+- Registers, starts, stops, clones and deletes macOS guests under QEMU/KVM
+- A user-supplied args file as the machine definition: no hardcoded CPU model, no SMC keys, no SMBIOS values, no OpenCore settings, no firmware paths
+- Sealed base images with qcow2 overlays: a fresh machine costs a few hundred kilobytes and a second
+- Throwaway machines with `macxvm run`: the overlay is removed afterwards, even when the command is interrupted
+- Two slimming levels that cut the idle cost of the guest, with a deny list that protects SSH and the network, and a restore that undoes the change
+- The Command Line Tools, Homebrew and Xcode installed inside the guest from the host
+- `xcodebuild` and `swift build` on a remote guest, with the derived data kept between the builds
+- A project file that holds the defaults of a build, a machine and a base image
+- Headless by default, a VNC display on the loopback interface when you need to see the screen
+- One static binary of about 4 MB, the Go standard library only, no third-party modules, no daemon, no background process
+
+<a id="args-file"></a>
+## The Args File
+
+The args file is the machine definition you bring. MacXVM substitutes a few placeholders and adds the flags it needs to manage the machine.
+
+```bash
+qemu-system-x86_64 \
+  -cpu host \
+  -smp {{CPUS}} \
+  -m {{RAM_MIB}} \
+  -drive file={{DISK_IMG}},format=qcow2,{{DISK_OPTS}} \
+  -drive file={{ASSETS}}/efi.img,format=raw \
+  -netdev {{NETDEV}} \
+  -device virtio-net-pci,mac={{MAC}}
+
+#install -drive file={{ASSETS}}/installer.img,format=raw
+```
+
+| Placeholder | Value |
+|-------------|-------|
+| `{{CPUS}}` | the number of CPUs of the machine |
+| `{{CORES}}` | half of the CPUs, at least one |
+| `{{RAM_MIB}}` | the memory of the machine in MiB |
+| `{{DISK_IMG}}` | the absolute path of the disk of the machine |
+| `{{DISK_OPTS}}` | `cache=writeback`, or `cache=unsafe` for a throwaway machine |
+| `{{NVRAM}}` | the absolute path of the NVRAM file, only when the machine has one |
+| `{{ASSETS}}` | the assets directory of the machine |
+| `{{MAC}}` | the MAC address of the machine |
+| `{{NETDEV}}` | `user,id=net0,hostfwd=tcp:127.0.0.1:<port>-:22` |
+
+`{{DISK_IMG}}`, `{{NETDEV}}`, `{{MAC}}`, `{{RAM_MIB}}` and `{{CPUS}}` are required. MacXVM injects `-name`, `-pidfile`, `-qmp`, `-display` and `-vnc` itself, so the args file must not contain them — most boot scripts of other projects use `-monitor stdio`, delete that line.
+
+The full guide, including how to adapt an upstream boot script, is in [docs/ARGS_FILE.md](docs/ARGS_FILE.md).
+
+<a id="quick-start"></a>
+## Quick Start
+
+```bash
+# 1. register the machine
+macxvm create demo --args-file ./args.txt --assets ./assets
+
+# 2. install macOS in the guest
+macxvm start demo --install --vnc
+#    connect a VNC client to 127.0.0.1:<port shown by macxvm> and follow the
+#    installation guide of the project your assets come from
+```
+
+<a id="first-boot-checklist"></a>
+### First boot checklist
+
+1. Create the user `admin` with a password, skip Apple ID, iCloud, Siri and analytics.
+2. System Settings, General, Sharing, **Remote Login**: on.
+3. In a terminal of the guest:
+
+```bash
+sudo sh -c 'echo "admin ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/admin'
+```
+
+4. On the host, hand the key of MacXVM to the guest:
+
+```bash
+macxvm ssh-key --install demo
+```
+
+5. Make the guest light and install the tools:
+
+```bash
+macxvm slim demo --level 1
+macxvm tools install demo clt
+macxvm xcode install demo --xip ./Xcode.xip
+macxvm slim demo --level 2
+```
+
+6. Keep the result as a base image:
+
+```bash
+macxvm stop demo
+macxvm base seal demo
+```
+
+7. Build:
+
+```bash
+macxvm clone demo work
+macxvm build --vm work --project . --scheme App
+```
+
+<a id="profiles"></a>
+## Profiles
+
+| Profile | Contents | Default resources | Use |
+|---------|----------|-------------------|-----|
+| `xcode` (default) | slim macOS + Command Line Tools + Xcode | 4 CPU / 8192 MiB / 100 GiB | `xcodebuild`, simulators, `.xcodeproj` and `.xcworkspace` |
+| `cli` | slim macOS + Command Line Tools | 2 CPU / 4096 MiB / 32 GiB | Swift packages for macOS, Homebrew, scripts |
+
+| | `cli` | `xcode` |
+|---|---|---|
+| `swift build` / `swift test` for macOS | yes | yes |
+| Homebrew packages, git, scripts | yes | yes |
+| `xcodebuild`, `.xcodeproj`, `.xcworkspace` | no (exit 9) | yes |
+| iOS SDK and iOS Simulator | no (the Command Line Tools have the macOS SDK only) | yes, software rendered |
+
+<a id="slimming"></a>
+## Slimming
+
+```bash
+macxvm slim demo --level 1
+macxvm slim demo --level 2 --measure
+macxvm slim demo --restore
+```
+
+Level 1 switches off Spotlight indexing, Time Machine, the automatic software updates, the animations and the sleep timers. Level 2 also disables the launchd jobs of `resources/slim-labels.txt`, skipping every job that does not exist on your version of macOS.
+
+Only the labels of that file are ever touched. A deny list in the code drops every label that would break SSH, the network or the window server. The system volume is never modified, SIP is never changed and no system application is removed.
+
+The details are in [docs/SLIM.md](docs/SLIM.md).
+
+<a id="building"></a>
+## Building Projects
+
+```bash
+macxvm build --project . --scheme App
+```
+
+The project is copied into the guest with `rsync -a`, the build runs there with `xcodebuild` or `swift build`, and the output is streamed back. The machine is only started when it is not running yet, and it is stopped again afterwards, even when the build fails.
+
+```bash
+macxvm build --ephemeral --from base-xcode --project . --scheme App
+```
+
+builds in a throwaway overlay that is removed afterwards. The full guide, including the project file and the fetch of the results, is in [docs/BUILDING.md](docs/BUILDING.md).
+
+<a id="commands"></a>
+## Command Reference
+
+| Command | Purpose |
+|---------|---------|
+| `macxvm create NAME --args-file FILE [...]` | register a virtual machine |
+| `macxvm start NAME [--install] [--vnc] [--force]` | start QEMU |
+| `macxvm stop NAME [--force] [--timeout SECONDS]` | stop the guest, gracefully if possible |
+| `macxvm list [--json]` / `macxvm status NAME [--json]` | show the machines |
+| `macxvm ssh NAME [-- ARGS...]` | interactive SSH session |
+| `macxvm exec NAME -- CMD...` | run a command, the exit code is passed through |
+| `macxvm cp SRC DST` | copy files, guest paths are `NAME:/path` |
+| `macxvm ssh-key [--install NAME]` | show or install the SSH key |
+| `macxvm clone SRC DST [--full]` | clone a machine, by default an overlay of a sealed base |
+| `macxvm delete NAME [--yes]` | delete a machine |
+| `macxvm slim NAME [--level 1\|2] [--measure] [--restore]` | trim the guest |
+| `macxvm tools install NAME clt\|brew` | install the Command Line Tools or Homebrew |
+| `macxvm tools brew NAME PKG...` | install Homebrew packages |
+| `macxvm tools list NAME` | show which tools are installed |
+| `macxvm xcode install NAME --xip PATH [--platform iOS]` | install Xcode |
+| `macxvm xcode clean NAME` | remove the caches of Xcode |
+| `macxvm base seal NAME` / `unseal NAME` / `list` | manage base images |
+| `macxvm run --from BASE [...] -- CMD...` | run a command in a temporary machine |
+| `macxvm prune [--all]` | delete the leftovers of temporary machines |
+| `macxvm build [...]` | build a project in a guest |
+| `macxvm compact NAME` | shrink the disk of a stopped machine |
+| `macxvm init [--profile P]` | write a `macxvm.json` |
+| `macxvm up` / `macxvm down [--delete]` | start and stop the machine of the project |
+| `macxvm doctor` | check the host |
+| `macxvm version` | print the version |
+| `macxvm completion bash\|zsh` | print the shell completion script |
+
+Exit codes: `0` success, `1` error, `2` usage, `3` not found, `4` already running, `5` not running, `6` unsupported host, `7` timeout, `8` invalid args file, `9` profile or tooling mismatch.
+
+<a id="speed"></a>
+## Speed
+
+| Operation | Target | Measured on the reference host |
+|-----------|--------|--------------------------------|
+| `list`, `status` | < 100 ms | 3 ms |
+| Release binary | < 6 MB | 4.07 MB, static, `linux/amd64` |
+| Overlay clone of a sealed base | < 1 s | < 1 s, a few hundred KiB on disk |
+| Idle cost on the host | none | no process of MacXVM stays alive |
+
+The numbers above were measured on the machine that builds this project, with four virtual machines registered. The real time of a boot depends on the machine definition of your args file and on the disk of the guest. `scripts/bench.sh BASE` measures the clone, the start and a throwaway run on your own host.
+
+<a id="project-structure"></a>
+## Project Structure
+
+```
+macxvm/
+├── cmd/macxvm/                    # the entry point of the binary
+├── internal/                      # the packages of the tool
+│   ├── exitcode/                  # the error type that carries an exit code
+│   ├── paths/                     # the state directory and the run directory
+│   ├── names/                     # the VM name rule
+│   ├── sizeparse/                 # the parsing of --ram
+│   ├── config/                    # the persisted description of a VM
+│   ├── store/                     # registration, cloning, sealing, deletion
+│   ├── argsfile/                  # the args file parser and expander
+│   ├── runstate/                  # process detection and the operation lock
+│   ├── qmp/                       # the QMP client
+│   ├── qemu/                      # spawn, readiness, argv assembly
+│   ├── sshx/                      # the SSH, SCP and rsync argument builders
+│   ├── slim/                      # the slimming policy and the runner
+│   ├── tools/                     # the Command Line Tools and Homebrew
+│   ├── xcode/                     # the installation of Xcode
+│   ├── project/                   # project detection and macxvm.json
+│   ├── doctor/                    # the host checks
+│   ├── hostcheck/                 # host facts and the Runner seam
+│   └── cmds/                      # one file per command
+├── resources/                     # the guest scripts and the label list
+├── scripts/                       # installation, benchmark, style checks
+├── docs/                          # bilingual guides (EN + AR)
+├── assets/logo/                   # the logo, the banner and the social preview
+├── .github/                       # workflows, issue and pull request templates
+├── Makefile                       # build, test, install, clean
+├── CHANGELOG.md                   # the release notes
+├── CONTRIBUTING.md                # how to contribute
+├── CODE_OF_CONDUCT.md             # the rules of the community
+├── SECURITY.md                    # how to report a vulnerability
+└── README.md, README_AR.md        # the entry points
+```
+
+<a id="documentation"></a>
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | The packages, the lifecycle, the state layout, the process supervision |
+| [ARGS_FILE.md](docs/ARGS_FILE.md) | The machine definition: format, placeholders, forbidden flags, upstream scripts |
+| [SLIM.md](docs/SLIM.md) | The slimming levels, the deny list, the restore, the measurement |
+| [BUILDING.md](docs/BUILDING.md) | The build workflow, the project file, the sync, the ephemeral builds |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | The common problems of the host, the machine, the guest and the build |
+| [DECISIONS.md](docs/DECISIONS.md) | Every deviation from the specification and every ambiguity that was resolved |
+
+Every document exists in English and in Arabic.
+
+<a id="contributing"></a>
+## Contributing
+
+1. Fork the repository and create a branch (`feature/`, `fix/`, `docs/`, `chore/`).
+2. Keep `go vet ./...`, `go test ./...` and `make build` green, and keep the file headers and the formatting intact.
+3. Add a `CHANGELOG.md` entry.
+4. Commit as `macxvm | <type>: <description>` and open a pull request against `main`.
+
+Read the [Contributing Guidelines](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). Report problems through [GitHub Issues](https://github.com/shadow-x78/macxvm/issues).
+
+<a id="license"></a>
+## License
+
+Distributed under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+Built by <a href="https://github.com/shadow-x78">shadow-x78</a> ·
+[Changelog](CHANGELOG.md) ·
+[Security](SECURITY.md)
+
+<sub>&copy; 2026 MacXVM</sub>
+
+</div>

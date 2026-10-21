@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MacXVM">
+  <!-- ─────────────────────────────────────────────
+       MacXVM - Project Logo (MIT)
+       https://github.com/shadow-x78/macxvm
+       ─────────────────────────────────────────────
+       A virtual display drawn as a rounded screen,
+       with a smaller guest window riding its lower
+       right corner: the guest lives inside the host.
+       Flat, two macOS accents (system blue #007AFF
+       and indigo #5E5CE6), three role classes
+       (.mxvm-s stroke, .mxvm-f fill, .mxvm-g fill).
+       Square content box, dead centered on the 512
+       canvas by construction.
+       ───────────────────────────────────────────── -->
+  <defs>
+    <style>
+      .mxvm-f{fill:#5E5CE6;}
+      .mxvm-g{fill:#007AFF;}
+      .mxvm-s{fill:none;stroke:#007AFF;}
+    </style>
+  </defs>
+  <rect class="mxvm-s" x="86" y="106" width="340" height="234" rx="28" stroke-width="40"/>
+  <path class="mxvm-s" d="M256 340v56M186 396h140" stroke-width="40" stroke-linecap="round"/>
+  <rect class="mxvm-f" x="268" y="212" width="116" height="88" rx="18"/>
+  <circle class="mxvm-g" cx="126" cy="152" r="16"/>
+</svg>
