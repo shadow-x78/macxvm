@@ -47,7 +47,7 @@ The file is copied into the state directory of the machine when it is registered
 - Blank lines are ignored.
 - A line that starts with `#` is a comment and is ignored.
 - A line that starts with exactly `#install ` (one space) is used **only** when the machine is started with `--install`. Use it for the installer medium and the bootloader steps.
-- A trailing backslash does not continue a line. Every line stands on its own.
+- A trailing backslash does not continue a line. Every line stands on its own, and the backslash itself is dropped, so the boot script of another project can be copied as it is.
 - The first token of the first line may be the name of the QEMU binary. It is dropped, because MacXVM starts QEMU itself.
 
 ```

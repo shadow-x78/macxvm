@@ -111,6 +111,17 @@ Check everything with:
 macxvm doctor
 ```
 
+The doctor also tells you when QEMU does not pick the KVM accelerator on its own. Some builds only use
+KVM when it is named, and a machine that asks for the host CPU needs it. Add `-accel kvm` to the args file
+of the machine in that case:
+
+```bash
+qemu-system-x86_64 \
+  -accel kvm \
+  -cpu host \
+  ...
+```
+
 <a id="installation"></a>
 ## Installation
 

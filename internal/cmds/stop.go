@@ -65,6 +65,8 @@ func stopVM(cfg *config.VMConfig, force bool, timeout int) (string, error) {
 	}
 	defer lock.Close()
 
+	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
+
 	pid, running := runstate.Running(runstate.ProcRoot(), runstate.PidFile(cfg.Dir()), cfg.ID)
 	if !running {
 		// A QEMU whose pid file is missing is still a QEMU of this machine
@@ -93,8 +95,8 @@ func stopVM(cfg *config.VMConfig, force bool, timeout int) (string, error) {
 	// shut the guest down. The connection drops while the guest goes down,
 	// so errors are ignored. The step is bounded, so that a guest that does
 	// not answer cannot block the steps below.
-	sshx.RunBounded(cfg, "sudo shutdown -h now", time.Duration(timeout)*time.Second)
-	if waitExit(pid, time.Duration(timeout)*time.Second) {
+	sshx.RunBounded(cfg, "sudo shutdown -h now", sshStepTimeout(timeout))
+	if waitExitUntil(pid, deadline) {
 		cleanup(cfg, sock)
 		return "ssh shutdown", nil
 	}
@@ -135,7 +137,12 @@ func qmpCommand(sock, command string) bool {
 
 // waitExit waits until the QEMU process of the VM is gone.
 func waitExit(pid int, timeout time.Duration) bool {
-	deadline := time.Now().Add(timeout)
+	return waitExitUntil(pid, time.Now().Add(timeout))
+}
+
+// waitExitUntil waits until the QEMU process of the VM is gone or the deadline
+// is reached.
+func waitExitUntil(pid int, deadline time.Time) bool {
 	for {
 		if runstate.ProcessGone(runstate.ProcRoot(), pid) {
 			return true
@@ -145,6 +152,24 @@ func waitExit(pid int, timeout time.Duration) bool {
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
+}
+
+// maxSSHShutdownTimeout is the longest time the SSH step of a stop may take.
+// A guest that does not answer must not use the whole timeout, because the
+// other steps below need the time as well.
+const maxSSHShutdownTimeout = 20 * time.Second
+
+// sshStepTimeout is the time the SSH step of a stop may take. It never
+// exceeds the timeout of the command itself.
+func sshStepTimeout(timeout int) time.Duration {
+	limit := time.Duration(timeout) * time.Second
+	if limit < 0 {
+		limit = 0
+	}
+	if limit > maxSSHShutdownTimeout {
+		limit = maxSSHShutdownTimeout
+	}
+	return limit
 }
 
 // cleanup removes the files that belong to a stopped virtual machine.

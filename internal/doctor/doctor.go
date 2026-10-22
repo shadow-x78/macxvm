@@ -114,6 +114,7 @@ func Run() []Check {
 	}
 
 	checks = append(checks, qemuCheck())
+	checks = append(checks, kvmAccelCheck())
 	checks = append(checks, kvmModuleCheck())
 	checks = append(checks, toolsCheck())
 	checks = append(checks, diskCheck())
@@ -138,6 +139,31 @@ func qemuCheck() Check {
 		return Check{name, Fail, fmt.Sprintf("QEMU %d.%d is too old, 6.0 or newer is required", major, minor)}
 	}
 	return Check{name, OK, fmt.Sprintf("QEMU %d.%d", major, minor)}
+}
+
+// kvmProbe reports whether QEMU can use the KVM accelerator and whether it
+// selects KVM on its own. The tests replace it, so that they do not start
+// QEMU.
+var kvmProbe = hostcheck.QemuKVM
+
+// kvmAccelCheck reports whether QEMU can accelerate the guest with KVM. A
+// QEMU that does not select KVM on its own needs an explicit accelerator in
+// the args file of the machine.
+func kvmAccelCheck() Check {
+	const name = "QEMU KVM"
+	bin := config.DefaultQemuBinary
+	if !hostcheck.HaveBinary(bin) {
+		return Check{name, Warn, "cannot check, " + bin + " is not in PATH"}
+	}
+	usable, isDefault := kvmProbe(bin)
+	switch {
+	case !usable:
+		return Check{name, Fail, "QEMU cannot use the KVM accelerator"}
+	case !isDefault:
+		return Check{name, Warn,
+			"QEMU does not select KVM by default; add '-accel kvm' to the args file of the machine"}
+	}
+	return Check{name, OK, "QEMU uses KVM"}
 }
 
 // kvmModuleCheck reports whether the KVM module ignores the MSRs. Several
