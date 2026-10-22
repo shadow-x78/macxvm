@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.0] - 2026-10-22
+
 ### Fixed
 - fix: a trailing backslash at the end of a line of the args file is dropped
   instead of becoming an argument, so that the example of the README and the
@@ -32,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: `macxvm doctor` reports whether QEMU can use the KVM accelerator and
   whether it selects KVM on its own, and it names the accelerator to add when
   it does not
+
+### Security
+- the name of a stored configuration is validated when it is read, so that a
+  broken or hand-edited file cannot make a delete reach outside of the state
+  directory
 
 ## [v0.1.0] - 2026-10-22
 

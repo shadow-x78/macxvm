@@ -2,7 +2,7 @@
 
 # Security Policy - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.1.0-007AFF?style=flat-square&logo=semver)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.0-007AFF?style=flat-square&logo=semver)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -77,6 +77,11 @@ string.
 repository may not write anywhere else on the host, so that building a project
 of somebody else cannot overwrite a file of yours.
 
+**The name of a stored configuration is checked.** Every path of the state
+directory is built from the name that `config.json` holds, so a configuration
+whose name is not a valid VM name is refused when it is read. A broken or a
+hand-edited file cannot make a delete reach outside of the state directory.
+
 **MacXVM never runs as root.** If a step needs root on the host, the tool
 prints the command for you and exits. It never calls `sudo` itself.
 
@@ -92,7 +97,7 @@ are responsible for them.
 |----------|-------|
 | The args file of the user | Trusted: it is the machine definition, and it is the user who starts it |
 | `macxvm.json` of a cloned repository | Untrusted for the paths of a fetch: they may not leave the project |
-| The state directory | Private to the user, mode 0700 |
+| The state directory | Private to the user, mode 0700. The name of a configuration is validated when it is read |
 | The run directory | Private to the user, checked for ownership and mode |
 | The guest | Semi-trusted: it holds the source code of the user and runs the builds |
 | The host | Trusted: MacXVM runs with the rights of the user who started it |

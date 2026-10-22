@@ -2,7 +2,7 @@
 
 # Troubleshooting - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.1.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -61,6 +61,17 @@ sudo dnf install qemu-system-x86_64 qemu-img
 **The doctor warns about `ignore_msrs`.**
 
 Several macOS on KVM guides need the KVM module to ignore the model specific registers. Check the README of the project your boot assets come from. MacXVM never changes this setting for you.
+
+**The doctor warns that QEMU does not select KVM by default.**
+
+Some builds of QEMU only use KVM when the accelerator is named, and a machine that asks for the host CPU needs it. Add `-accel kvm` to the args file of the machine:
+
+```bash
+qemu-system-x86_64 \
+  -accel kvm \
+  -cpu host \
+  ...
+```
 
 **`run directory path too long; set MACXVM_RUN to a shorter path`**
 
