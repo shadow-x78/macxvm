@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 400" role="img" aria-label="MacXVM">
+  <!-- ─────────────────────────────────────────────
+       MacXVM - Project Banner, Arabic (MIT)
+       https://github.com/shadow-x78/macxvm
+       ─────────────────────────────────────────────
+       The macOS palette: system blue #007AFF, indigo
+       #5E5CE6, graphite #1D1D1F and the text
+       colours #F5F5F7 and #A1A1A6.
+       ───────────────────────────────────────────── -->
+  <defs>
+    <style>
+      .mxvm-f{fill:#5E5CE6;}
+      .mxvm-g{fill:#007AFF;}
+      .mxvm-s{fill:none;stroke:#007AFF;}
+      .mxvm-t{fill:#F5F5F7;}
+      .mxvm-d{fill:#A1A1A6;}
+      .mxvm-ar{font-family:'Noto Sans Arabic','Noto Sans Arabic UI','DejaVu Sans',sans-serif;}
+    </style>
+    <linearGradient id="mxvm-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1D1D1F"/>
+      <stop offset="100%" stop-color="#0B0B0C"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="400" fill="url(#mxvm-bg)"/>
+
+  <g transform="translate(96 84) scale(0.45)">
+    <rect class="mxvm-s" x="86" y="106" width="340" height="234" rx="28" stroke-width="40"/>
+    <path class="mxvm-s" d="M256 340v56M186 396h140" stroke-width="40" stroke-linecap="round"/>
+    <rect class="mxvm-f" x="268" y="212" width="116" height="88" rx="18"/>
+    <circle class="mxvm-g" cx="126" cy="152" r="16"/>
+  </g>
+
+  <text class="mxvm-t" x="400" y="196" font-family="DejaVu Sans, Verdana, sans-serif" font-size="86" font-weight="700">MacXVM</text>
+  <text class="mxvm-d mxvm-ar" x="404" y="252" font-size="30">شغّل ضيوف macOS خفيفين مع Xcode على مضيف Linux</text>
+  <text class="mxvm-d mxvm-ar" x="404" y="300" font-size="24">ملف تنفيذي واحد ثابت · بلا خادم دائم · QEMU/KVM</text>
+
+  <rect x="404" y="330" width="300" height="8" rx="4" fill="#007AFF" opacity="0.5"/>
+</svg>

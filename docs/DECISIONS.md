@@ -22,7 +22,7 @@
 <a id="owner"></a>
 ## Confirmed with the project owner
 
-Every deviation from the specification and every ambiguity that had to be resolved while implementing "MacXVM — Implementation Spec v4". New entries are appended as the work proceeds.
+Every deviation from the specification and every ambiguity that had to be resolved while implementing the MacXVM implementation specification v4. New entries are appended as the work proceeds.
 
 | # | Decision | Reason |
 |---|---|---|

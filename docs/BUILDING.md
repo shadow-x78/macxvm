@@ -56,7 +56,7 @@ The kind of the project is detected at the top level of the project directory:
 | `*.xcworkspace` | xcode | `xcodebuild -workspace ...` |
 | `*.xcodeproj` | xcode | `xcodebuild -project ...` |
 | `Package.swift` | swiftPackage | `swift build` |
-| nothing of these | — | error `unsupported project` |
+| nothing of these | n/a | error `unsupported project` |
 
 A `.xcodeproj` inside a `.xcworkspace` is ignored, and a workspace wins over a project.
 
