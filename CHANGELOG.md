@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.2.2] - 2026-10-22
 
+### Added
+- feat: `macxvm image prepare` fetches the installer of Apple and the OpenCore
+  boot loader, writes an args file for macOS and registers the machine. The
+  chunk list and the signature of Apple are checked before the image is used,
+  and the image is converted into a raw disk with `dmg2img`
+
+### Changed
+- the binary is 7.32 MB now, because the command `image prepare` needs a client
+  of HTTP and the arithmetic of big numbers. The limit of the CI moves from
+  6 MB to 8 MB
+
 ### Fixed
 - fix: the example of the args file attaches the network card to the network of
   QEMU with `netdev=net0`. Without it the card stays outside the network, the

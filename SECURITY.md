@@ -86,9 +86,11 @@ hand-edited file cannot make a delete reach outside of the state directory.
 prints the command for you and exits. It never calls `sudo` itself.
 
 **The boot assets are yours.** MacXVM ships no Apple software, no firmware, no
-boot loader and no keys, and it never downloads any. The machine definition,
-the bootloader, the firmware and the installer image come from you, and you
-are responsible for them.
+boot loader and no keys. The machine definition, the bootloader, the firmware
+and the installer image come from you, and you are responsible for them. The
+command `macxvm image prepare` fetches the installer of Apple and the OpenCore
+boot loader for you, but only when you ask for it, and never into the
+repository.
 
 <a id="boundaries"></a>
 ## Trust Boundaries
@@ -101,3 +103,4 @@ are responsible for them.
 | The run directory | Private to the user, checked for ownership and mode |
 | The guest | Semi-trusted: it holds the source code of the user and runs the builds |
 | The host | Trusted: MacXVM runs with the rights of the user who started it |
+| The assets of a machine | Downloaded only when the user asks for it. The installer comes from the recovery service of Apple, and its chunk list and signature are checked against the public key of Apple before it is used, because the service answers over plain HTTP. The boot loader comes from a repository of GitHub |

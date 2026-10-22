@@ -30,4 +30,4 @@ jobs:
         run: |
           size=$(stat -c %s bin/macxvm)
           echo "the binary is $size bytes"
-          test "$size" -lt 6291456
+          test "$size" -lt 8388608

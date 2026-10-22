@@ -195,6 +195,21 @@ The full guide, including how to adapt an upstream boot script, is in [docs/ARGS
 <a id="quick-start"></a>
 ## Quick Start
 
+The fast way: let MacXVM fetch the boot assets and register the machine.
+
+```bash
+# 1. fetch the installer of Apple and the OpenCore boot loader, and register
+#    the machine with them
+macxvm image prepare demo --macos sequoia
+
+# 2. install macOS in the guest
+macxvm start demo --install --vnc
+#    connect a VNC client to 127.0.0.1:<port shown by macxvm> and follow the
+#    installation guide of the project your assets come from
+```
+
+The way with your own assets: bring an args file and the boot assets yourself.
+
 ```bash
 # 1. register the machine
 macxvm create demo --args-file ./args.txt --assets ./assets
@@ -205,8 +220,37 @@ macxvm start demo --install --vnc
 #    installation guide of the project your assets come from
 ```
 
+### What `macxvm image prepare` does
+
+| Step | Source |
+|------|--------|
+| The installer of macOS | The recovery service of Apple, over the session of the service. The chunk list and the signature of Apple are checked, and the image is converted into a raw disk with `dmg2img` |
+| The OpenCore boot loader | The repository of the community of OSX-KVM |
+| The UEFI firmware of QEMU | The same repository, the pair `OVMF_CODE_4M.fd` and `OVMF_VARS-1920x1080.fd` |
+| The args file of the machine | Written into the assets directory, with the flags that macOS needs on KVM. Edit it as you like |
+
+The assets land in `~/.local/share/macxvm/assets` and are shared by every machine. Nothing is
+downloaded without your command, and the repository of the project ships no Apple software.
+
+```bash
+macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile cli
+```
+
+The versions are `high-sierra`, `mojave`, `catalina`, `big-sur`, `monterey`, `ventura`,
+`sonoma`, `sequoia` and `tahoe`.
+
 <a id="first-boot-checklist"></a>
 ### First boot checklist
+
+0. In the recovery environment, erase the disk of the machine, because the
+   installer only offers a volume that is formatted as APFS. Open **Disk
+   Utility**, choose the disk of the machine on the left, press **Erase**, pick
+   **APFS** and erase it. In a terminal of the recovery environment the same
+   is one line:
+
+```bash
+diskutil eraseDisk APFS "Macintosh HD" GPTFormat /dev/disk2
+```
 
 1. Create the user `admin` with a password, skip Apple ID, iCloud, Siri and analytics.
 2. System Settings, General, Sharing, **Remote Login**: on.
@@ -296,6 +340,7 @@ builds in a throwaway overlay that is removed afterwards. The full guide, includ
 | Command | Purpose |
 |---------|---------|
 | `macxvm create NAME --args-file FILE [...]` | register a virtual machine |
+| `macxvm image prepare NAME [--macos VERSION] [...]` | fetch the boot assets of a macOS guest and register the machine |
 | `macxvm start NAME [--install] [--vnc] [--force]` | start QEMU |
 | `macxvm stop NAME [--force] [--timeout SECONDS]` | stop the guest, gracefully if possible |
 | `macxvm list [--json]` / `macxvm status NAME [--json]` | show the machines |
@@ -330,7 +375,7 @@ Exit codes: `0` success, `1` error, `2` usage, `3` not found, `4` already runnin
 | Operation | Target | Measured on the reference host |
 |-----------|--------|--------------------------------|
 | `list`, `status` | < 100 ms | 3 ms |
-| Release binary | < 6 MB | 4.07 MB, static, `linux/amd64` |
+| Release binary | < 8 MB | 7.32 MB, static, `linux/amd64` |
 | Overlay clone of a sealed base | < 1 s | < 1 s, a few hundred KiB on disk |
 | Idle cost on the host | none | no process of MacXVM stays alive |
 

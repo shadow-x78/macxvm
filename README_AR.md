@@ -163,7 +163,7 @@ make install          # يثبّت في ~/.local/bin/macxvm
 
 </div>
 
-الملف التنفيذي بحجم نحو 4 ميغابايت، ثابت ومبني لـ `linux/amd64`. لا يحتاج خادمًا دائمًا ولا خدمة. الدليل الكامل، بما فيه مجلد الحالة والحذف، في [docs/INSTALLATION_AR.md](docs/INSTALLATION_AR.md).
+الملف التنفيذي بحجم نحو 7 ميغابايت، ثابت ومبني لـ `linux/amd64`. لا يحتاج خادمًا دائمًا ولا خدمة. الدليل الكامل، بما فيه مجلد الحالة والحذف، في [docs/INSTALLATION_AR.md](docs/INSTALLATION_AR.md).
 
 <a id="features"></a>
 ## المزايا
@@ -225,6 +225,24 @@ qemu-system-x86_64 \
 <a id="quick-start"></a>
 ## البدء السريع
 
+الطريقة السريعة: دع MacXVM يجلب أصول الإقلاع ويسجّل الجهاز.
+
+<div dir="ltr" align="left">
+
+```bash
+# 1. اجلب مثبّت Apple ومحمّل الإقلاع OpenCore، وسجّل الجهاز بهما
+macxvm image prepare demo --macos sequoia
+
+# 2. ثبّت macOS داخل الضيف
+macxvm start demo --install --vnc
+#    صل بعميل VNC بالعنوان 127.0.0.1:<المنفذ الذي يطبعه macxvm> واتّبع دليل
+#    التثبيت الخاص بالمشروع الذي جاءت منه أصولك
+```
+
+</div>
+
+الطريقة بأصولك الخاصة: أحضر ملف وسائط وأصول الإقلاع بنفسك.
+
 <div dir="ltr" align="left">
 
 ```bash
@@ -239,8 +257,41 @@ macxvm start demo --install --vnc
 
 </div>
 
+### ما يفعله `macxvm image prepare`
+
+| الخطوة | المصدر |
+|--------|--------|
+| مثبّت macOS | خدمة الاستعادة من Apple، عبر جلسة الخدمة. تُفحص قائمة الأجزاء وتوقيع Apple، ثم تُحوَّل الصورة إلى قرص خام بـ `dmg2img` |
+| محمّل الإقلاع OpenCore | مستودع مجتمع OSX-KVM |
+| برمجية UEFI لـ QEMU | نفس المستودع، الزوج `OVMF_CODE_4M.fd` و`OVMF_VARS-1920x1080.fd` |
+| ملف وسائط الجهاز | يُكتب في مجلد الأصول بالرايات التي يحتاجها macOS على KVM، وعدّله كما شئت |
+
+تقع الأصول في `~/.local/share/macxvm/assets` ويشاركها كل الأجهزة. لا يُنزَّل شيء بلا أمر منك،
+ومستودع المشروع لا يضم أي برنامج من Apple.
+
+<div dir="ltr" align="left">
+
+```bash
+macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile cli
+```
+
+</div>
+
+الإصدارات: `high-sierra` و`mojave` و`catalina` و`big-sur` و`monterey` و`ventura`
+و`sonoma` و`sequoia` و`tahoe`.
+
 <a id="first-boot-checklist"></a>
 ### قائمة إقلاع أول مرة
+
+0. في بيئة الاستعادة، امسح قرص الجهاز، لأن المثبّت لا يعرض إلا حجمًا بصيغة APFS. افتح **Disk Utility**، واختر قرص الجهاز على اليسار، ثم **Erase**، واختر **APFS** وامسحه. وفي طرفية بيئة الاستعادة يكون الأمر سطرًا واحدًا:
+
+<div dir="ltr" align="left">
+
+```bash
+diskutil eraseDisk APFS "Macintosh HD" GPTFormat /dev/disk2
+```
+
+</div>
 
 1. أنشئ المستخدم `admin` بكلمة مرور، وتخطَّ Apple ID وiCloud وSiri والتحليلات.
 2. إعدادات النظام، ثم عام، ثم المشاركة، ثم **Remote Login**: مفعّل.
@@ -372,6 +423,7 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 | الأمر | الغرض |
 |-------|-------|
 | `macxvm create NAME --args-file FILE [...]` | تسجيل جهاز افتراضي |
+| `macxvm image prepare NAME [--macos VERSION] [...]` | جلب أصول إقلاع ضيف macOS وتسجيل الجهاز |
 | `macxvm start NAME [--install] [--vnc] [--force]` | تشغيل QEMU |
 | `macxvm stop NAME [--force] [--timeout SECONDS]` | إيقاف الضيف بلطف إن أمكن |
 | `macxvm list [--json]` / `macxvm status NAME [--json]` | عرض الأجهزة |
@@ -410,7 +462,7 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 | العملية | الهدف | المقاس على المضيف المرجعي |
 |---------|-------|----------------------------|
 | `list` و`status` | أقل من 100 مللي ثانية | 3 مللي ثانية |
-| الملف التنفيذي | أقل من 6 ميغابايت | 4.07 ميغابايت، ثابت، `linux/amd64` |
+| الملف التنفيذي | أقل من 8 ميغابايت | 7.32 ميغابايت، ثابت، `linux/amd64` |
 | نسخ طبقة فوق أساس ختم | أقل من ثانية | أقل من ثانية، وبضعة مئات كيلوبايت على القرص |
 | الكلفة الخاملة على المضيف | لا شيء | لا تبقى أي عملية من MacXVM |
 
