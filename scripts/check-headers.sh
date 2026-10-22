@@ -64,7 +64,7 @@ while IFS= read -r file; do
     check_config "$file"
 done < <(find "$ROOT" -name '*.yml' -not -path "$ROOT/.git/*" | sort)
 
-for file in "$ROOT/.editorconfig" "$ROOT/.gitattributes" "$ROOT/Makefile"; do
+for file in "$ROOT/.editorconfig" "$ROOT/.gitattributes" "$ROOT/.gitignore" "$ROOT/Makefile"; do
     [ -f "$file" ] && check_config "$file"
 done
 

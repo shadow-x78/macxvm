@@ -3,6 +3,7 @@
 # https://github.com/shadow-x78/macxvm
 # ─────────────────────────────────────────────
 
+# ── Linguist ──
 go.sum        linguist-generated=true
 *.md          linguist-detectable=true
 *.sh          linguist-detectable=true
