@@ -134,12 +134,15 @@ func qemuCheck() Check {
 	return Check{name, OK, fmt.Sprintf("QEMU %d.%d", major, minor)}
 }
 
-var kvmProbe = hostcheck.QemuKVM
+var (
+	kvmProbe  = hostcheck.QemuKVM
+	kvmBinary = hostcheck.HaveBinary
+)
 
 func kvmAccelCheck() Check {
 	const name = "QEMU KVM"
 	bin := config.DefaultQemuBinary
-	if !hostcheck.HaveBinary(bin) {
+	if !kvmBinary(bin) {
 		return Check{name, Warn, "cannot check, " + bin + " is not in PATH"}
 	}
 	usable, isDefault := kvmProbe(bin)
