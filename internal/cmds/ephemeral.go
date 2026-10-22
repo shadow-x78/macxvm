@@ -14,7 +14,6 @@ import (
 	"github.com/shadow-x78/macxvm/internal/store"
 )
 
-// createEphemeral creates a temporary overlay of a sealed base image.
 func createEphemeral(base string, cpus int, ram string) (string, error) {
 	baseCfg, err := store.Load(base)
 	if err != nil {
@@ -37,8 +36,6 @@ func createEphemeral(base string, cpus int, ram string) (string, error) {
 		}
 		memoryMiB = size
 	}
-	// The checks come before the clone, so that a rejected value leaves no
-	// machine behind.
 	if err := hostcheck.Protect(memoryMiB, cpusTotal, false); err != nil {
 		return "", err
 	}
@@ -47,8 +44,6 @@ func createEphemeral(base string, cpus int, ram string) (string, error) {
 		return "", err
 	}
 	cfg.Ephemeral = true
-	// The disk of a temporary virtual machine is thrown away, so it may use
-	// the fast and unsafe cache mode.
 	cfg.DiskOpts = "unsafe"
 	cfg.CPUs = cpusTotal
 	cfg.MemoryMiB = memoryMiB
@@ -58,7 +53,6 @@ func createEphemeral(base string, cpus int, ram string) (string, error) {
 	return name, nil
 }
 
-// removeEphemeral stops and deletes a temporary virtual machine.
 func removeEphemeral(name string, keep bool) {
 	if name == "" || keep {
 		return

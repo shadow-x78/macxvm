@@ -22,7 +22,6 @@ func TestDialTimesOutWhenTheServerNeverAnswers(t *testing.T) {
 		if err != nil {
 			return
 		}
-		// The connection stays open, but the server never greets.
 		time.Sleep(3 * time.Second)
 		conn.Close()
 	}()

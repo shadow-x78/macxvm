@@ -1,10 +1,6 @@
 // MacXVM - Embedded Resources (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package resources embeds the guest-side scripts and data used by MacXVM.
-//
-// The files in this directory are the single source of truth; no Go string
-// constant duplicates their content.
 package resources
 
 import _ "embed"

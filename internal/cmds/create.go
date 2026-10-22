@@ -28,7 +28,6 @@ func init() {
 	})
 }
 
-// minRAMMiB is the smallest amount of memory a macOS guest can use.
 const minRAMMiB = 4096
 
 func cmdCreate(args []string) error {
@@ -167,8 +166,6 @@ func cmdCreate(args []string) error {
 	if err := paths.EnsureHome(); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot create %s: %v", paths.Home(), err)
 	}
-	// The new machine is built in a staging directory and only replaces the
-	// old one when it is complete. A failure never destroys what is there.
 	staging := filepath.Join(paths.Home(), "staging", config.NewID())
 	if err := os.MkdirAll(staging, 0o700); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot create %s: %v", staging, err)

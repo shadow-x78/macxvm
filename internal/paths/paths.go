@@ -1,7 +1,6 @@
 // MacXVM - Paths (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package paths resolves the macxvm state and run directories.
 package paths
 
 import (
@@ -13,7 +12,6 @@ import (
 
 const dirMode = 0o700
 
-// Home returns the macxvm state directory. It is never created by this call.
 func Home() string {
 	if v := os.Getenv("MACXVM_HOME"); v != "" {
 		return v
@@ -28,8 +26,6 @@ func Home() string {
 	return filepath.Join(home, ".local", "share", "macxvm")
 }
 
-// Run returns the directory holding the QMP sockets. It is never created by
-// this call.
 func Run() string {
 	if v := os.Getenv("MACXVM_RUN"); v != "" {
 		return v
@@ -40,14 +36,10 @@ func Run() string {
 	return fmt.Sprintf("/tmp/macxvm-%d", os.Getuid())
 }
 
-// EnsureHome creates the state directory if needed.
 func EnsureHome() error {
 	return os.MkdirAll(Home(), dirMode)
 }
 
-// EnsureRun creates the run directory if needed. The directory holds the QMP
-// socket, which is not authenticated, so it must be a real directory of the
-// current user that nobody else can write to.
 func EnsureRun() error {
 	dir := Run()
 	if err := os.MkdirAll(dir, dirMode); err != nil {
@@ -56,7 +48,6 @@ func EnsureRun() error {
 	return checkPrivateDir(dir)
 }
 
-// checkPrivateDir refuses a directory that another user may write to.
 func checkPrivateDir(dir string) error {
 	info, err := os.Lstat(dir)
 	if err != nil {
@@ -83,12 +74,10 @@ func checkPrivateDir(dir string) error {
 	return nil
 }
 
-// VMDir returns the directory holding the state of the named VM.
 func VMDir(name string) string {
 	return filepath.Join(Home(), "vms", name)
 }
 
-// KeyPath returns the path of the shared SSH private key.
 func KeyPath() string {
 	return filepath.Join(Home(), "id_ed25519")
 }

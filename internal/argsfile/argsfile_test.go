@@ -95,8 +95,6 @@ func TestParseIgnoresInstallPrefixWithoutSpace(t *testing.T) {
 	}
 }
 
-// The example of the README ends every line with a backslash. Such a line
-// must not add a backslash argument, because QEMU would read it as a path.
 func TestParseDropsTheTrailingBackslashOfALine(t *testing.T) {
 	text := `qemu-system-x86_64 \
   -cpu host \

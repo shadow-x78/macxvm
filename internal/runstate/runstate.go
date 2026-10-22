@@ -1,7 +1,6 @@
 // MacXVM - Run State (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package runstate detects running QEMU processes and serialises operations.
 package runstate
 
 import (
@@ -15,14 +14,10 @@ import (
 	"github.com/shadow-x78/macxvm/internal/config"
 )
 
-// ProcRoot is the mount point of the proc filesystem.
 func ProcRoot() string { return "/proc" }
 
-// PidFile returns the path of the pid file of a VM.
 func PidFile(dir string) string { return dir + "/qemu.pid" }
 
-// Running reports whether the QEMU process of the VM with the given id is
-// alive. The pid file is removed when it turns out to be stale.
 func Running(procRoot, pidFile, id string) (int, bool) {
 	b, err := os.ReadFile(pidFile)
 	if err != nil {
@@ -48,9 +43,6 @@ func Running(procRoot, pidFile, id string) (int, bool) {
 	return pid, true
 }
 
-// Alive reports whether the process with the given pid is the QEMU process of
-// the VM with the given id. It is immune to PID reuse because the command
-// line of the process must contain the VM identifier.
 func Alive(procRoot string, pid int, id string) bool {
 	if pid <= 0 {
 		return false
@@ -62,9 +54,6 @@ func Alive(procRoot string, pid int, id string) bool {
 	return bytes.Contains(cmd, []byte("macxvm-"+id))
 }
 
-// ProcessGone reports whether the process no longer exists or has become a
-// zombie. It is the authoritative answer to "did the process exit", because
-// the command line of a process is briefly empty while it is starting.
 func ProcessGone(procRoot string, pid int) bool {
 	if pid <= 0 {
 		return true
@@ -73,8 +62,6 @@ func ProcessGone(procRoot string, pid int) bool {
 	if err != nil {
 		return true
 	}
-	// The command name may contain spaces and parentheses, so the state
-	// follows the last closing parenthesis.
 	idx := strings.LastIndex(string(b), ")")
 	if idx < 0 || idx+2 >= len(b) {
 		return true
@@ -90,7 +77,6 @@ func cmdlinePath(procRoot string, pid int) string {
 	return fmt.Sprintf("%s/%d/cmdline", procRoot, pid)
 }
 
-// State returns the state of a VM: running, sealed or stopped.
 func State(cfg *config.VMConfig) string {
 	if pid, ok := Running(ProcRoot(), PidFile(cfg.Dir()), cfg.ID); ok && pid > 0 {
 		return "running"
@@ -101,15 +87,11 @@ func State(cfg *config.VMConfig) string {
 	return "stopped"
 }
 
-// IsRunning reports whether the QEMU process of the VM is alive.
 func IsRunning(cfg *config.VMConfig) bool {
 	pid, ok := Running(ProcRoot(), PidFile(cfg.Dir()), cfg.ID)
 	return ok && pid > 0
 }
 
-// FindByMarker looks for a process whose command line contains the marker of
-// a VM. It finds a QEMU whose pid file is missing, for example because the
-// machine did not start completely.
 func FindByMarker(procRoot, id string) (int, bool) {
 	entries, err := os.ReadDir(procRoot)
 	if err != nil {
@@ -132,8 +114,6 @@ func FindByMarker(procRoot, id string) (int, bool) {
 	return 0, false
 }
 
-// LockOp takes an exclusive non-blocking lock on path. The caller must close
-// the returned file to release the lock.
 func LockOp(path string) (*os.File, error) {
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {

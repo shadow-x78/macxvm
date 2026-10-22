@@ -30,8 +30,6 @@ func init() {
 	})
 }
 
-// startTimeout is the time QEMU may take to write its pid file and to create
-// the QMP socket.
 const startTimeout = 20 * time.Second
 
 func cmdStart(args []string) error {
@@ -62,11 +60,8 @@ func cmdStart(args []string) error {
 	return nil
 }
 
-// lastVNCDisplay holds the VNC display of the last start, so that the
-// command can print it.
 var lastVNCDisplay int
 
-// startVM starts the QEMU process of a virtual machine.
 func startVM(cfg *config.VMConfig, install, vnc, force bool) error {
 	name := cfg.Name
 	lock, err := runstate.LockOp(cfg.File("op.lock"))
@@ -78,9 +73,6 @@ func startVM(cfg *config.VMConfig, install, vnc, force bool) error {
 	if runstate.IsRunning(cfg) {
 		return exitcode.New(exitcode.AlreadyRunning, "VM '%s' is already running", name)
 	}
-	// A QEMU whose pid file is missing is still a QEMU of this machine. It
-	// must not be started a second time, because two QEMU processes would
-	// write the same disk.
 	if pid, ok := runstate.FindByMarker(runstate.ProcRoot(), cfg.ID); ok {
 		return exitcode.New(exitcode.AlreadyRunning,
 			"VM '%s' is already running (process %d)", name, pid)
@@ -161,8 +153,6 @@ func startVM(cfg *config.VMConfig, install, vnc, force bool) error {
 			return exitcode.New(exitcode.Generic,
 				"QEMU exited before it was ready (see %s)", logPath)
 		}
-		// QEMU is running but not ready. It must not stay behind, because
-		// the next start would run a second QEMU on the same disk.
 		qemu.Kill(pid)
 		cleanup(cfg, sock)
 		return exitcode.New(exitcode.Timeout,

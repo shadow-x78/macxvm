@@ -82,8 +82,6 @@ func TestLogTail(t *testing.T) {
 }
 
 func TestPreflight(t *testing.T) {
-	// The success case needs QEMU on the host, which a build machine does
-	// not necessarily have.
 	if hostcheck.HaveBinary(config.DefaultQemuBinary) {
 		if err := Preflight(config.DefaultQemuBinary); err != nil {
 			t.Fatalf("Preflight() = %v", err)

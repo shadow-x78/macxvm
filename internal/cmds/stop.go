@@ -55,8 +55,6 @@ func cmdStop(args []string) error {
 	return nil
 }
 
-// stopVM stops the QEMU process of a virtual machine and reports which step
-// ended it.
 func stopVM(cfg *config.VMConfig, force bool, timeout int) (string, error) {
 	name := cfg.Name
 	lock, err := runstate.LockOp(cfg.File("op.lock"))
@@ -69,8 +67,6 @@ func stopVM(cfg *config.VMConfig, force bool, timeout int) (string, error) {
 
 	pid, running := runstate.Running(runstate.ProcRoot(), runstate.PidFile(cfg.Dir()), cfg.ID)
 	if !running {
-		// A QEMU whose pid file is missing is still a QEMU of this machine
-		// and must be stopped as well.
 		found, ok := runstate.FindByMarker(runstate.ProcRoot(), cfg.ID)
 		if !ok {
 			return "", exitcode.New(exitcode.NotRunning, "VM '%s' is not running", name)
@@ -91,10 +87,6 @@ func stopVM(cfg *config.VMConfig, force bool, timeout int) (string, error) {
 		return step, nil
 	}
 
-	// A passwordless sudo in the guest makes this the most reliable way to
-	// shut the guest down. The connection drops while the guest goes down,
-	// so errors are ignored. The step is bounded, so that a guest that does
-	// not answer cannot block the steps below.
 	sshx.RunBounded(cfg, "sudo shutdown -h now", sshStepTimeout(timeout))
 	if waitExitUntil(pid, deadline) {
 		cleanup(cfg, sock)
@@ -119,7 +111,6 @@ func stopVM(cfg *config.VMConfig, force bool, timeout int) (string, error) {
 	return "killed", nil
 }
 
-// qmpCommand runs a QMP command and reports whether it worked.
 func qmpCommand(sock, command string) bool {
 	client, err := qmp.Dial(sock, 5*time.Second)
 	if err != nil {
@@ -135,13 +126,10 @@ func qmpCommand(sock, command string) bool {
 	return false
 }
 
-// waitExit waits until the QEMU process of the VM is gone.
 func waitExit(pid int, timeout time.Duration) bool {
 	return waitExitUntil(pid, time.Now().Add(timeout))
 }
 
-// waitExitUntil waits until the QEMU process of the VM is gone or the deadline
-// is reached.
 func waitExitUntil(pid int, deadline time.Time) bool {
 	for {
 		if runstate.ProcessGone(runstate.ProcRoot(), pid) {
@@ -154,13 +142,8 @@ func waitExitUntil(pid int, deadline time.Time) bool {
 	}
 }
 
-// maxSSHShutdownTimeout is the longest time the SSH step of a stop may take.
-// A guest that does not answer must not use the whole timeout, because the
-// other steps below need the time as well.
 const maxSSHShutdownTimeout = 20 * time.Second
 
-// sshStepTimeout is the time the SSH step of a stop may take. It never
-// exceeds the timeout of the command itself.
 func sshStepTimeout(timeout int) time.Duration {
 	limit := time.Duration(timeout) * time.Second
 	if limit < 0 {
@@ -172,7 +155,6 @@ func sshStepTimeout(timeout int) time.Duration {
 	return limit
 }
 
-// cleanup removes the files that belong to a stopped virtual machine.
 func cleanup(cfg *config.VMConfig, sock string) {
 	os.Remove(runstate.PidFile(cfg.Dir()))
 	os.Remove(sock)

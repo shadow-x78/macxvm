@@ -47,7 +47,6 @@ func cmdRun(args []string) error {
 		return exitcode.New(exitcode.Usage, "--from is required")
 	}
 
-	// Remove the leftovers of earlier runs before starting a new one.
 	pruneEphemeral(false, false)
 
 	name, err := createEphemeral(*from, *cpus, *ram)

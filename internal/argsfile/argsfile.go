@@ -1,11 +1,6 @@
 // MacXVM - Args File (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package argsfile parses and expands the user supplied QEMU args file.
-//
-// The args file is the machine definition the user brings. MacXVM only
-// substitutes placeholders and injects its own management flags; it never
-// hardcodes machine details.
 package argsfile
 
 import (
@@ -20,7 +15,6 @@ import (
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 )
 
-// Context holds the values substituted into the placeholders.
 type Context struct {
 	CPUs       int
 	RAMMiB     int
@@ -33,14 +27,11 @@ type Context struct {
 	QemuBinary string
 }
 
-// ForbiddenFlags are the QEMU options MacXVM injects itself. A user supplied
-// args file must not contain them.
 var ForbiddenFlags = []string{
 	"-name", "-pidfile", "-qmp", "-monitor", "-display",
 	"-vnc", "-daemonize", "-serial", "-nographic",
 }
 
-// RequiredPlaceholders must be present in every args file.
 var RequiredPlaceholders = []string{"DISK_IMG", "NETDEV", "MAC", "RAM_MIB", "CPUS"}
 
 var knownPlaceholders = map[string]bool{
@@ -50,13 +41,6 @@ var knownPlaceholders = map[string]bool{
 
 var placeholderPattern = regexp.MustCompile(`\{\{[A-Z_]+\}\}`)
 
-// Tokenize splits one line of an args file into tokens. Quoting follows the
-// usual shell rules: single quotes are literal, double quotes allow \" and \\
-// and a backslash outside quotes escapes the next character.
-//
-// A trailing backslash is a line continuation of a shell script. Every line of
-// an args file stands on its own, so the backslash ends the line and adds no
-// argument.
 func Tokenize(line string) ([]string, error) {
 	var tokens []string
 	var cur strings.Builder
@@ -129,8 +113,6 @@ loop:
 	return tokens, nil
 }
 
-// Parse splits an args file into the normal lines and the lines that are only
-// used for the installation phase.
 func Parse(text string) (normal, install [][]string, err error) {
 	for _, line := range strings.Split(text, "\n") {
 		trimmed := strings.TrimSpace(line)
@@ -162,8 +144,6 @@ func Parse(text string) (normal, install [][]string, err error) {
 	return normal, install, nil
 }
 
-// Validate rejects forbidden QEMU flags and reports missing required
-// placeholders.
 func Validate(lines [][]string) error {
 	for _, toks := range lines {
 		for _, tok := range toks {
@@ -184,7 +164,6 @@ func Validate(lines [][]string) error {
 	return nil
 }
 
-// CheckPlaceholders rejects placeholders MacXVM does not know.
 func CheckPlaceholders(lines [][]string) error {
 	for _, toks := range lines {
 		for _, tok := range toks {
@@ -200,7 +179,6 @@ func CheckPlaceholders(lines [][]string) error {
 	return nil
 }
 
-// DropBinary removes the QEMU binary name from the first line when present.
 func DropBinary(lines [][]string, qemuBinary string) [][]string {
 	out := make([][]string, len(lines))
 	copy(out, lines)
@@ -214,7 +192,6 @@ func DropBinary(lines [][]string, qemuBinary string) [][]string {
 	return out
 }
 
-// Expand substitutes the placeholders and returns the flat argument vector.
 func Expand(lines [][]string, ctx Context) ([]string, error) {
 	var out []string
 	for _, toks := range lines {
@@ -229,8 +206,6 @@ func Expand(lines [][]string, ctx Context) ([]string, error) {
 	return out, nil
 }
 
-// Build parses, validates and expands an args file. The install lines are
-// only included when install is true.
 func Build(text string, ctx Context, install bool) ([]string, error) {
 	normal, inst, err := Parse(text)
 	if err != nil {
@@ -252,8 +227,6 @@ func Build(text string, ctx Context, install bool) ([]string, error) {
 	return Expand(lines, ctx)
 }
 
-// DiskOptValue returns the cache mode of the guest disk. The unsafe mode is
-// only allowed for ephemeral virtual machines.
 func DiskOptValue(cfg *config.VMConfig) (string, error) {
 	if cfg.DiskOpts == "unsafe" {
 		if !cfg.Ephemeral {
@@ -264,7 +237,6 @@ func DiskOptValue(cfg *config.VMConfig) (string, error) {
 	return "cache=writeback", nil
 }
 
-// ContextFor builds the substitution context of a registered VM.
 func ContextFor(cfg *config.VMConfig) (Context, error) {
 	opts, err := DiskOptValue(cfg)
 	if err != nil {

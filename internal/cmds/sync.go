@@ -19,16 +19,13 @@ import (
 	"github.com/shadow-x78/macxvm/internal/sshx"
 )
 
-// defaultExcludes are the paths that are never sent to the guest.
 var defaultExcludes = []string{".git", "DerivedData", "build", ".build"}
 
-// workdir returns the directory of a project inside the guest.
 func workdir(absProject string) string {
 	sum := sha1.Sum([]byte(absProject))
 	return "~/macxvm-work/" + hex.EncodeToString(sum[:])[:12]
 }
 
-// syncProject copies the project directory into the guest.
 func syncProject(cfg *config.VMConfig, absProject, dir string, excludes []string) error {
 	if err := runInGuest(cfg, "mkdir -p "+sshx.ShellQuote(dir)); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot create the work directory in the guest: %v", err)
@@ -43,9 +40,6 @@ func syncProject(cfg *config.VMConfig, absProject, dir string, excludes []string
 	return nil
 }
 
-// fetchBack copies a path of the guest back to the host. The paths must stay
-// inside the project, so that a project file cannot write anywhere on the
-// host.
 func fetchBack(cfg *config.VMConfig, dir, remote, local string) error {
 	if remote == "" || local == "" {
 		return exitcode.New(exitcode.Usage, "a fetch needs a remote and a local path")
@@ -66,7 +60,6 @@ func fetchBack(cfg *config.VMConfig, dir, remote, local string) error {
 	return nil
 }
 
-// checkRelative refuses a path that leaves the project directory.
 func checkRelative(path, what string) error {
 	if strings.HasPrefix(path, "/") {
 		return exitcode.New(exitcode.Usage,
@@ -85,7 +78,6 @@ func checkRelative(path, what string) error {
 	return nil
 }
 
-// runInGuest runs a command in the guest and returns the error.
 func runInGuest(cfg *config.VMConfig, command string) error {
 	cmd := exec.Command("ssh", sshx.SSHArgs(cfg, sshx.RemoteCommand(command))...)
 	cmd.Stdout = os.Stdout
@@ -93,12 +85,10 @@ func runInGuest(cfg *config.VMConfig, command string) error {
 	return cmd.Run()
 }
 
-// outputInGuest runs a command in the guest and returns its output.
 func outputInGuest(cfg *config.VMConfig, command string) (string, error) {
 	return sshx.Output(cfg, command)
 }
 
-// stringList is a flag that may be given more than once.
 type stringList []string
 
 func (s *stringList) String() string { return strings.Join(*s, ",") }
@@ -108,7 +98,6 @@ func (s *stringList) Set(value string) error {
 	return nil
 }
 
-// parseFetch splits a REMOTE=LOCAL pair.
 func parseFetch(value string) (string, string, error) {
 	idx := strings.Index(value, "=")
 	if idx <= 0 || idx == len(value)-1 {
@@ -118,7 +107,6 @@ func parseFetch(value string) (string, string, error) {
 	return value[:idx], value[idx+1:], nil
 }
 
-// describeBuild prints what is going to be built.
 func describeBuild(kind project.Kind, scheme, configuration string) string {
 	if kind == project.KindSwiftPackage {
 		return fmt.Sprintf("swift build (%s)", configuration)

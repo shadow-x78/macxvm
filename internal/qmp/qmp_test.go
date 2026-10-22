@@ -14,7 +14,6 @@ import (
 	"time"
 )
 
-// fakeServer answers QMP requests on a unix socket.
 func fakeServer(t *testing.T, handle func(cmd string) (string, bool)) string {
 	t.Helper()
 	sock := filepath.Join(t.TempDir(), "qmp.sock")

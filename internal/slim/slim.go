@@ -1,11 +1,6 @@
 // MacXVM - Guest Slimming (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package slim trims the services of a macOS guest so that it uses less
-// CPU, memory and processes.
-//
-// Only the launchd labels of the labels file are ever touched, the deny list
-// is enforced in this package and every change can be undone.
 package slim
 
 import (
@@ -21,14 +16,11 @@ import (
 	"github.com/shadow-x78/macxvm/resources"
 )
 
-// Label is a launchd job that may be disabled.
 type Label struct {
 	Domain string
 	Label  string
 }
 
-// DenyPrefixes lists the launchd labels that are never disabled, because
-// they keep SSH, the network or the window server alive.
 var DenyPrefixes = []string{
 	"com.apple.dt.",
 	"com.apple.CoreSimulator",
@@ -49,8 +41,6 @@ var DenyPrefixes = []string{
 	"com.apple.sshd",
 }
 
-// restoreScript re-enables the jobs that were disabled and turns Spotlight
-// back on.
 const restoreScript = `LOG="$HOME/.macxvm-slim-disabled"
 UIDN=$(id -u)
 if [ -f "$LOG" ]; then
@@ -66,15 +56,12 @@ sudo mdutil -a -i on || true
 echo "slim restore done, reboot the guest to start the jobs again"
 `
 
-// measureScript collects the numbers that show how much lighter the guest is.
 const measureScript = `echo "processes: $(ps -A | wc -l | tr -d ' ')"
 top -l 2 -n 8 -o cpu -stats pid,command,cpu,mem | tail -n 12
 vm_stat | head -6
 memory_pressure | tail -4
 `
 
-// ParseLabels reads a labels file. Lines are "domain label", the domain is
-// either gui or system. Comments and blank lines are ignored.
 func ParseLabels(text string) ([]Label, error) {
 	var labels []Label
 	for _, line := range strings.Split(text, "\n") {
@@ -96,8 +83,6 @@ func ParseLabels(text string) ([]Label, error) {
 	return labels, nil
 }
 
-// Filter removes the labels that the deny list protects. The dropped labels
-// are returned so that the caller can warn about them.
 func Filter(labels []Label) (kept, dropped []Label) {
 	for _, l := range labels {
 		if denied(l.Label) {
@@ -109,7 +94,6 @@ func Filter(labels []Label) (kept, dropped []Label) {
 	return kept, dropped
 }
 
-// denied reports whether a label starts with a protected prefix.
 func denied(label string) bool {
 	lower := strings.ToLower(label)
 	for _, prefix := range DenyPrefixes {
@@ -120,7 +104,6 @@ func denied(label string) bool {
 	return false
 }
 
-// FormatLabels renders labels in the format of the labels file.
 func FormatLabels(labels []Label) string {
 	var b strings.Builder
 	for _, l := range labels {
@@ -129,7 +112,6 @@ func FormatLabels(labels []Label) string {
 	return b.String()
 }
 
-// ValidateLevel checks that a slim level exists.
 func ValidateLevel(level int) error {
 	if level != 1 && level != 2 {
 		return exitcode.New(exitcode.Usage, "unknown slim level %d (use 1 or 2)", level)
@@ -137,7 +119,6 @@ func ValidateLevel(level int) error {
 	return nil
 }
 
-// Apply runs the slim scripts of the given level in the guest.
 func Apply(cfg *config.VMConfig, level int) error {
 	if err := ValidateLevel(level); err != nil {
 		return err
@@ -165,7 +146,6 @@ func Apply(cfg *config.VMConfig, level int) error {
 	return nil
 }
 
-// Restore re-enables the jobs that were disabled and turns Spotlight back on.
 func Restore(cfg *config.VMConfig) error {
 	if err := runScript(cfg, restoreScript); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot restore the guest: %v", err)
@@ -173,8 +153,6 @@ func Restore(cfg *config.VMConfig) error {
 	return nil
 }
 
-// Measure returns the numbers of the guest. It is called before and after
-// the slimming, with a settling time in between.
 func Measure(cfg *config.VMConfig) (string, error) {
 	cmd := exec.Command("ssh", sshx.SSHArgs(cfg, sshx.RemoteCommand(measureScript))...)
 	out, err := cmd.Output()
@@ -184,18 +162,14 @@ func Measure(cfg *config.VMConfig) (string, error) {
 	return string(out), nil
 }
 
-// Settle waits until the guest has been idle long enough for the second
-// measurement to be meaningful.
 func Settle() {
 	time.Sleep(30 * time.Second)
 }
 
-// runScript sends a script to the guest and runs it with the login shell.
 func runScript(cfg *config.VMConfig, script string) error {
 	return sshx.RunScript(cfg, script)
 }
 
-// putFile writes a file in the guest.
 func putFile(cfg *config.VMConfig, path, content string) error {
 	cmd := exec.Command("ssh", sshx.SSHArgs(cfg, sshx.RemoteCommand("cat > "+sshx.ShellQuote(path)))...)
 	cmd.Stdin = strings.NewReader(content)

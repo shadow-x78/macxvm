@@ -18,7 +18,7 @@ func TestValid(t *testing.T) {
 func TestInvalid(t *testing.T) {
 	invalid := []string{
 		"", "../x", "..", ".", "A", "Vm", "-x", ".x", "a/b", "a b", "a\x00b",
-		"abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz01", // 64 chars
+		"abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz01",
 	}
 	for _, name := range invalid {
 		if Valid(name) {

@@ -1,7 +1,6 @@
 // MacXVM - Configuration (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package config holds the persisted description of a virtual machine.
 package config
 
 import (
@@ -17,20 +16,15 @@ import (
 	"github.com/shadow-x78/macxvm/internal/paths"
 )
 
-// SchemaVersion is the version of the on-disk config format.
 const SchemaVersion = 1
 
-// Supported profiles.
 const (
 	ProfileCLI   = "cli"
 	ProfileXcode = "xcode"
 )
 
-// DefaultQemuBinary is the QEMU executable used when the user does not
-// provide one.
 const DefaultQemuBinary = "qemu-system-x86_64"
 
-// VMConfig describes one registered virtual machine.
 type VMConfig struct {
 	SchemaVersion int       `json:"schemaVersion"`
 	Name          string    `json:"name"`
@@ -52,8 +46,6 @@ type VMConfig struct {
 	CreatedAt     time.Time `json:"createdAt"`
 }
 
-// Defaults returns a configuration pre-filled with the preset of the given
-// profile.
 func Defaults(profile string) VMConfig {
 	c := VMConfig{
 		SchemaVersion: SchemaVersion,
@@ -69,7 +61,6 @@ func Defaults(profile string) VMConfig {
 	return c
 }
 
-// Normalize fills in the implicit values of a configuration.
 func (c *VMConfig) Normalize() {
 	if c.Profile == "" {
 		c.Profile = ProfileXcode
@@ -85,17 +76,14 @@ func (c *VMConfig) Normalize() {
 	}
 }
 
-// Dir returns the directory holding the state of this VM.
 func (c *VMConfig) Dir() string {
 	return paths.VMDir(c.Name)
 }
 
-// File returns a path inside the state directory of this VM.
 func (c *VMConfig) File(name string) string {
 	return filepath.Join(c.Dir(), name)
 }
 
-// Load reads the configuration of the VM stored in dir.
 func Load(dir string) (*VMConfig, error) {
 	b, err := os.ReadFile(filepath.Join(dir, "config.json"))
 	if err != nil {
@@ -115,7 +103,6 @@ func Load(dir string) (*VMConfig, error) {
 	return &c, nil
 }
 
-// Save writes the configuration of the VM stored in dir.
 func Save(dir string, c *VMConfig) error {
 	c.Normalize()
 	b, err := json.MarshalIndent(c, "", "  ")
@@ -126,7 +113,6 @@ func Save(dir string, c *VMConfig) error {
 	return WriteFileAtomic(filepath.Join(dir, "config.json"), b, 0o600)
 }
 
-// WriteFileAtomic writes data to path through a temporary file and a rename.
 func WriteFileAtomic(path string, data []byte, perm os.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
@@ -152,18 +138,14 @@ func WriteFileAtomic(path string, data []byte, perm os.FileMode) error {
 	return os.Rename(tmp, path)
 }
 
-// NewID returns a random 8 character hexadecimal identifier.
 func NewID() string {
 	b := make([]byte, 4)
 	if _, err := rand.Read(b); err != nil {
-		// crypto/rand only fails on a broken system; fall back to a fixed
-		// but still valid identifier shape.
 		return "00000000"
 	}
 	return hex.EncodeToString(b)
 }
 
-// NewMAC returns a random locally administered MAC address.
 func NewMAC() string {
 	b := make([]byte, 3)
 	if _, err := rand.Read(b); err != nil {

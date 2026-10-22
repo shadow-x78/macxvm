@@ -11,7 +11,6 @@ import (
 
 const tagline = "run slim macOS guests with Xcode on a Linux host (QEMU/KVM)"
 
-// Usage writes the general help of the tool.
 func Usage(w io.Writer) {
 	fmt.Fprintf(w, "macxvm — %s\n\n", tagline)
 	fmt.Fprintln(w, "Usage:")
@@ -32,7 +31,6 @@ func Usage(w io.Writer) {
 	fmt.Fprintln(w, "Run \"macxvm doctor\" to check this host.")
 }
 
-// Help writes the help of a single command.
 func Help(w io.Writer, c Command) {
 	fmt.Fprintf(w, "%s\n\n", c.Usage)
 	if c.Summary != "" {
@@ -40,8 +38,6 @@ func Help(w io.Writer, c Command) {
 	}
 }
 
-// Completions returns the list of subcommands, used by the shell completion
-// scripts.
 func Completions() []string {
 	out := make([]string, 0, len(order))
 	for _, name := range order {
@@ -50,8 +46,6 @@ func Completions() []string {
 	return out
 }
 
-// completionScript returns a static shell completion script for the given
-// shell.
 func completionScript(shell string) string {
 	names := strings.Join(Completions(), " ")
 	if shell == "zsh" {

@@ -1,7 +1,6 @@
 // MacXVM - Host Doctor (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package doctor checks whether this host can run macOS guests.
 package doctor
 
 import (
@@ -18,17 +17,14 @@ import (
 	"github.com/shadow-x78/macxvm/internal/store"
 )
 
-// Status is the outcome of a single check.
 type Status int
 
-// The possible outcomes of a check.
 const (
 	OK Status = iota
 	Fail
 	Warn
 )
 
-// Symbol returns the character used to report the status.
 func (s Status) Symbol() string {
 	switch s {
 	case Fail:
@@ -40,14 +36,12 @@ func (s Status) Symbol() string {
 	}
 }
 
-// Check is the result of a single host check.
 type Check struct {
 	Name   string
 	Status Status
 	Detail string
 }
 
-// LegalNotice is the reminder printed at the end of the doctor report.
 const LegalNotice = `Legal notice
 
 Running macOS in a virtual machine is only permitted by Apple's macOS license
@@ -76,7 +70,6 @@ by Apple Inc. macOS, Xcode and iOS are trademarks of Apple Inc. MacXVM does not
 distribute any Apple software; the user supplies and is responsible for all
 Apple software and for complying with Apple's license terms.`
 
-// Run performs every host check and returns the results.
 func Run() []Check {
 	var checks []Check
 
@@ -141,14 +134,8 @@ func qemuCheck() Check {
 	return Check{name, OK, fmt.Sprintf("QEMU %d.%d", major, minor)}
 }
 
-// kvmProbe reports whether QEMU can use the KVM accelerator and whether it
-// selects KVM on its own. The tests replace it, so that they do not start
-// QEMU.
 var kvmProbe = hostcheck.QemuKVM
 
-// kvmAccelCheck reports whether QEMU can accelerate the guest with KVM. A
-// QEMU that does not select KVM on its own needs an explicit accelerator in
-// the args file of the machine.
 func kvmAccelCheck() Check {
 	const name = "QEMU KVM"
 	bin := config.DefaultQemuBinary
@@ -166,8 +153,6 @@ func kvmAccelCheck() Check {
 	return Check{name, OK, "QEMU uses KVM"}
 }
 
-// kvmModuleCheck reports whether the KVM module ignores the MSRs. Several
-// macOS on KVM guides need this setting.
 func kvmModuleCheck() Check {
 	const name = "KVM ignore_msrs"
 	switch {
@@ -242,7 +227,6 @@ func vmCheck() Check {
 	return Check{name, OK, strings.Join(parts, ", ")}
 }
 
-// Print writes the report of the doctor command.
 func Print(w io.Writer, checks []Check) {
 	for _, c := range checks {
 		fmt.Fprintf(w, "%s %-22s %s\n", c.Status.Symbol(), c.Name, c.Detail)
@@ -251,7 +235,6 @@ func Print(w io.Writer, checks []Check) {
 	fmt.Fprintln(w, LegalNotice)
 }
 
-// Failed reports whether any check failed.
 func Failed(checks []Check) bool {
 	for _, c := range checks {
 		if c.Status == Fail {

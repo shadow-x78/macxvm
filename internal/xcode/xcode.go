@@ -1,7 +1,6 @@
 // MacXVM - Xcode Install (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package xcode installs and cleans Xcode inside a macOS guest.
 package xcode
 
 import (
@@ -15,10 +14,8 @@ import (
 	"github.com/shadow-x78/macxvm/internal/sshx"
 )
 
-// Platform is the platform runtime that is installed together with Xcode.
 const Platform = "iOS"
 
-// Install expands the given xip file in the guest and installs Xcode.
 func Install(cfg *config.VMConfig, xipPath, platform string) error {
 	if cfg.Profile != config.ProfileXcode {
 		return exitcode.New(exitcode.ProfileMismatch,
@@ -59,21 +56,17 @@ func Install(cfg *config.VMConfig, xipPath, platform string) error {
 	return nil
 }
 
-// Clean removes the caches and the derived data of Xcode in the guest.
 func Clean(cfg *config.VMConfig) error {
 	steps := []string{
 		"rm -rf ~/Library/Developer/Xcode/DerivedData ~/Library/Caches/com.apple.dt.Xcode",
 		"xcrun simctl delete unavailable",
 	}
 	for _, step := range steps {
-		// The clean up is best effort: a missing simulator runtime must not
-		// stop the command.
 		run(cfg, step)
 	}
 	return nil
 }
 
-// copyXip sends the xip file to the guest.
 func copyXip(cfg *config.VMConfig, path string) error {
 	target := sshx.Target(cfg) + ":~/Xcode.xip"
 	cmd := exec.Command("scp", sshx.SCPArgs(cfg, path, target)...)
@@ -85,7 +78,6 @@ func copyXip(cfg *config.VMConfig, path string) error {
 	return nil
 }
 
-// run executes a command in the guest.
 func run(cfg *config.VMConfig, command string) error {
 	cmd := exec.Command("ssh", sshx.SSHArgs(cfg, sshx.RemoteCommand(command))...)
 	cmd.Stdout = os.Stdout
@@ -93,7 +85,6 @@ func run(cfg *config.VMConfig, command string) error {
 	return cmd.Run()
 }
 
-// output executes a command in the guest and returns its output.
 func output(cfg *config.VMConfig, command string) (string, error) {
 	return sshx.Output(cfg, command)
 }
