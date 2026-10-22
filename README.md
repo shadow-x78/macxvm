@@ -23,7 +23,7 @@ MacXVM is an independent open-source project, not affiliated with or endorsed by
 
 Run slim macOS guests with Xcode on a Linux host.
 
-[![Version](https://img.shields.io/badge/version-0.3.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.1-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -249,7 +249,9 @@ The images below were taken from a real run of the tool on a Linux host, with
 `macxvm image prepare`, `macxvm start --install --vnc` and `macxvm slim`. They
 are the screen of the guest as it is. The guest is macOS 14.8.9 with four
 processors and eight gigabytes of memory, and the disk holds 9.6 GB after the
-installation.
+installation. The guest uses the dark appearance, and the desktop and the login
+window are black, because a guest without a GPU draws the video wallpaper of
+Sonoma as a white surface.
 
 | The boot loader of the community | The environment of the recovery |
 |---|---|
