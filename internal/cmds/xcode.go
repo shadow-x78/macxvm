@@ -36,7 +36,7 @@ func cmdXcode(args []string) error {
 func xcodeInstall(args []string) error {
 	fs := newFlagSet("xcode install")
 	xip := fs.String("xip", "", "path of the Xcode.xip file (required)")
-	platform := fs.String("platform", xcode.Platform, "platform runtime to install")
+	platform := fs.String("platform", "", "the platform runtime to install, for example iOS. Without it the guest stays light")
 	positional, flagArgs := SplitArgs(fs, args)
 	if err := parseFlags("xcode install", fs, flagArgs); err != nil {
 		return err

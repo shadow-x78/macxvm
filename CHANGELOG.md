@@ -12,6 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   boot loader, writes an args file for macOS and registers the machine. The
   chunk list and the signature of Apple are checked before the image is used,
   and the image is converted into a raw disk with `dmg2img`
+- feat: `macxvm image link` prints the addresses of the boot assets without
+  downloading anything. No Apple software is ever stored in the repository or
+  in a release of the project
+- feat: the slim level 3 removes the applications that a build machine does not
+  need, the leftovers of the installation, the updates, the caches, the logs
+  and the simulator runtimes. Safari and Xcode stay
+- feat: the args file of the tool carries the flags that make the guest fast:
+  the timer of the guest without the lag, the table of ACPI that macOS needs,
+  the shape of the processors and the model of the processor of the host
+- feat: `macxvm image prepare --cpu host` uses the processor of the host, which
+  is the fastest, and `macxvm xcode install` leaves out the platform runtime
+  unless it is asked for
 
 ### Changed
 - the binary is 7.32 MB now, because the command `image prepare` needs a client

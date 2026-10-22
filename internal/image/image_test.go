@@ -35,7 +35,7 @@ func TestLookupRelease(t *testing.T) {
 }
 
 func TestArgsTemplateCarriesThePlaceholders(t *testing.T) {
-	text := argsTemplate()
+	text := argsTemplate(CPUSkylake)
 	for _, want := range []string{
 		"{{CPUS}}", "{{RAM_MIB}}", "{{DISK_IMG}}", "{{NETDEV}}", "{{MAC}}", "{{ASSETS}}",
 		"#install -drive id=InstallMedia",
@@ -48,6 +48,12 @@ func TestArgsTemplateCarriesThePlaceholders(t *testing.T) {
 	}
 	if !contains(text, "-accel kvm") {
 		t.Error("the args file does not name the accelerator")
+	}
+	if !contains(text, "kvm-pit.lost_tick_policy=discard") {
+		t.Error("the args file does not fix the timer of the guest")
+	}
+	if !contains(text, "cores={{CORES}}") {
+		t.Error("the args file does not name the shape of the processors")
 	}
 	if !contains(text, "netdev=net0") {
 		t.Error("the args file does not attach the network card")
@@ -122,6 +128,36 @@ func TestRandomID(t *testing.T) {
 	for _, c := range a {
 		if !((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')) {
 			t.Fatalf("the identifier holds '%c'", c)
+		}
+	}
+}
+
+func TestLookupCPU(t *testing.T) {
+	if _, err := LookupCPU(""); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LookupCPU("skylake"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LookupCPU("host"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LookupCPU("pentium"); err == nil {
+		t.Fatal("LookupCPU() = nil error, want an error")
+	}
+}
+
+func TestLinks(t *testing.T) {
+	links, err := Links("sonoma")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(links) < 4 {
+		t.Fatalf("Links() returned %d links", len(links))
+	}
+	for _, l := range links {
+		if l.What == "" || l.From == "" {
+			t.Fatalf("the link %+v misses a text", l)
 		}
 	}
 }
