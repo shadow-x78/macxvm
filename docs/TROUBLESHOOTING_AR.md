@@ -2,7 +2,7 @@
 
 # حل المشكلات - MacXVM
 
-[![الإصدار](https://img.shields.io/badge/version-0.1.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.2.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -61,6 +61,17 @@ sudo dnf install qemu-system-x86_64 qemu-img
 **ينبّه `doctor` على `ignore_msrs`.**
 
 عدة أدلة لتشغيل macOS على KVM تحتاج أن تتجاهل وحدة KVM سجلات المعالج الفريدة. راجع README المشروع الذي جاءت منه أصول الإقلاع. لا يغيّر MacXVM هذا الإعداد نيابة عنك.
+
+**ينبّه `doctor` أن QEMU لا يختار KVM تلقائيًا.**
+
+بعض بناءات QEMU لا تستعمل KVM إلا حين يُسمّى المسرّع صراحة، والجهاز الذي يطلب معالج المضيف يحتاجه. أضف `-accel kvm` إلى ملف وسائط الجهاز:
+
+```bash
+qemu-system-x86_64 \
+  -accel kvm \
+  -cpu host \
+  ...
+```
 
 **`run directory path too long; set MACXVM_RUN to a shorter path`**
 

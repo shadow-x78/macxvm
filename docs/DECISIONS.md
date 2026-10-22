@@ -2,7 +2,7 @@
 
 # Decisions Log - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.1.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -16,6 +16,7 @@
 - [Confirmed with the project owner](#owner)
 - [Spec ambiguities and deviations](#deviations)
 - [Repository and documentation](#repository)
+- [The audit of the project](#audit)
 
 ---
 
@@ -84,3 +85,21 @@ Every deviation from the specification and every ambiguity that had to be resolv
 | A41 | The documentation is bilingual | Every guide exists in English and in Arabic, and the README has a language switcher, like the other projects of the owner |
 | A42 | The file headers | Every source file carries the header of the project, and `scripts/check-headers.sh` fails when one misses it. The CI runs it |
 | A43 | The license | MIT, as the specification states. MacXVM ships no Apple software and links no copyleft library, so a permissive license is the right one. The license tab of the repository stays empty until the first push, because GitHub reads the license from the committed file |
+
+<a id="audit"></a>
+## The audit of the project
+
+The whole project was audited in October 2026. The findings, the evidence and the verification of every change are in the report of the audit. The decisions below are the ones that the audit produced and that a reader of the code cannot guess.
+
+| # | Decision | Reason |
+|---|---|---|
+| A44 | The full copy of a machine | `store.Clone` converts the disk with `qemu-img convert -O qcow2` instead of copying the file. A copy of a qcow2 overlay keeps the pointer to its base in the header, so the copy would break as soon as the base was deleted |
+| A45 | The name of a stored configuration | `config.Load` refuses a name that is not a valid VM name. The name that the user types was always validated, but the name that is stored in `config.json` was not, and every path of the state directory is built from it |
+| A46 | The order of the checks of a temporary machine | The memory size and the host protection are checked before the clone, so that a rejected value leaves no machine behind |
+| A47 | The exit code of the host protection | The refusal of the host protection carries the usage code, like every other wrong argument |
+| A48 | The console log of a machine | It is written with the mode 0600 and it is truncated on every start, so that it holds the messages of the last start only and does not grow without a bound |
+| A49 | The public key in the guest | It is appended only when it is not in `~/.ssh/authorized_keys` yet, so that a second `ssh-key --install` does not leave a duplicate |
+| A50 | The comments of the source files | The comments of the Go files and of the shell scripts were removed during the audit. The credit header at the top of a file and the tool directives such as `//go:embed` stay, because the first one is the credit of the project and the second one is read by the compiler |
+| A51 | The comments of the configuration files | The `Makefile`, `.gitignore`, `.gitattributes` and the files of `.github` carry the header block of the project and the section titles. `scripts/check-headers.sh` checks `.gitignore` as well, because the file carries the header from now on |
+| A52 | The version 0.2.0 | The audit added a check to `macxvm doctor`, so the version moves to 0.2.0. A new capability of the command line is a minor release, and the fixes that came with it are a patch release |
+| A53 | The tags and the releases | Every version of the changelog gets a tag and a release on GitHub, with the binary `macxvm-v<version>-linux-amd64` of the tag. The release notes are the section of the changelog |

@@ -2,7 +2,7 @@
 
 # مواصفات البنية - MacXVM
 
-[![الإصدار](https://img.shields.io/badge/version-0.1.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.2.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -104,6 +104,7 @@ create ──► start ──► (slim, tools, xcode) ──► stop ──► b
 - `slim` و`tools` و`xcode` تعمل داخل الضيف عبر SSH. تشغّل الجهاز إن كان متوقفًا، وتوقفه مجددًا فقط إن كانت هي التي شغّلته.
 - `base seal` يضع علامة على الجهاز كصورة أساس. الأساس الختم لا يُشغَّل ولا يُعدَّل أبدًا، بل يُستخدم كملف backing للطبقات.
 - `clone` ينشئ طبقة فوق أساس ختم. الطبقة تكلّف بضعة مئات كيلوبايت وتُقلع في ثوانٍ.
+- `clone --full` يحوّل القرص كله بدل نسخ الملف، فيكون القرص مستقلًا ولا يحتاج أساسه بعد الآن.
 - `run` ينشئ طبقة مؤقتة، ينفّذ أمرًا واحدًا فيها، ثم يحذفها، حتى عند مقاطعة الأمر.
 
 <a id="state-layout"></a>

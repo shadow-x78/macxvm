@@ -23,7 +23,7 @@ MacXVM is an independent open-source project, not affiliated with or endorsed by
 
 Run slim macOS guests with Xcode on a Linux host.
 
-[![Version](https://img.shields.io/badge/version-0.1.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)

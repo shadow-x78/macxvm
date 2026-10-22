@@ -2,7 +2,7 @@
 
 # Architecture Specification - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.1.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -104,6 +104,7 @@ create ──► start ──► (slim, tools, xcode) ──► stop ──► b
 - `slim`, `tools` and `xcode` run inside the guest over SSH. They start the machine when it is stopped and stop it again only when they started it.
 - `base seal` marks a machine as a base image. A sealed base is never booted and never modified; it is only used as the backing file of overlays.
 - `clone` creates an overlay of a sealed base. The overlay costs a few hundred kilobytes and boots in seconds.
+- `clone --full` converts the whole disk instead of copying the file, so that the copy is a standalone disk and does not need its base any more.
 - `run` creates a throwaway overlay, runs one command in it and removes it afterwards, including when the command is interrupted.
 
 <a id="state-layout"></a>
