@@ -246,8 +246,10 @@ The versions are `high-sierra`, `mojave`, `catalina`, `big-sur`, `monterey`, `ve
 ## Screenshots
 
 The images below were taken from a real run of the tool on a Linux host, with
-`macxvm image prepare` and `macxvm start --install --vnc`. They are the screen
-of the guest as it is.
+`macxvm image prepare`, `macxvm start --install --vnc` and `macxvm slim`. They
+are the screen of the guest as it is. The guest is macOS 14.8.9 with four
+processors and eight gigabytes of memory, and the disk holds 9.6 GB after the
+installation.
 
 | The boot loader of the community | The environment of the recovery |
 |---|---|
@@ -256,6 +258,10 @@ of the guest as it is.
 | The installer sees the disk of the machine | The installation runs |
 |---|---|
 | ![The disk of the machine](assets/screenshots/installer-disk.png) | ![The installation](assets/screenshots/installer-progress.png) |
+
+| The desktop of the guest | Safari of the guest |
+|---|---|
+| ![The desktop](assets/screenshots/macos-desktop.png) | ![Safari](assets/screenshots/macos-safari.png) |
 
 | A terminal inside the guest |
 |---|

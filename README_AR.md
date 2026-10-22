@@ -286,7 +286,7 @@ macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile c
 <a id="screenshots"></a>
 ## صور من التشغيل
 
-الصور أدناه من تشغيل حقيقي للأداة على مضيف Linux، بـ `macxvm image prepare` و`macxvm start --install --vnc`. وهي شاشة الضيف كما هي.
+الصور أدناه من تشغيل حقيقي للأداة على مضيف Linux، بـ `macxvm image prepare` و`macxvm start --install --vnc` و`macxvm slim`. وهي شاشة الضيف كما هي. الضيف macOS 14.8.9 بأربعة معالجات وثمانية غيغابايت من الذاكرة، والقرص يحمل 9.6 غيغابايت بعد التثبيت.
 
 <div dir="ltr" align="left">
 
@@ -297,6 +297,10 @@ macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile c
 | The installer sees the disk of the machine | The installation runs |
 |---|---|
 | ![The disk of the machine](assets/screenshots/installer-disk.png) | ![The installation](assets/screenshots/installer-progress.png) |
+
+| The desktop of the guest | Safari of the guest |
+|---|---|
+| ![The desktop](assets/screenshots/macos-desktop.png) | ![Safari](assets/screenshots/macos-safari.png) |
 
 | A terminal inside the guest |
 |---|
