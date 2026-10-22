@@ -47,6 +47,7 @@ Run slim macOS guests with Xcode on a Linux host.
 - [Features](#features)
 - [The args file](#args-file)
 - [Quick start](#quick-start)
+- [Screenshots](#screenshots)
 - [Profiles](#profiles)
 - [Slimming](#slimming)
 - [Building projects](#building)
@@ -240,6 +241,25 @@ macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile c
 
 The versions are `high-sierra`, `mojave`, `catalina`, `big-sur`, `monterey`, `ventura`,
 `sonoma`, `sequoia` and `tahoe`.
+
+<a id="screenshots"></a>
+## Screenshots
+
+The images below were taken from a real run of the tool on a Linux host, with
+`macxvm image prepare` and `macxvm start --install --vnc`. They are the screen
+of the guest as it is.
+
+| The boot loader of the community | The environment of the recovery |
+|---|---|
+| ![The picker of OpenCore](assets/screenshots/opencore-picker.png) | ![The recovery of macOS](assets/screenshots/macos-recovery.png) |
+
+| The installer sees the disk of the machine | The installation runs |
+|---|---|
+| ![The disk of the machine](assets/screenshots/installer-disk.png) | ![The installation](assets/screenshots/installer-progress.png) |
+
+| A terminal inside the guest |
+|---|
+| ![The terminal of the guest](assets/screenshots/macos-terminal.png) |
 
 <a id="first-boot-checklist"></a>
 ### First boot checklist
