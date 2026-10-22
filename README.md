@@ -129,8 +129,6 @@ make build
 make install          # installs ~/.local/bin/macxvm
 ```
 
-**Release:** download `macxvm-v0.1.0-linux-amd64` from [GitHub Releases](https://github.com/shadow-x78/macxvm/releases) and run it.
-
 The binary is about 4 MB, static and built for `linux/amd64`. It needs no daemon and no service.
 The full guide, including the state directory and the removal, is in [docs/INSTALLATION.md](docs/INSTALLATION.md).
 

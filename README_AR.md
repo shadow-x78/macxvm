@@ -149,8 +149,6 @@ make install          # يثبّت في ~/.local/bin/macxvm
 
 </div>
 
-**الإصدار:** نزّل `macxvm-v0.1.0-linux-amd64` من [GitHub Releases](https://github.com/shadow-x78/macxvm/releases) وشغّله.
-
 الملف التنفيذي بحجم نحو 4 ميغابايت، ثابت ومبني لـ `linux/amd64`. لا يحتاج خادمًا دائمًا ولا خدمة. الدليل الكامل، بما فيه مجلد الحالة والحذف، في [docs/INSTALLATION_AR.md](docs/INSTALLATION_AR.md).
 
 <a id="features"></a>
