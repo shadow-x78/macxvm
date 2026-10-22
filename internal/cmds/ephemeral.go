@@ -25,6 +25,23 @@ func createEphemeral(base string, cpus int, ram string) (string, error) {
 			"only sealed base images can be used as the base of a temporary virtual machine")
 	}
 	name := "eph-" + config.NewID()
+	cpusTotal := baseCfg.CPUs
+	if cpus > 0 {
+		cpusTotal = cpus
+	}
+	memoryMiB := baseCfg.MemoryMiB
+	if ram != "" {
+		size, err := sizeparse.Parse(ram)
+		if err != nil {
+			return "", err
+		}
+		memoryMiB = size
+	}
+	// The checks come before the clone, so that a rejected value leaves no
+	// machine behind.
+	if err := hostcheck.Protect(memoryMiB, cpusTotal, false); err != nil {
+		return "", err
+	}
 	cfg, err := store.Clone(baseCfg, name, false, hostcheck.ExecRunner{})
 	if err != nil {
 		return "", err
@@ -33,19 +50,8 @@ func createEphemeral(base string, cpus int, ram string) (string, error) {
 	// The disk of a temporary virtual machine is thrown away, so it may use
 	// the fast and unsafe cache mode.
 	cfg.DiskOpts = "unsafe"
-	if cpus > 0 {
-		cfg.CPUs = cpus
-	}
-	if ram != "" {
-		size, err := sizeparse.Parse(ram)
-		if err != nil {
-			return "", err
-		}
-		cfg.MemoryMiB = size
-	}
-	if err := hostcheck.Protect(cfg.MemoryMiB, cfg.CPUs, false); err != nil {
-		return "", err
-	}
+	cfg.CPUs = cpusTotal
+	cfg.MemoryMiB = memoryMiB
 	if err := store.Save(cfg); err != nil {
 		return "", err
 	}
