@@ -61,6 +61,10 @@ func cmdDown(args []string) error {
 	}
 	if file.Base == "" || cfg.BackingOf != file.Base {
 		if !*yes {
+			if file.Base == "" {
+				return exitcode.New(exitcode.Usage,
+					"%s does not name a base, use --yes to delete '%s' anyway", project.FileName, cfg.Name)
+			}
 			return exitcode.New(exitcode.Usage,
 				"'%s' was not cloned from '%s'; use --yes to delete it anyway", cfg.Name, file.Base)
 		}

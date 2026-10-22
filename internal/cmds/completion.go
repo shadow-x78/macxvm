@@ -19,8 +19,9 @@ func init() {
 }
 
 func cmdCompletion(args []string) error {
-	positional, flagArgs := SplitArgs(newFlagSet("completion"), args)
-	if err := newFlagSet("completion").Parse(flagArgs); err != nil {
+	fs := newFlagSet("completion")
+	positional, flagArgs := SplitArgs(fs, args)
+	if err := fs.Parse(flagArgs); err != nil {
 		return exitcode.New(exitcode.Usage, "%v", err)
 	}
 	if len(positional) != 1 {

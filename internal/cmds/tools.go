@@ -103,10 +103,7 @@ func toolsList(args []string) error {
 	if err != nil {
 		return err
 	}
-	found, err := tools.List(cfg)
-	if err != nil {
-		return err
-	}
+	found := tools.List(cfg)
 	fmt.Printf("clt:   %s\n", yesNo(found.CLT))
 	fmt.Printf("brew:  %s\n", yesNo(found.Brew))
 	fmt.Printf("xcode: %s\n", yesNo(found.Xcode))

@@ -48,8 +48,17 @@ func cmdSSHKey(args []string) error {
 	if err != nil {
 		return err
 	}
-	command := "mkdir -p ~/.ssh && chmod 700 ~/.ssh && " +
-		"cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+	command := `mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+touch ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+KEY=$(mktemp)
+cat > "$KEY"
+if [ -s "$KEY" ] && ! grep -qxFf "$KEY" ~/.ssh/authorized_keys; then
+  cat "$KEY" >> ~/.ssh/authorized_keys
+fi
+rm -f "$KEY"
+`
 	argsList := sshx.SSHArgs(cfg, sshx.RemoteCommand(command))
 	// Password authentication is needed once, so that the user can type the
 	// password of the guest.

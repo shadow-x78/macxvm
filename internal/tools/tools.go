@@ -86,12 +86,12 @@ func BrewInstall(cfg *config.VMConfig, packages []string) error {
 }
 
 // List reports which tools are installed in the guest.
-func List(cfg *config.VMConfig) (Tooling, error) {
+func List(cfg *config.VMConfig) Tooling {
 	return Tooling{
 		CLT:   HasCLT(cfg),
 		Brew:  hasBrew(cfg),
 		Xcode: HasXcode(cfg),
-	}, nil
+	}
 }
 
 // HasCLT reports whether the Command Line Tools are installed.

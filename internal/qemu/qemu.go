@@ -68,8 +68,14 @@ func BuildArgv(cfg *config.VMConfig, userArgs []string, sock string, vncDisplay 
 // Spawn starts QEMU in its own session and returns its process identifier.
 // The process is not waited for: QEMU outlives the command.
 func Spawn(cfg *config.VMConfig, argv []string, logPath string) (int, error) {
-	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	logFile, err := os.OpenFile(logPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
+		return 0, err
+	}
+	// The mode of a file that exists is not changed by the open, so it is
+	// set again for the logs of the older versions.
+	if err := os.Chmod(logPath, 0o600); err != nil {
+		logFile.Close()
 		return 0, err
 	}
 	defer logFile.Close()
