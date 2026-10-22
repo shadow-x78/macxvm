@@ -263,9 +263,9 @@ installation.
 |---|---|
 | ![The desktop](assets/screenshots/macos-desktop.png) | ![Safari](assets/screenshots/macos-safari.png) |
 
-| A terminal inside the guest |
-|---|
-| ![The terminal of the guest](assets/screenshots/macos-terminal.png) |
+| A terminal inside the guest | Xcode in the guest |
+|---|---|
+| ![The terminal of the guest](assets/screenshots/macos-terminal.png) | ![Xcode](assets/screenshots/macos-xcode.png) |
 
 <a id="first-boot-checklist"></a>
 ### First boot checklist
@@ -310,7 +310,14 @@ macxvm stop demo
 macxvm base seal demo
 ```
 
-7. Build:
+7. Install Xcode from the xip of Apple, which needs an Apple ID, and keep the
+   guest light by leaving out the runtime of a platform:
+
+```bash
+macxvm xcode install demo --xip ./Xcode.xip
+```
+
+8. Build:
 
 ```bash
 macxvm clone demo work

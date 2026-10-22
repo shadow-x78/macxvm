@@ -39,7 +39,7 @@ func Install(cfg *config.VMConfig, xipPath, platform string) error {
 		"sudo rm -rf /Applications/Xcode.app && sudo mv Xcode*.app /Applications/Xcode.app",
 		"sudo xcode-select -s /Applications/Xcode.app/Contents/Developer",
 		"sudo xcodebuild -license accept",
-		"xcodebuild -runFirstLaunch",
+		"sudo xcodebuild -runFirstLaunch",
 		"rm -f ~/Xcode.xip",
 	}
 	for _, step := range steps {
