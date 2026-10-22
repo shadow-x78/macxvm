@@ -57,9 +57,12 @@ func TestPrint(t *testing.T) {
 }
 
 func TestRunReturnsChecks(t *testing.T) {
-	old := kvmProbe
+	oldProbe, oldBinary := kvmProbe, kvmBinary
 	kvmProbe = func(string) (bool, bool) { return true, true }
-	defer func() { kvmProbe = old }()
+	kvmBinary = func(string) bool { return true }
+	defer func() {
+		kvmProbe, kvmBinary = oldProbe, oldBinary
+	}()
 
 	checks := Run()
 	if len(checks) < 8 {
@@ -81,9 +84,12 @@ func TestRunReturnsChecks(t *testing.T) {
 }
 
 func TestKVMAccelCheckWarnsWhenKVMIsNotTheDefault(t *testing.T) {
-	old := kvmProbe
+	oldProbe, oldBinary := kvmProbe, kvmBinary
 	kvmProbe = func(string) (bool, bool) { return true, false }
-	defer func() { kvmProbe = old }()
+	kvmBinary = func(string) bool { return true }
+	defer func() {
+		kvmProbe, kvmBinary = oldProbe, oldBinary
+	}()
 
 	check := kvmAccelCheck()
 	if check.Status != Warn {
@@ -95,11 +101,31 @@ func TestKVMAccelCheckWarnsWhenKVMIsNotTheDefault(t *testing.T) {
 }
 
 func TestKVMAccelCheckFailsWithoutKVM(t *testing.T) {
-	old := kvmProbe
+	oldProbe, oldBinary := kvmProbe, kvmBinary
 	kvmProbe = func(string) (bool, bool) { return false, false }
-	defer func() { kvmProbe = old }()
+	kvmBinary = func(string) bool { return true }
+	defer func() {
+		kvmProbe, kvmBinary = oldProbe, oldBinary
+	}()
 
 	if check := kvmAccelCheck(); check.Status != Fail {
 		t.Fatalf("kvmAccelCheck() = %v, want a failure", check.Status)
+	}
+}
+
+func TestKVMAccelCheckWarnsWithoutQEMU(t *testing.T) {
+	oldProbe, oldBinary := kvmProbe, kvmBinary
+	kvmProbe = func(string) (bool, bool) { return true, true }
+	kvmBinary = func(string) bool { return false }
+	defer func() {
+		kvmProbe, kvmBinary = oldProbe, oldBinary
+	}()
+
+	check := kvmAccelCheck()
+	if check.Status != Warn {
+		t.Fatalf("kvmAccelCheck() = %v, want a warning", check.Status)
+	}
+	if !strings.Contains(check.Detail, "not in PATH") {
+		t.Fatalf("kvmAccelCheck() = %q, want a hint about the missing binary", check.Detail)
 	}
 }
