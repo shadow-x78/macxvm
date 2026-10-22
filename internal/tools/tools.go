@@ -1,7 +1,6 @@
 // MacXVM - Guest Tooling (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package tools installs the developer tools of a macOS guest.
 package tools
 
 import (
@@ -17,21 +16,17 @@ import (
 	"github.com/shadow-x78/macxvm/resources"
 )
 
-// Tooling describes the tools that are installed in a guest.
 type Tooling struct {
 	CLT   bool
 	Brew  bool
 	Xcode bool
 }
 
-// InstallCLT installs the Command Line Tools in the guest.
 func InstallCLT(cfg *config.VMConfig) error {
 	if err := sshx.RunScript(cfg, resources.InstallCLT); err != nil {
 		return exitcode.New(exitcode.Generic,
 			"cannot install the Command Line Tools in '%s': %v", cfg.Name, err)
 	}
-	// The script points the developer directory at the Command Line Tools.
-	// When Xcode is installed, Xcode stays in charge.
 	if HasXcode(cfg) {
 		if err := run(cfg, "sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"); err != nil {
 			return exitcode.New(exitcode.Generic,
@@ -41,8 +36,6 @@ func InstallCLT(cfg *config.VMConfig) error {
 	return nil
 }
 
-// InstallBrew installs Homebrew in the guest. Homebrew refuses to run as
-// root and needs the Command Line Tools.
 func InstallBrew(cfg *config.VMConfig) error {
 	if !HasCLT(cfg) {
 		return exitcode.New(exitcode.ProfileMismatch,
@@ -66,7 +59,6 @@ func InstallBrew(cfg *config.VMConfig) error {
 	return nil
 }
 
-// BrewInstall installs the given Homebrew packages in the guest.
 func BrewInstall(cfg *config.VMConfig, packages []string) error {
 	if len(packages) == 0 {
 		return exitcode.New(exitcode.Usage, "no package given")
@@ -85,21 +77,18 @@ func BrewInstall(cfg *config.VMConfig, packages []string) error {
 	return nil
 }
 
-// List reports which tools are installed in the guest.
-func List(cfg *config.VMConfig) (Tooling, error) {
+func List(cfg *config.VMConfig) Tooling {
 	return Tooling{
 		CLT:   HasCLT(cfg),
 		Brew:  hasBrew(cfg),
 		Xcode: HasXcode(cfg),
-	}, nil
+	}
 }
 
-// HasCLT reports whether the Command Line Tools are installed.
 func HasCLT(cfg *config.VMConfig) bool {
 	return run(cfg, "xcode-select -p") == nil
 }
 
-// HasXcode reports whether Xcode is installed.
 func HasXcode(cfg *config.VMConfig) bool {
 	return run(cfg, "test -d /Applications/Xcode.app") == nil
 }
@@ -108,7 +97,6 @@ func hasBrew(cfg *config.VMConfig) bool {
 	return run(cfg, "command -v brew") == nil
 }
 
-// brewPrefix returns the Homebrew prefix of the guest.
 func brewPrefix(cfg *config.VMConfig) (string, error) {
 	for _, prefix := range []string{"/usr/local", "/opt/homebrew"} {
 		if run(cfg, "test -x "+prefix+"/bin/brew") == nil {
@@ -119,7 +107,6 @@ func brewPrefix(cfg *config.VMConfig) (string, error) {
 		"Homebrew was not found in '%s' (expected /usr/local/bin/brew or /opt/homebrew/bin/brew)", cfg.Name)
 }
 
-// appendToProfile adds a line to the shell profile of the guest.
 func appendToProfile(cfg *config.VMConfig, line string) error {
 	script := fmt.Sprintf("grep -qxF %s ~/.zprofile 2>/dev/null || printf '%%s\\n' %s >> ~/.zprofile\n",
 		sshx.ShellQuote(strings.TrimSpace(line)), sshx.ShellQuote(strings.TrimSpace(line)))
@@ -129,7 +116,6 @@ func appendToProfile(cfg *config.VMConfig, line string) error {
 	return nil
 }
 
-// run executes a command in the guest and reports whether it succeeded.
 func run(cfg *config.VMConfig, command string) error {
 	cmd := exec.Command("ssh", sshx.SSHArgs(cfg, sshx.RemoteCommand(command))...)
 	cmd.Stdout = nil
@@ -137,7 +123,6 @@ func run(cfg *config.VMConfig, command string) error {
 	return cmd.Run()
 }
 
-// remoteError turns the failure of a remote command into an error.
 func remoteError(err error, name string) error {
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {

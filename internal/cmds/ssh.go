@@ -27,10 +27,10 @@ func cmdSSH(args []string) error {
 		return exitcode.New(exitcode.Usage, "no virtual machine given (see: macxvm list)")
 	}
 	cfg, err := store.Load(name)
-	if err := ensureSSHKey(); err != nil {
+	if err != nil {
 		return err
 	}
-	if err != nil {
+	if err := ensureSSHKey(); err != nil {
 		return err
 	}
 	cmd := exec.Command("ssh", sshx.SSHArgs(cfg, extra...)...)

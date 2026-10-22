@@ -14,7 +14,6 @@ import (
 	"github.com/shadow-x78/macxvm/internal/store"
 )
 
-// createEphemeral creates a temporary overlay of a sealed base image.
 func createEphemeral(base string, cpus int, ram string) (string, error) {
 	baseCfg, err := store.Load(base)
 	if err != nil {
@@ -25,34 +24,35 @@ func createEphemeral(base string, cpus int, ram string) (string, error) {
 			"only sealed base images can be used as the base of a temporary virtual machine")
 	}
 	name := "eph-" + config.NewID()
-	cfg, err := store.Clone(baseCfg, name, false, hostcheck.ExecRunner{})
-	if err != nil {
-		return "", err
-	}
-	cfg.Ephemeral = true
-	// The disk of a temporary virtual machine is thrown away, so it may use
-	// the fast and unsafe cache mode.
-	cfg.DiskOpts = "unsafe"
+	cpusTotal := baseCfg.CPUs
 	if cpus > 0 {
-		cfg.CPUs = cpus
+		cpusTotal = cpus
 	}
+	memoryMiB := baseCfg.MemoryMiB
 	if ram != "" {
 		size, err := sizeparse.Parse(ram)
 		if err != nil {
 			return "", err
 		}
-		cfg.MemoryMiB = size
+		memoryMiB = size
 	}
-	if err := hostcheck.Protect(cfg.MemoryMiB, cfg.CPUs, false); err != nil {
+	if err := hostcheck.Protect(memoryMiB, cpusTotal, false); err != nil {
 		return "", err
 	}
+	cfg, err := store.Clone(baseCfg, name, false, hostcheck.ExecRunner{})
+	if err != nil {
+		return "", err
+	}
+	cfg.Ephemeral = true
+	cfg.DiskOpts = "unsafe"
+	cfg.CPUs = cpusTotal
+	cfg.MemoryMiB = memoryMiB
 	if err := store.Save(cfg); err != nil {
 		return "", err
 	}
 	return name, nil
 }
 
-// removeEphemeral stops and deletes a temporary virtual machine.
 func removeEphemeral(name string, keep bool) {
 	if name == "" || keep {
 		return

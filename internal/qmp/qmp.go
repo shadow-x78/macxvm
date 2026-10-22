@@ -1,7 +1,6 @@
 // MacXVM - QMP Client (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package qmp implements a minimal QEMU Machine Protocol client.
 package qmp
 
 import (
@@ -14,14 +13,12 @@ import (
 	"time"
 )
 
-// Client talks to a QEMU QMP socket.
 type Client struct {
 	c       net.Conn
 	r       *bufio.Reader
 	timeout time.Duration
 }
 
-// Dial connects to a QMP socket and performs the capability handshake.
 func Dial(path string, timeout time.Duration) (*Client, error) {
 	c, err := net.DialTimeout("unix", path, timeout)
 	if err != nil {
@@ -43,14 +40,10 @@ func Dial(path string, timeout time.Duration) (*Client, error) {
 	return q, nil
 }
 
-// setDeadline bounds the time a single exchange may take. Without it a QEMU
-// that stops answering would block the command line forever.
 func (q *Client) setDeadline() error {
 	return q.c.SetDeadline(time.Now().Add(q.timeout))
 }
 
-// Execute sends a QMP command and returns its result. Event messages are
-// skipped.
 func (q *Client) Execute(cmd string, args map[string]any) (json.RawMessage, error) {
 	req := map[string]any{"execute": cmd}
 	if args != nil {
@@ -89,21 +82,16 @@ func (q *Client) Execute(cmd string, args map[string]any) (json.RawMessage, erro
 	}
 }
 
-// Close closes the connection.
 func (q *Client) Close() error { return q.c.Close() }
 
-// Powerdown asks the guest to shut down through the ACPI power button.
 func (q *Client) Powerdown() error {
 	return q.tolerant("system_powerdown")
 }
 
-// Quit asks QEMU to exit.
 func (q *Client) Quit() error {
 	return q.tolerant("quit")
 }
 
-// tolerant runs a command whose answer may never arrive because QEMU closes
-// the connection while executing it.
 func (q *Client) tolerant(cmd string) error {
 	_, err := q.Execute(cmd, nil)
 	if err == nil {

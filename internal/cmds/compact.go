@@ -64,8 +64,6 @@ func cmdCompact(args []string) error {
 		os.Remove(tmp)
 		return exitcode.New(exitcode.Generic, "cannot compact the disk: %v", err)
 	}
-	// The machine may have been started while the conversion ran. Swapping
-	// the disk under a running QEMU would lose everything it writes.
 	if runstate.IsRunning(cfg) {
 		os.Remove(tmp)
 		return exitcode.New(exitcode.AlreadyRunning,
@@ -75,7 +73,6 @@ func cmdCompact(args []string) error {
 		os.Remove(tmp)
 		return exitcode.New(exitcode.Generic, "cannot replace the disk: %v", err)
 	}
-	// The new disk is a standalone image, it does not use the base anymore.
 	if cfg.BackingOf != "" {
 		cfg.BackingOf = ""
 		if err := store.Save(cfg); err != nil {
@@ -88,7 +85,6 @@ func cmdCompact(args []string) error {
 	return nil
 }
 
-// fileSize returns the size of a file in a readable form.
 func fileSize(path string) string {
 	st, err := os.Stat(path)
 	if err != nil {

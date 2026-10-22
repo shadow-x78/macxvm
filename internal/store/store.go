@@ -1,7 +1,6 @@
 // MacXVM - Store (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package store keeps the registered virtual machines on disk.
 package store
 
 import (
@@ -21,17 +20,13 @@ import (
 	"github.com/shadow-x78/macxvm/internal/runstate"
 )
 
-// Dir returns the state directory of the named VM.
 func Dir(name string) string { return paths.VMDir(name) }
 
-// Exists reports whether a VM with the given name is registered.
 func Exists(name string) bool {
 	st, err := os.Stat(paths.VMDir(name))
 	return err == nil && st.IsDir()
 }
 
-// List returns every registered VM, sorted by name. Directories without a
-// readable configuration are ignored.
 func List() ([]*config.VMConfig, error) {
 	root := filepath.Join(paths.Home(), "vms")
 	entries, err := os.ReadDir(root)
@@ -56,7 +51,6 @@ func List() ([]*config.VMConfig, error) {
 	return out, nil
 }
 
-// Load returns the configuration of a registered VM.
 func Load(name string) (*config.VMConfig, error) {
 	if err := names.Validate(name); err != nil {
 		return nil, err
@@ -71,7 +65,6 @@ func Load(name string) (*config.VMConfig, error) {
 	return cfg, nil
 }
 
-// Save writes the configuration of a VM.
 func Save(cfg *config.VMConfig) error {
 	if err := os.MkdirAll(cfg.Dir(), 0o700); err != nil {
 		return err
@@ -79,8 +72,6 @@ func Save(cfg *config.VMConfig) error {
 	return config.Save(cfg.Dir(), cfg)
 }
 
-// OverlaysOf returns the names of the VMs whose disk overlays the disk of
-// the named VM.
 func OverlaysOf(name string) ([]string, error) {
 	vms, err := List()
 	if err != nil {
@@ -96,8 +87,6 @@ func OverlaysOf(name string) ([]string, error) {
 	return out, nil
 }
 
-// Delete removes a VM and its state. It refuses to delete a running VM or a
-// VM that is used as the base of other VMs.
 func Delete(name string) error {
 	cfg, err := Load(name)
 	if err != nil {
@@ -110,9 +99,6 @@ func Delete(name string) error {
 	return deleteVM(cfg, overlays)
 }
 
-// DeleteChecked removes a VM whose users are already known. The caller has
-// checked that no other VM uses it as a base, so the registry is not read
-// again.
 func DeleteChecked(cfg *config.VMConfig) error {
 	return deleteVM(cfg, nil)
 }
@@ -134,9 +120,6 @@ func deleteVM(cfg *config.VMConfig, overlays []string) error {
 	return os.RemoveAll(Dir(name))
 }
 
-// SelectPrunable returns the names of the VMs that may be removed by prune:
-// stopped ephemeral VMs only. The running check is a parameter, so that the
-// selection can be tested without a running QEMU.
 func SelectPrunable(vms []*config.VMConfig, isRunning func(*config.VMConfig) bool) []string {
 	var out []string
 	for _, v := range vms {
@@ -148,8 +131,6 @@ func SelectPrunable(vms []*config.VMConfig, isRunning func(*config.VMConfig) boo
 	return out
 }
 
-// Clone creates a copy of the VM src under the name dst. By default the copy
-// is a qcow2 overlay of the sealed base src; with full the disk is copied.
 func Clone(src *config.VMConfig, dst string, full bool, r hostcheck.Runner) (*config.VMConfig, error) {
 	if err := names.Validate(dst); err != nil {
 		return nil, err
@@ -185,7 +166,8 @@ func Clone(src *config.VMConfig, dst string, full bool, r hostcheck.Runner) (*co
 	srcDisk := src.File("disk.qcow2")
 	dstDisk := filepath.Join(dstDir, "disk.qcow2")
 	if full {
-		if err := r.Run("cp", "--reflink=auto", "--sparse=always", srcDisk, dstDisk); err != nil {
+		args := []string{"convert", "-O", "qcow2", srcDisk, dstDisk}
+		if err := r.Run("qemu-img", args...); err != nil {
 			return nil, exitcode.New(exitcode.Generic, "cannot copy the disk of '%s': %v", src.Name, err)
 		}
 	} else {
@@ -231,7 +213,6 @@ func Clone(src *config.VMConfig, dst string, full bool, r hostcheck.Runner) (*co
 	return &cfg, nil
 }
 
-// FreePort returns a free TCP port on the loopback interface.
 func FreePort() (int, error) {
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -241,7 +222,6 @@ func FreePort() (int, error) {
 	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
-// PortFree reports whether the given loopback TCP port can be bound.
 func PortFree(p int) bool {
 	l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", p))
 	if err != nil {

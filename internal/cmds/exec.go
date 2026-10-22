@@ -30,10 +30,10 @@ func cmdExec(args []string) error {
 		return exitcode.New(exitcode.Usage, "no command given (see: macxvm exec --help)")
 	}
 	cfg, err := store.Load(name)
-	if err := ensureSSHKey(); err != nil {
+	if err != nil {
 		return err
 	}
-	if err != nil {
+	if err := ensureSSHKey(); err != nil {
 		return err
 	}
 	remote := sshx.RemoteCommand(joinCommand(command))

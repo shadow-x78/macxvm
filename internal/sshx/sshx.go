@@ -1,8 +1,6 @@
 // MacXVM - SSH Helpers (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package sshx builds the arguments of the SSH, SCP and rsync commands that
-// talk to a guest.
 package sshx
 
 import (
@@ -21,13 +19,10 @@ import (
 	"github.com/shadow-x78/macxvm/internal/paths"
 )
 
-// DefaultTimeout is the time WaitForSSH waits for a guest to answer.
 const DefaultTimeout = 240 * time.Second
 
-// attemptTimeout bounds a single attempt to reach the guest.
 const attemptTimeout = 15 * time.Second
 
-// Options returns the SSH options used for every guest.
 func Options(cfg *config.VMConfig) []string {
 	return []string{
 		"-i", paths.KeyPath(),
@@ -42,24 +37,20 @@ func Options(cfg *config.VMConfig) []string {
 	}
 }
 
-// Target returns the host part of the SSH target.
 func Target(cfg *config.VMConfig) string {
 	return cfg.SSHUser + "@127.0.0.1"
 }
 
-// SSHArgs returns the argument vector of an SSH call to the guest.
 func SSHArgs(cfg *config.VMConfig, extra ...string) []string {
 	args := Options(cfg)
 	args = append(args, Target(cfg))
 	return append(args, extra...)
 }
 
-// SCPArgs returns the argument vector of an SCP call to the guest.
 func SCPArgs(cfg *config.VMConfig, src, dst string) []string {
 	return scpArgs(cfg, nil, src, dst)
 }
 
-// SCPRArgs returns the argument vector of a recursive SCP call to the guest.
 func SCPRArgs(cfg *config.VMConfig, src, dst string) []string {
 	return scpArgs(cfg, []string{"-r"}, src, dst)
 }
@@ -77,7 +68,6 @@ func scpArgs(cfg *config.VMConfig, extra []string, src, dst string) []string {
 	return append(args, src, dst)
 }
 
-// RSyncArgs returns the argument vector of an rsync call to the guest.
 func RSyncArgs(cfg *config.VMConfig, src, dst string, excludes []string) []string {
 	args := []string{"-a", "--delete"}
 	for _, pattern := range excludes {
@@ -92,17 +82,14 @@ func RSyncArgs(cfg *config.VMConfig, src, dst string, excludes []string) []strin
 	return args
 }
 
-// ShellQuote quotes a string for the remote shell.
 func ShellQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
-// RemoteCommand wraps a command so that the login shell of the guest runs it.
 func RemoteCommand(command string) string {
 	return "zsh -lc " + ShellQuote(command)
 }
 
-// EnsureKey creates the shared SSH key when it does not exist yet.
 func EnsureKey(r hostcheck.Runner) (string, error) {
 	path := paths.KeyPath()
 	if _, err := os.Stat(path); err == nil {
@@ -120,7 +107,6 @@ func EnsureKey(r hostcheck.Runner) (string, error) {
 	return path, nil
 }
 
-// PublicKey returns the public key of the shared SSH identity.
 func PublicKey() (string, error) {
 	b, err := os.ReadFile(paths.KeyPath() + ".pub")
 	if err != nil {
@@ -129,7 +115,6 @@ func PublicKey() (string, error) {
 	return strings.TrimSpace(string(b)), nil
 }
 
-// Run executes a command in the guest and connects its standard streams.
 func Run(cfg *config.VMConfig, command string, stdin io.Reader, stdout, stderr io.Writer) error {
 	cmd := exec.Command("ssh", SSHArgs(cfg, RemoteCommand(command))...)
 	cmd.Stdin = stdin
@@ -138,9 +123,6 @@ func Run(cfg *config.VMConfig, command string, stdin io.Reader, stdout, stderr i
 	return cmd.Run()
 }
 
-// RunBounded executes a command in the guest and gives up after the timeout.
-// It is used where a guest that does not answer must not block the command
-// line forever.
 func RunBounded(cfg *config.VMConfig, command string, timeout time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -154,7 +136,6 @@ func RunBounded(cfg *config.VMConfig, command string, timeout time.Duration) err
 	return err
 }
 
-// Output runs a command in the guest and returns its standard output.
 func Output(cfg *config.VMConfig, command string) (string, error) {
 	cmd := exec.Command("ssh", SSHArgs(cfg, RemoteCommand(command))...)
 	cmd.Stderr = os.Stderr
@@ -162,7 +143,6 @@ func Output(cfg *config.VMConfig, command string) (string, error) {
 	return string(out), err
 }
 
-// RunScript sends a script to the guest and runs it with the login shell.
 func RunScript(cfg *config.VMConfig, script string) error {
 	cmd := exec.Command("ssh", SSHArgs(cfg, "zsh -s")...)
 	cmd.Stdin = strings.NewReader(script)
@@ -171,7 +151,6 @@ func RunScript(cfg *config.VMConfig, script string) error {
 	return cmd.Run()
 }
 
-// WaitForSSH waits until the guest answers on the SSH port.
 func WaitForSSH(cfg *config.VMConfig, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	for {

@@ -107,8 +107,6 @@ func cmdBuild(args []string) error {
 	}
 	started, err := ensureRunning(cfg)
 	if !*keep && ephemeralName == "" {
-		// A temporary machine is stopped by removeEphemeral, which knows
-		// that it has to remove it.
 		defer stopIfStarted(cfg, started)
 	}
 	if err != nil {
@@ -139,7 +137,6 @@ func cmdBuild(args []string) error {
 	if err := cmd.Run(); err != nil {
 		return remoteError(err)
 	}
-	// The results are only fetched after a successful build.
 	for _, entry := range fetches {
 		remote, local, parseErr := parseFetch(entry)
 		if parseErr != nil {
@@ -152,7 +149,6 @@ func cmdBuild(args []string) error {
 	return nil
 }
 
-// buildCommand builds the command line of the build that runs in the guest.
 func buildCommand(cfg *config.VMConfig, kind project.Kind, target, dir, scheme,
 	configuration, destination string, jobs int, extra []string) (string, error) {
 	if jobs <= 0 {
@@ -194,7 +190,6 @@ func buildCommand(cfg *config.VMConfig, kind project.Kind, target, dir, scheme,
 	return appendExtra(command, extra), nil
 }
 
-// appendExtra adds the extra arguments of the user to a command.
 func appendExtra(command string, extra []string) string {
 	if len(extra) == 0 {
 		return command
@@ -206,7 +201,6 @@ func appendExtra(command string, extra []string) string {
 	return command + " " + strings.Join(parts, " ")
 }
 
-// detectScheme asks the guest for the schemes of the project.
 func detectScheme(cfg *config.VMConfig, dir, target string) (string, error) {
 	command := fmt.Sprintf("cd %s && xcodebuild -list", sshx.ShellQuote(dir))
 	if strings.HasSuffix(target, ".xcworkspace") {
@@ -229,7 +223,6 @@ func detectScheme(cfg *config.VMConfig, dir, target string) (string, error) {
 		"the project has several schemes (%s), use --scheme", strings.Join(schemes, ", "))
 }
 
-// parseSchemes reads the schemes of the output of xcodebuild -list.
 func parseSchemes(output string) []string {
 	var schemes []string
 	inSchemes := false
@@ -250,7 +243,6 @@ func parseSchemes(output string) []string {
 	return schemes
 }
 
-// resolveVMName returns the virtual machine a build runs in.
 func resolveVMName(vmName string, file *project.File) (string, error) {
 	if vmName != "" {
 		return vmName, nil

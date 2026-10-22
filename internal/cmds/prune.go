@@ -34,8 +34,6 @@ func cmdPrune(args []string) error {
 	return nil
 }
 
-// pruneEphemeral deletes the stopped temporary virtual machines. With force
-// the running ones are stopped first.
 func pruneEphemeral(force, report bool) {
 	vms, err := store.List()
 	if err != nil {
@@ -48,8 +46,6 @@ func pruneEphemeral(force, report bool) {
 			}
 		}
 	}
-	// The machines that are the base of others are collected once, so that
-	// the registry is not read again for every machine.
 	bases := map[string]bool{}
 	for _, vm := range vms {
 		if vm.BackingOf != "" {

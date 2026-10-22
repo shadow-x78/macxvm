@@ -1,8 +1,6 @@
 // MacXVM - Project Detection (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package project detects the kind of a project and reads the optional
-// macxvm.json file.
 package project
 
 import (
@@ -13,18 +11,13 @@ import (
 	"strings"
 )
 
-// Kind is the kind of a project directory.
 type Kind string
 
-// The supported kinds of project.
 const (
 	KindXcode        Kind = "xcode"
 	KindSwiftPackage Kind = "swiftPackage"
 )
 
-// Detect looks at the top level of dir and reports what kind of project it
-// is. The second result is the workspace or project file, empty for a Swift
-// package.
 func Detect(dir string) (Kind, string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {

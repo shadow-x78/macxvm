@@ -120,7 +120,6 @@ func TestFormatLabels(t *testing.T) {
 }
 
 func TestDenyListCoversTheSensitiveJobs(t *testing.T) {
-	// The list must keep SSH, the network and the window server alive.
 	for _, wanted := range []string{"com.openssh", "com.apple.sshd", "com.apple.networkd",
 		"com.apple.WindowServer", "com.apple.loginwindow", "com.apple.launchd"} {
 		found := false

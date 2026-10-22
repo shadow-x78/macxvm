@@ -10,13 +10,10 @@ import (
 	"path/filepath"
 )
 
-// FileName is the name of the optional project file.
 const FileName = "macxvm.json"
 
-// Version is the only supported version of the project file.
 const Version = 1
 
-// File is the content of macxvm.json.
 type File struct {
 	Version int           `json:"version"`
 	Profile string        `json:"profile,omitempty"`
@@ -27,25 +24,21 @@ type File struct {
 	Fetch   []Fetch       `json:"fetch,omitempty"`
 }
 
-// BuildOptions holds the defaults of a build.
 type BuildOptions struct {
 	Scheme        string `json:"scheme,omitempty"`
 	Configuration string `json:"configuration,omitempty"`
 	Destination   string `json:"destination,omitempty"`
 }
 
-// SyncOptions holds the defaults of the synchronisation.
 type SyncOptions struct {
 	Exclude []string `json:"exclude,omitempty"`
 }
 
-// Fetch copies a path of the guest back to the host.
 type Fetch struct {
 	Remote string `json:"remote"`
 	Local  string `json:"local"`
 }
 
-// Scheme returns the scheme of the project file.
 func (f *File) Scheme() string {
 	if f == nil || f.Build == nil {
 		return ""
@@ -53,7 +46,6 @@ func (f *File) Scheme() string {
 	return f.Build.Scheme
 }
 
-// Configuration returns the build configuration of the project file.
 func (f *File) Configuration() string {
 	if f == nil || f.Build == nil {
 		return ""
@@ -61,7 +53,6 @@ func (f *File) Configuration() string {
 	return f.Build.Configuration
 }
 
-// Destination returns the destination of the project file.
 func (f *File) Destination() string {
 	if f == nil || f.Build == nil {
 		return ""
@@ -69,7 +60,6 @@ func (f *File) Destination() string {
 	return f.Build.Destination
 }
 
-// Excludes returns the paths that are never sent to the guest.
 func (f *File) Excludes() []string {
 	if f == nil || f.Sync == nil {
 		return nil
@@ -77,8 +67,6 @@ func (f *File) Excludes() []string {
 	return f.Sync.Exclude
 }
 
-// LoadFile reads the project file of a directory. A missing file is not an
-// error, it returns nil.
 func LoadFile(dir string) (*File, error) {
 	path := filepath.Join(dir, FileName)
 	b, err := os.ReadFile(path)
@@ -99,7 +87,6 @@ func LoadFile(dir string) (*File, error) {
 	return &f, nil
 }
 
-// WriteFile writes the project file of a directory.
 func WriteFile(dir string, f *File) error {
 	b, err := json.MarshalIndent(f, "", "  ")
 	if err != nil {
@@ -109,7 +96,6 @@ func WriteFile(dir string, f *File) error {
 	return os.WriteFile(filepath.Join(dir, FileName), b, 0o600)
 }
 
-// Exists reports whether a directory has a project file.
 func Exists(dir string) bool {
 	_, err := os.Stat(filepath.Join(dir, FileName))
 	return err == nil

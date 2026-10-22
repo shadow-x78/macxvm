@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   boot script of another project work as they are
 - fix: the SSH step of a stop is bounded on its own, so that a guest that does
   not answer no longer uses the whole timeout before the other steps run
+- fix: the full copy of a machine is a standalone disk, so that it keeps
+  working when the base image is deleted
+- fix: a configuration whose name leaves the state directory is refused, so
+  that a broken file cannot make a delete reach outside of it
+- fix: a rejected memory size or a refused host no longer leaves a temporary
+  virtual machine behind
+- fix: the refusal of the host protection exits with the usage code, like
+  every other wrong argument
+- fix: the public key is added to the guest only once
+- fix: the console log of a machine holds the messages of the last start only
+
+### Changed
+- the console log of a machine is written with the mode 0600
+- `macxvm down --delete` names the base of the project file in its message
 
 ### Added
 - feat: `macxvm doctor` reports whether QEMU can use the KVM accelerator and

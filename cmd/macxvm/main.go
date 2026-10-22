@@ -1,8 +1,6 @@
 // MacXVM - Command Line Entry Point (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Command macxvm manages slim macOS guests running under QEMU on a Linux
-// host.
 package main
 
 import (
