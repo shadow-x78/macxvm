@@ -154,7 +154,7 @@ func TestCloneFullCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{
-		"cp", "--reflink=auto", "--sparse=always",
+		"qemu-img", "convert", "-O", "qcow2",
 		src.File("disk.qcow2"),
 		filepath.Join(paths.VMDir("child"), "disk.qcow2"),
 	}
