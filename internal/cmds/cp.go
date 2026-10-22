@@ -40,10 +40,10 @@ func cmdCopy(args []string) error {
 			"one of the paths must point into a guest (for example NAME:/path/to/file)")
 	}
 	cfg, err := store.Load(name)
-	if err := ensureSSHKey(); err != nil {
+	if err != nil {
 		return err
 	}
-	if err != nil {
+	if err := ensureSSHKey(); err != nil {
 		return err
 	}
 	srcPath, err := expandGuestPath(cfg, src)

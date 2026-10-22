@@ -53,7 +53,7 @@ Every deviation from the specification and every ambiguity that had to be resolv
 | A16 | `--` handling | Go's `flag` package stops at the first positional, so `NAME -- cmd` leaves `--` in the remainder; every command strips exactly one leading `--` after the positional |
 | A17 | Flag ordering | The spec's usage puts `NAME` before the flags, so `cmds.SplitArgs` splits the leading positional out of the argument list before handing the rest to `flag`. Bool flags are detected through the `FlagSet`, so `--flag value NAME` works too |
 | A18 | `Makefile` `install` target | Adds `mkdir -p $(HOME)/.local/bin` before the install step; the spec's Makefile would fail when the directory does not exist |
-| A19 | Version | `var Version = "0.1.0"` in `cmd/macxvm/main.go`; `macxvm version` prints `macxvm 0.1.0` |
+| A19 | Version | `const Version = "0.1.0"` in `internal/cmds/cmds.go`; `macxvm version` prints `macxvm 0.1.0` |
 | A20 | `go.mod` | `go 1.22` language level; any toolchain from 1.22 upwards works. The build host uses Go 1.27.3 |
 | A21 | Release artefacts | `linux/amd64` only, built with `CGO_ENABLED=0`. No extra release workflow: spec section 17 allows a single CI job only |
 | A22 | Guest assets | The repository never ships, downloads or embeds Apple software, firmware, keys or boot loaders. The machine definition, bootloader, firmware and installer image come from the user |
