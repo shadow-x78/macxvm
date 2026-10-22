@@ -3,8 +3,6 @@
 # MacXVM - Install Script (MIT)
 # https://github.com/shadow-x78/macxvm
 # ─────────────────────────────────────────────
-#
-# Builds MacXVM and installs it into ~/.local/bin.
 
 set -euo pipefail
 

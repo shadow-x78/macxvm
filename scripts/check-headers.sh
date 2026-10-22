@@ -3,9 +3,6 @@
 # MacXVM - Header Check (MIT)
 # https://github.com/shadow-x78/macxvm
 # ─────────────────────────────────────────────
-#
-# Every source file and every configuration file of the project carries the
-# credit banner of the project. This script fails when a file misses it.
 
 set -euo pipefail
 
@@ -19,7 +16,6 @@ report() {
     failed=1
 }
 
-# check_source verifies the banner of a source file.
 check_source() {
     local file="$1" head
     head="$(head -n 2 "$file")"
@@ -32,7 +28,6 @@ check_source() {
     fi
 }
 
-# check_config verifies the banner of a configuration file.
 check_config() {
     local file="$1" head
     head="$(head -n 4 "$file")"
@@ -45,7 +40,6 @@ check_config() {
     fi
 }
 
-# check_shell verifies the banner of a shell script.
 check_shell() {
     local file="$1" head
     head="$(head -n 4 "$file")"
@@ -74,8 +68,6 @@ for file in "$ROOT/.editorconfig" "$ROOT/.gitattributes" "$ROOT/Makefile"; do
     [ -f "$file" ] && check_config "$file"
 done
 
-# The go module takes the style of a source file, it has no comment syntax
-# of its own.
 check_source "$ROOT/go.mod"
 
 if [ "$failed" -ne 0 ]; then
