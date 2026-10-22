@@ -26,7 +26,7 @@ Contributions to MacXVM are welcome. Please note that this project is released w
 ## Day-to-Day Work
 
 - **Branches:** `feature/`, `fix/`, `docs/`, `chore/` prefixes (e.g. `feature/overlay-clone`), branched from `main`.
-- **Commits:** `macxvm | <type>: <description>` for work. Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`.
+- **Commits:** `macxvm | v<version> | <type>: <description>` for the work of a release cycle, and `macxvm | v<version> | release: <summary>` for the commit that a release is cut from. Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `release`. Every release moves the version, and the tag, the name of the release (`MacXVM v<version>`) and the assets (`macxvm-v<version>-linux-amd64` with its `.sha256`) follow the same number.
 - **Style:** every Go file is formatted with `gofmt`, and every file carries the header of the project:
 
 ```go
