@@ -52,13 +52,14 @@ The file is copied into the state directory of the machine when it is registered
 
 ```
 qemu-system-x86_64 \
+  -accel kvm \
   -cpu host \
   -smp {{CPUS}} \
   -m {{RAM_MIB}} \
   -drive file={{DISK_IMG}},format=qcow2,{{DISK_OPTS}} \
   -drive file={{ASSETS}}/efi.img,format=raw \
   -netdev {{NETDEV}} \
-  -device virtio-net-pci,mac={{MAC}}
+  -device virtio-net-pci,netdev=net0,mac={{MAC}}
 
 #install -drive file={{ASSETS}}/installer.img,format=raw
 ```
@@ -81,6 +82,10 @@ qemu-system-x86_64 \
 A placeholder is replaced inside any token, so `-smp {{CPUS}}` and `-smp={{CPUS}}` both work. An unknown placeholder is an error, never a silent empty string.
 
 `{{NVRAM}}` and `{{ASSETS}}` fail when the machine has no NVRAM file or no assets directory. Create the machine with `--nvram-template` and `--assets` if you need them.
+
+The network of the guest needs two lines that belong together. The `-netdev` line builds the network of QEMU with the name `net0`, and the `-device` line must point at that name with `netdev=net0`. Without it the card stays outside the network, QEMU writes `netdev net0 has no peer` in the console log, and the port of SSH is never forwarded, so every command that needs the guest fails.
+
+The `-accel kvm` line names the accelerator of QEMU. Some builds of QEMU only use KVM when it is named, and a guest that falls back to the software emulation of the processor is far too slow to be usable. `macxvm doctor` tells you when the accelerator has to be named.
 
 <a id="required-placeholders"></a>
 ## Required Placeholders
