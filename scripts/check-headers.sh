@@ -4,8 +4,8 @@
 # https://github.com/shadow-x78/macxvm
 # ─────────────────────────────────────────────
 #
-# Every source file of the project carries the header of the project. This
-# script fails when a file misses it.
+# Every source file and every configuration file of the project carries the
+# credit banner of the project. This script fails when a file misses it.
 
 set -euo pipefail
 
@@ -14,47 +14,73 @@ GIT_URL="https://github.com/shadow-x78/macxvm"
 
 failed=0
 
-check_go() {
-    local file="$1"
-    local head
+report() {
+    echo "$1" >&2
+    failed=1
+}
+
+# check_source verifies the banner of a source file.
+check_source() {
+    local file="$1" head
     head="$(head -n 2 "$file")"
     if ! grep -q "^// MacXVM - " <<<"$head"; then
-        echo "missing header: $file" >&2
-        failed=1
+        report "missing the credit banner: ${file#$ROOT/}"
         return
     fi
     if ! grep -q "$GIT_URL" <<<"$head"; then
-        echo "missing the URL in the header: $file" >&2
-        failed=1
+        report "missing the project URL in the banner: ${file#$ROOT/}"
     fi
 }
 
-check_shell() {
-    local file="$1"
-    local head
+# check_config verifies the banner of a configuration file.
+check_config() {
+    local file="$1" head
     head="$(head -n 4 "$file")"
     if ! grep -q "^# MacXVM - " <<<"$head"; then
-        echo "missing header: $file" >&2
-        failed=1
+        report "missing the credit banner: ${file#$ROOT/}"
         return
     fi
     if ! grep -q "$GIT_URL" <<<"$head"; then
-        echo "missing the URL in the header: $file" >&2
-        failed=1
+        report "missing the project URL in the banner: ${file#$ROOT/}"
+    fi
+}
+
+# check_shell verifies the banner of a shell script.
+check_shell() {
+    local file="$1" head
+    head="$(head -n 4 "$file")"
+    if ! grep -q "^# MacXVM - " <<<"$head"; then
+        report "missing the credit banner: ${file#$ROOT/}"
+        return
+    fi
+    if ! grep -q "$GIT_URL" <<<"$head"; then
+        report "missing the project URL in the banner: ${file#$ROOT/}"
     fi
 }
 
 while IFS= read -r file; do
-    check_go "$file"
+    check_source "$file"
 done < <(find "$ROOT" -name '*.go' -not -path "$ROOT/.git/*" | sort)
 
 while IFS= read -r file; do
     check_shell "$file"
 done < <(find "$ROOT" -name '*.sh' -not -path "$ROOT/.git/*" | sort)
 
+while IFS= read -r file; do
+    check_config "$file"
+done < <(find "$ROOT" -name '*.yml' -not -path "$ROOT/.git/*" | sort)
+
+for file in "$ROOT/.editorconfig" "$ROOT/.gitattributes" "$ROOT/Makefile"; do
+    [ -f "$file" ] && check_config "$file"
+done
+
+# The go module takes the style of a source file, it has no comment syntax
+# of its own.
+check_source "$ROOT/go.mod"
+
 if [ "$failed" -ne 0 ]; then
-    echo "some files miss the header of the project" >&2
+    echo "some files miss the credit banner of the project" >&2
     exit 1
 fi
 
-echo "every source file carries the header of the project"
+echo "every source and configuration file carries the credit banner of the project"

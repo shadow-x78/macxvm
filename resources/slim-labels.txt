@@ -1,3 +1,8 @@
+# ─────────────────────────────────────────────
+# MacXVM - Launchd Label List
+# https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+
 # user-session agents
 gui com.apple.photoanalysisd
 gui com.apple.mediaanalysisd
