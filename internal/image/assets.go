@@ -177,7 +177,6 @@ func argsTemplate(cpuModel string) string {
 	b.WriteString("  -rtc base=utc,clock=host \\\n")
 	b.WriteString("  -global ICH9-LPC.acpi-pci-hotplug-with-bridge-support=off \\\n")
 	b.WriteString("  -global kvm-pit.lost_tick_policy=discard \\\n")
-	b.WriteString("  -global kvm-msi-ext-dest-id=off \\\n")
 	b.WriteString("  -device isa-applesmc,osk=ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc \\\n")
 	b.WriteString("  -smbios type=2 \\\n")
 	b.WriteString("  -drive if=pflash,format=raw,readonly=on,file={{ASSETS}}/" + FirmwareName + " \\\n")
