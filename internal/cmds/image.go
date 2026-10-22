@@ -18,7 +18,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "image",
-		Usage:   "macxvm image prepare NAME [--macos VERSION] [--cpus N] [--ram SIZE] [--disk GiB] [--profile cli|xcode]",
+		Usage:   "macxvm image prepare NAME [--macos VERSION] [--cpu MODEL] [--cpus N] [--ram SIZE] [--disk GiB] [--profile cli|xcode]",
 		Summary: "prepare the boot assets of a macOS guest",
 		Run:     cmdImage,
 	})
@@ -28,6 +28,7 @@ func cmdImage(args []string) error {
 	fs := newFlagSet("image")
 	macos := fs.String("macos", "sonoma",
 		"the version of macOS: high-sierra, mojave, catalina, big-sur, monterey, ventura, sonoma, sequoia or tahoe")
+	cpu := fs.String("cpu", "skylake", "the processor of the guest: skylake (safe) or host (the fastest)")
 	cpus := fs.Int("cpus", 4, "the number of CPUs of the machine")
 	ram := fs.String("ram", "8G", "the memory of the machine")
 	disk := fs.Int("disk", 64, "the size of the disk of the machine in GiB")
@@ -41,6 +42,9 @@ func cmdImage(args []string) error {
 	}
 	if len(positional) > 0 && positional[0] == "prepare" {
 		positional = positional[1:]
+	}
+	if len(positional) > 0 && positional[0] == "link" {
+		return printImageLinks(*macos)
 	}
 	name, err := requireName(positional)
 	if err != nil {
@@ -64,6 +68,7 @@ func cmdImage(args []string) error {
 	opts := image.Options{
 		Dir:    abs,
 		OS:     *macos,
+		CPU:    *cpu,
 		Runner: hostcheck.ExecRunner{},
 	}
 	if err := image.Prepare(opts); err != nil {
@@ -80,4 +85,25 @@ func cmdImage(args []string) error {
 		"--profile", *profile,
 		"--force",
 	})
+}
+
+func printImageLinks(version string) error {
+	links, err := image.Links(version)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("The boot assets of macOS %s come from these places:\n", version)
+	fmt.Println()
+	for _, l := range links {
+		fmt.Printf("  %s\n", l.What)
+		fmt.Printf("    from: %s\n", l.From)
+		fmt.Printf("    %s\n", l.URL)
+		if l.Command != "" {
+			fmt.Printf("    %s\n", l.Command)
+		}
+		fmt.Println()
+	}
+	fmt.Println("None of these files belongs to the repository or to a release of the project.")
+	fmt.Println("The tool downloads them only when you ask for it, into the state directory of MacXVM.")
+	return nil
 }

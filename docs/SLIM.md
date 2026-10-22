@@ -22,6 +22,7 @@
 - [Goal](#goal)
 - [Level 1](#level-1)
 - [Level 2](#level-2)
+- [Level 3](#level-3)
 - [The Deny List](#deny-list)
 - [What Is Never Touched](#never)
 - [Restoring](#restore)
@@ -115,14 +116,32 @@ When a label is dropped, the tool says so:
 macxvm: warning: skipping the protected label gui com.apple.sshd
 ```
 
+<a id="level-3"></a>
+## Level 3 (the lightest, optional)
+
+Level 3 does everything of level 1 and 2 and removes the parts of the guest that a build machine does not need:
+
+| What | How much |
+|------|----------|
+| The applications of `/Applications` that are not Safari, Xcode or Utilities | several hundred megabytes |
+| The leftovers of the installation and the downloaded updates | up to 5 GB |
+| The simulator runtimes and the caches of Xcode | up to 20 GB |
+| The caches, the logs and the mail of the user | a few hundred megabytes |
+
+Safari and Xcode stay, and the level 3 never touches the system volume.
+
+```bash
+macxvm slim demo --level 3
+```
+
 <a id="never"></a>
 ## What Is Never Touched
 
 - The system volume is never modified.
 - SIP is never changed, `csrutil` is never used.
 - No system application is removed.
-- No file of the guest is deleted by the slimming.
-- Only the labels of the label file are ever disabled.
+- Only the labels of the label file are ever disabled by level 2.
+- Level 3 only removes the applications of `/Applications`, the caches, the logs and the leftovers of the installation.
 
 The level 1 settings are not undone by `--restore`, because keeping the automatic updates off is what protects the boot of the guest. The restore undoes the disabled jobs and turns Spotlight back on.
 

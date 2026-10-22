@@ -113,8 +113,8 @@ func FormatLabels(labels []Label) string {
 }
 
 func ValidateLevel(level int) error {
-	if level != 1 && level != 2 {
-		return exitcode.New(exitcode.Usage, "unknown slim level %d (use 1 or 2)", level)
+	if level != 1 && level != 2 && level != 3 {
+		return exitcode.New(exitcode.Usage, "unknown slim level %d (use 1, 2 or 3)", level)
 	}
 	return nil
 }
@@ -142,6 +142,12 @@ func Apply(cfg *config.VMConfig, level int) error {
 	}
 	if err := runScript(cfg, resources.Slim2); err != nil {
 		return exitcode.New(exitcode.Generic, "slim level 2 failed: %v", err)
+	}
+	if level == 2 {
+		return nil
+	}
+	if err := runScript(cfg, resources.Slim3); err != nil {
+		return exitcode.New(exitcode.Generic, "slim level 3 failed: %v", err)
 	}
 	return nil
 }

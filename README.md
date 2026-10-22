@@ -92,7 +92,8 @@ Read this before you install anything:
 3. **Host.** Linux x86_64 with hardware virtualisation (Intel VT-x or AMD-V), a `/dev/kvm` that your user may use, and QEMU 6.0 or newer. ARM Linux hosts are not supported.
 4. **No GPU acceleration.** The user interface and the iOS Simulator are software rendered. Builds are fine, the Simulator is slow.
 5. **Fragility.** A macOS system update inside such a virtual machine can break booting. The slim level 1 switches the automatic updates off, and you should not run system updates in the guest.
-6. **The boot assets are your job.** The machine definition, the bootloader, the firmware files and the macOS installer image come from you, for example by following the documentation of the open-source projects listed in the [credits](#credits). MacXVM copies none of their content, fetches no Apple installers and does not automate the macOS installation.
+6. **The boot assets are your job.** The machine definition, the bootloader, the firmware files and the macOS installer image come from you, for example by following the documentation of the open-source projects listed in the [credits](#credits). MacXVM copies none of their content.
+7. **No Apple software is ever stored in this repository or in a release of it.** `macxvm image link` prints the addresses of the boot assets, and `macxvm image prepare` fetches them into the state directory of MacXVM on your own machine, when you ask for it. The installer of Apple comes from the recovery service of Apple and is checked against the signature of Apple before it is used. Nothing of Apple is committed, tagged or uploaded, so the repository holds no content of Apple and cannot be taken down for it.
 
 <a id="requirements"></a>
 ## Requirements
@@ -310,12 +311,13 @@ macxvm build --vm work --project . --scheme App
 ```bash
 macxvm slim demo --level 1
 macxvm slim demo --level 2 --measure
+macxvm slim demo --level 3
 macxvm slim demo --restore
 ```
 
-Level 1 switches off Spotlight indexing, Time Machine, the automatic software updates, the animations and the sleep timers. Level 2 also disables the launchd jobs of `resources/slim-labels.txt`, skipping every job that does not exist on your version of macOS.
+Level 1 switches off Spotlight indexing, Time Machine, the automatic software updates, the animations and the sleep timers. Level 2 also disables the launchd jobs of `resources/slim-labels.txt`, skipping every job that does not exist on your version of macOS. Level 3 removes the applications that a build machine does not need, the leftovers of the installation, the updates, the caches, the logs and the simulator runtimes. Safari and Xcode stay.
 
-Only the labels of that file are ever touched. A deny list in the code drops every label that would break SSH, the network or the window server. The system volume is never modified, SIP is never changed and no system application is removed.
+Only the labels of that file are ever touched by level 2. A deny list in the code drops every label that would break SSH, the network or the window server. The system volume is never modified and SIP is never changed. Level 3 removes applications of `/Applications` and caches, and nothing else.
 
 The details are in [docs/SLIM.md](docs/SLIM.md).
 
@@ -341,6 +343,7 @@ builds in a throwaway overlay that is removed afterwards. The full guide, includ
 |---------|---------|
 | `macxvm create NAME --args-file FILE [...]` | register a virtual machine |
 | `macxvm image prepare NAME [--macos VERSION] [...]` | fetch the boot assets of a macOS guest and register the machine |
+| `macxvm image link [--macos VERSION]` | print the addresses of the boot assets, without downloading anything |
 | `macxvm start NAME [--install] [--vnc] [--force]` | start QEMU |
 | `macxvm stop NAME [--force] [--timeout SECONDS]` | stop the guest, gracefully if possible |
 | `macxvm list [--json]` / `macxvm status NAME [--json]` | show the machines |
@@ -380,6 +383,22 @@ Exit codes: `0` success, `1` error, `2` usage, `3` not found, `4` already runnin
 | Idle cost on the host | none | no process of MacXVM stays alive |
 
 The numbers above were measured on the machine that builds this project, with four virtual machines registered. The real time of a boot depends on the machine definition of your args file and on the disk of the guest. `scripts/bench.sh BASE` measures the clone, the start and a throwaway run on your own host.
+
+### Speed of the guest
+
+The args file that `macxvm image prepare` writes carries the flags that make the guest as fast as the host allows:
+
+| Flag | What it does |
+|------|--------------|
+| `-accel kvm` | the processor of the host, with the acceleration of the hardware |
+| `-cpu host,-hypervisor,...` | the features of the processor of the host, with the bit of the hypervisor hidden, so that macOS does not take the slow path of a machine in a virtual machine |
+| `-global kvm-pit.lost_tick_policy=discard` | the timer of the guest, without the lag that makes the interface feel slow |
+| `-global ICH9-LPC.acpi-pci-hotplug-with-bridge-support=off` | the table of ACPI that macOS needs |
+| `-smp {{CPUS}},cores={{CORES}},sockets=1` | the shape of the processors that the scheduler of macOS expects |
+| `-device vmware-svga` | the card of the display, the fastest one that macOS drives well |
+| the disks on the controller `ich9-ahci` | macOS has no driver for the disks of the kernel, so they must not be `virtio` |
+
+The model of the processor has to stay the same between the installation of macOS and every later start, because macOS builds itself for the processor it sees. `macxvm image prepare --cpu host` uses the processor of the host and is the fastest, but then macOS has to be installed with it.
 
 <a id="project-structure"></a>
 ## Project Structure

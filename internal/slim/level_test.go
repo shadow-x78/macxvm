@@ -12,7 +12,10 @@ func TestValidateLevel(t *testing.T) {
 	if err := ValidateLevel(2); err != nil {
 		t.Fatalf("ValidateLevel(2) = %v", err)
 	}
-	for _, level := range []int{0, 3, -1} {
+	if err := ValidateLevel(3); err != nil {
+		t.Fatalf("ValidateLevel(3) = %v", err)
+	}
+	for _, level := range []int{0, 4, -1} {
 		if err := ValidateLevel(level); err == nil {
 			t.Errorf("ValidateLevel(%d) = nil error, want an error", level)
 		}

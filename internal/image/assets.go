@@ -137,7 +137,7 @@ func downloadFile(rawURL, dest string) error {
 
 func writeArgs(opts Options) error {
 	path := fileIn(opts.Dir, ArgsName)
-	content := argsTemplate()
+	content := argsTemplate(opts.CPU)
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot write '%s': %v", path, err)
 	}
@@ -145,14 +145,39 @@ func writeArgs(opts Options) error {
 	return nil
 }
 
-func argsTemplate() string {
+// CPU models of the guest. The model of the processor has to stay the same
+// between the installation of macOS and every later start, because macOS
+// builds itself for the processor it sees.
+const (
+	CPUSkylake = "Skylake-Client,-hle,-rtm,kvm=on,vendor=GenuineIntel," +
+		"+invtsc,vmware-cpuid-freq=on,+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,check"
+	CPUHost = "host,-hypervisor,kvm=on,vendor=GenuineIntel," +
+		"+invtsc,vmware-cpuid-freq=on,+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,check"
+)
+
+func LookupCPU(name string) (string, error) {
+	switch name {
+	case "", "skylake":
+		return CPUSkylake, nil
+	case "host":
+		return CPUHost, nil
+	}
+	return "", exitcode.New(exitcode.Usage,
+		"unknown processor model '%s' (use skylake or host)", name)
+}
+
+func argsTemplate(cpuModel string) string {
 	var b strings.Builder
 	b.WriteString("qemu-system-x86_64 \\\n")
 	b.WriteString("  -accel kvm \\\n")
 	b.WriteString("  -machine q35 \\\n")
-	b.WriteString("  -cpu Skylake-Client,-hle,-rtm,kvm=on,vendor=GenuineIntel,+invtsc,vmware-cpuid-freq=on,+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,check \\\n")
-	b.WriteString("  -smp {{CPUS}} \\\n")
+	b.WriteString("  -cpu " + cpuModel + " \\\n")
+	b.WriteString("  -smp {{CPUS}},cores={{CORES}},sockets=1 \\\n")
 	b.WriteString("  -m {{RAM_MIB}} \\\n")
+	b.WriteString("  -rtc base=utc,clock=host \\\n")
+	b.WriteString("  -global ICH9-LPC.acpi-pci-hotplug-with-bridge-support=off \\\n")
+	b.WriteString("  -global kvm-pit.lost_tick_policy=discard \\\n")
+	b.WriteString("  -global kvm-msi-ext-dest-id=off \\\n")
 	b.WriteString("  -device isa-applesmc,osk=ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc \\\n")
 	b.WriteString("  -smbios type=2 \\\n")
 	b.WriteString("  -drive if=pflash,format=raw,readonly=on,file={{ASSETS}}/" + FirmwareName + " \\\n")

@@ -21,7 +21,7 @@ func Install(cfg *config.VMConfig, xipPath, platform string) error {
 		return exitcode.New(exitcode.ProfileMismatch,
 			"this profile has no Xcode; use profile 'xcode'")
 	}
-	if platform != Platform {
+	if platform != "" && platform != Platform {
 		return exitcode.New(exitcode.Usage, "unknown platform '%s' (use %s)", platform, Platform)
 	}
 	abs, err := filepath.Abs(xipPath)
@@ -40,10 +40,15 @@ func Install(cfg *config.VMConfig, xipPath, platform string) error {
 		"sudo xcode-select -s /Applications/Xcode.app/Contents/Developer",
 		"sudo xcodebuild -license accept",
 		"xcodebuild -runFirstLaunch",
-		fmt.Sprintf("xcodebuild -downloadPlatform %s", platform),
 		"rm -f ~/Xcode.xip",
 	}
 	for _, step := range steps {
+		if err := run(cfg, step); err != nil {
+			return exitcode.New(exitcode.Generic, "the step '%s' failed: %v", step, err)
+		}
+	}
+	if platform != "" {
+		step := fmt.Sprintf("xcodebuild -downloadPlatform %s", platform)
 		if err := run(cfg, step); err != nil {
 			return exitcode.New(exitcode.Generic, "the step '%s' failed: %v", step, err)
 		}

@@ -15,7 +15,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "slim",
-		Usage:   "macxvm slim NAME [--level 1|2] [--measure] [--restore]",
+		Usage:   "macxvm slim NAME [--level 1|2|3] [--measure] [--restore]",
 		Summary: "make a guest lighter and faster",
 		Run:     cmdSlim,
 	})
@@ -23,7 +23,7 @@ func init() {
 
 func cmdSlim(args []string) error {
 	fs := newFlagSet("slim")
-	level := fs.Int("level", 1, "slim level: 1 (safe) or 2 (aggressive)")
+	level := fs.Int("level", 1, "slim level: 1 (safe), 2 (aggressive) or 3 (removes the applications)")
 	measure := fs.Bool("measure", false, "write the measurements to slim-report.txt")
 	restore := fs.Bool("restore", false, "undo the slimming")
 
