@@ -302,9 +302,9 @@ macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile c
 |---|---|
 | ![The desktop](assets/screenshots/macos-desktop.png) | ![Safari](assets/screenshots/macos-safari.png) |
 
-| A terminal inside the guest |
-|---|
-| ![The terminal of the guest](assets/screenshots/macos-terminal.png) |
+| A terminal inside the guest | Xcode in the guest |
+|---|---|
+| ![The terminal of the guest](assets/screenshots/macos-terminal.png) | ![Xcode](assets/screenshots/macos-xcode.png) |
 
 </div>
 
