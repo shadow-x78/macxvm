@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- fix: a trailing backslash at the end of a line of the args file is dropped
+  instead of becoming an argument, so that the example of the README and the
+  boot script of another project work as they are
+- fix: the SSH step of a stop is bounded on its own, so that a guest that does
+  not answer no longer uses the whole timeout before the other steps run
+
+### Added
+- feat: `macxvm doctor` reports whether QEMU can use the KVM accelerator and
+  whether it selects KVM on its own, and it names the accelerator to add when
+  it does not
+
 ## [v0.1.0] - 2026-10-22
 
 ### Added

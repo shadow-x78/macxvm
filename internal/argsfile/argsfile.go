@@ -53,11 +53,16 @@ var placeholderPattern = regexp.MustCompile(`\{\{[A-Z_]+\}\}`)
 // Tokenize splits one line of an args file into tokens. Quoting follows the
 // usual shell rules: single quotes are literal, double quotes allow \" and \\
 // and a backslash outside quotes escapes the next character.
+//
+// A trailing backslash is a line continuation of a shell script. Every line of
+// an args file stands on its own, so the backslash ends the line and adds no
+// argument.
 func Tokenize(line string) ([]string, error) {
 	var tokens []string
 	var cur strings.Builder
 	inToken := false
 	i := 0
+loop:
 	for i < len(line) {
 		c := line[i]
 		switch {
@@ -106,14 +111,12 @@ func Tokenize(line string) ([]string, error) {
 				return nil, errors.New("unterminated quote")
 			}
 		case c == '\\':
-			inToken = true
-			if i+1 < len(line) {
-				cur.WriteByte(line[i+1])
-				i += 2
-			} else {
-				cur.WriteByte('\\')
-				i++
+			if i+1 >= len(line) {
+				break loop
 			}
+			inToken = true
+			cur.WriteByte(line[i+1])
+			i += 2
 		default:
 			inToken = true
 			cur.WriteByte(c)

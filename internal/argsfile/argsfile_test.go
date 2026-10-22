@@ -28,6 +28,8 @@ func TestTokenize(t *testing.T) {
 		{`"a\nb"`, []string{`a\nb`}},
 		{`'a'"'"'b'`, []string{"a'b"}},
 		{`-name "macxvm"`, []string{"-name", "macxvm"}},
+		{`-cpu host \`, []string{"-cpu", "host"}},
+		{`\`, nil},
 	}
 	for _, c := range cases {
 		got, err := Tokenize(c.line)
@@ -90,6 +92,42 @@ func TestParseIgnoresInstallPrefixWithoutSpace(t *testing.T) {
 	}
 	if len(normal) != 1 {
 		t.Fatalf("normal = %v", normal)
+	}
+}
+
+// The example of the README ends every line with a backslash. Such a line
+// must not add a backslash argument, because QEMU would read it as a path.
+func TestParseDropsTheTrailingBackslashOfALine(t *testing.T) {
+	text := `qemu-system-x86_64 \
+  -cpu host \
+  -smp {{CPUS}} \
+  -m {{RAM_MIB}} \
+  -drive file={{DISK_IMG}},format=qcow2,{{DISK_OPTS}} \
+  -netdev {{NETDEV}} \
+  -device virtio-net-pci,mac={{MAC}}
+`
+	normal, _, err := Parse(text)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range normal {
+		for _, token := range line {
+			if token == `\` {
+				t.Fatalf("normal = %v, want no backslash argument", normal)
+			}
+		}
+	}
+	want := [][]string{
+		{"qemu-system-x86_64"},
+		{"-cpu", "host"},
+		{"-smp", "{{CPUS}}"},
+		{"-m", "{{RAM_MIB}}"},
+		{"-drive", "file={{DISK_IMG}},format=qcow2,{{DISK_OPTS}}"},
+		{"-netdev", "{{NETDEV}}"},
+		{"-device", "virtio-net-pci,mac={{MAC}}"},
+	}
+	if !reflect.DeepEqual(normal, want) {
+		t.Fatalf("normal = %v, want %v", normal, want)
 	}
 }
 

@@ -5,6 +5,7 @@ package cmds
 
 import (
 	"testing"
+	"time"
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 )
@@ -50,5 +51,19 @@ func TestGuestName(t *testing.T) {
 	}
 	if got := guestName("/tmp/file", "/tmp/other"); got != "" {
 		t.Fatalf("guestName() = %q, want an empty string", got)
+	}
+}
+
+func TestSSHStepTimeout(t *testing.T) {
+	if got := sshStepTimeout(5); got != 5*time.Second {
+		t.Fatalf("sshStepTimeout(5) = %v, want 5s", got)
+	}
+	// A guest that does not answer must not use the whole timeout, because
+	// the other steps of a stop need the time as well.
+	if got := sshStepTimeout(90); got != maxSSHShutdownTimeout {
+		t.Fatalf("sshStepTimeout(90) = %v, want %v", got, maxSSHShutdownTimeout)
+	}
+	if got := sshStepTimeout(-1); got != 0 {
+		t.Fatalf("sshStepTimeout(-1) = %v, want 0", got)
 	}
 }

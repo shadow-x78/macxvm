@@ -5,6 +5,7 @@
 package hostcheck
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 )
 
 // Runner executes host commands. Tests inject a fake implementation to
@@ -131,6 +133,34 @@ func DiskFreeGiB(path string) (int, error) {
 func HaveBinary(name string) bool {
 	_, err := exec.LookPath(name)
 	return err == nil
+}
+
+// accelProbeTimeout bounds the probe of the accelerator of QEMU.
+const accelProbeTimeout = 2 * time.Second
+
+// QemuKVM reports whether QEMU can use the KVM accelerator and whether it
+// selects KVM without an explicit -accel. Some QEMU builds only use KVM when
+// the accelerator is named, which a machine that asks for the host CPU needs.
+func QemuKVM(bin string) (usable, isDefault bool) {
+	if !qemuKeepsRunning(bin, "-accel", "kvm") {
+		return false, false
+	}
+	return true, qemuKeepsRunning(bin)
+}
+
+// qemuKeepsRunning starts QEMU with a frozen machine and reports whether the
+// process stayed alive. A process that leaves at once could not use KVM.
+func qemuKeepsRunning(bin string, extra ...string) bool {
+	args := append([]string{"-cpu", "host", "-m", "128", "-display", "none", "-S"}, extra...)
+	ctx, cancel := context.WithTimeout(context.Background(), accelProbeTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, bin, args...)
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	if err := cmd.Run(); err != nil {
+		return ctx.Err() == context.DeadlineExceeded
+	}
+	return true
 }
 
 // QemuVersion returns the major and minor version of the given QEMU binary.

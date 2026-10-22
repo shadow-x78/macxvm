@@ -57,6 +57,10 @@ func TestPrint(t *testing.T) {
 }
 
 func TestRunReturnsChecks(t *testing.T) {
+	old := kvmProbe
+	kvmProbe = func(string) (bool, bool) { return true, true }
+	defer func() { kvmProbe = old }()
+
 	checks := Run()
 	if len(checks) < 8 {
 		t.Fatalf("Run() returned %d checks, want at least 8", len(checks))
@@ -67,11 +71,35 @@ func TestRunReturnsChecks(t *testing.T) {
 	}
 	for _, wanted := range []string{
 		"host operating system", "/dev/kvm", "CPU virtualization", "QEMU",
-		"KVM ignore_msrs", "host tools", "free disk space", "host memory",
-		"registered virtual machines",
+		"QEMU KVM", "KVM ignore_msrs", "host tools", "free disk space",
+		"host memory", "registered virtual machines",
 	} {
 		if !names[wanted] {
 			t.Errorf("the report misses the check %q", wanted)
 		}
+	}
+}
+
+func TestKVMAccelCheckWarnsWhenKVMIsNotTheDefault(t *testing.T) {
+	old := kvmProbe
+	kvmProbe = func(string) (bool, bool) { return true, false }
+	defer func() { kvmProbe = old }()
+
+	check := kvmAccelCheck()
+	if check.Status != Warn {
+		t.Fatalf("kvmAccelCheck() = %v, want a warning", check.Status)
+	}
+	if !strings.Contains(check.Detail, "-accel kvm") {
+		t.Fatalf("kvmAccelCheck() = %q, want a hint about the accelerator", check.Detail)
+	}
+}
+
+func TestKVMAccelCheckFailsWithoutKVM(t *testing.T) {
+	old := kvmProbe
+	kvmProbe = func(string) (bool, bool) { return false, false }
+	defer func() { kvmProbe = old }()
+
+	if check := kvmAccelCheck(); check.Status != Fail {
+		t.Fatalf("kvmAccelCheck() = %v, want a failure", check.Status)
 	}
 }

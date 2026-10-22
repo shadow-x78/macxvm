@@ -123,6 +123,20 @@ macxvm doctor
 
 </div>
 
+كما يخبرك الفحص حين لا يختار QEMU مسرّع KVM من تلقاء نفسه. بعض البناءات لا تستعمل KVM إلا حين
+يُسمّى صراحة، والجهاز الذي يطلب معالج المضيف يحتاجه. أضف `-accel kvm` إلى ملف وسائط الجهاز في تلك الحالة:
+
+<div dir="ltr" align="left">
+
+```bash
+qemu-system-x86_64 \
+  -accel kvm \
+  -cpu host \
+  ...
+```
+
+</div>
+
 <a id="installation"></a>
 ## التثبيت
 
