@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/shadow-x78/macxvm/internal/names"
 	"github.com/shadow-x78/macxvm/internal/paths"
 )
 
@@ -103,6 +104,9 @@ func Load(dir string) (*VMConfig, error) {
 	var c VMConfig
 	if err := json.Unmarshal(b, &c); err != nil {
 		return nil, fmt.Errorf("config.json of '%s' is not valid JSON: %w", dir, err)
+	}
+	if err := names.Validate(c.Name); err != nil {
+		return nil, fmt.Errorf("config.json of '%s' has an invalid name: %w", dir, err)
 	}
 	if c.SchemaVersion > SchemaVersion {
 		return nil, fmt.Errorf("config was created by a newer macxvm")
