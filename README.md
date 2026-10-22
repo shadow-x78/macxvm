@@ -23,7 +23,7 @@ MacXVM is an independent open-source project, not affiliated with or endorsed by
 
 Run slim macOS guests with Xcode on a Linux host.
 
-[![Version](https://img.shields.io/badge/version-0.2.2-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -267,6 +267,10 @@ installation.
 |---|---|
 | ![The terminal of the guest](assets/screenshots/macos-terminal.png) | ![Xcode](assets/screenshots/macos-xcode.png) |
 
+| The login window, with the dark appearance and no wallpaper |
+|---|
+| ![The login window](assets/screenshots/macos-login-dark.png) |
+
 <a id="first-boot-checklist"></a>
 ### First boot checklist
 
@@ -412,7 +416,7 @@ Exit codes: `0` success, `1` error, `2` usage, `3` not found, `4` already runnin
 | Operation | Target | Measured on the reference host |
 |-----------|--------|--------------------------------|
 | `list`, `status` | < 100 ms | 3 ms |
-| Release binary | < 8 MB | 7.32 MB, static, `linux/amd64` |
+| Release binary | < 8 MB | 7.20 MB, static, `linux/amd64` |
 | Overlay clone of a sealed base | < 1 s | < 1 s, a few hundred KiB on disk |
 | Idle cost on the host | none | no process of MacXVM stays alive |
 

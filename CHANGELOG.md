@@ -5,9 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.2.2] - 2026-10-22
+## [v0.3.0] - 2026-10-22
 
 ### Added
+- feat: the guest of the example comes with the dark appearance, and the
+  background of the login window is the black colour of the system instead of
+  a wallpaper
 - feat: `macxvm image prepare` fetches the installer of Apple and the OpenCore
   boot loader, writes an args file for macOS and registers the machine. The
   chunk list and the signature of Apple are checked before the image is used,
@@ -32,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of QEMU starts as a file of zeros and the installer does not list it
 
 ### Changed
-- the binary is 7.32 MB now, because the command `image prepare` needs a client
+- the binary is 7.20 MB now, because the command `image prepare` needs a client
   of HTTP and the arithmetic of big numbers. The limit of the CI moves from
   6 MB to 8 MB
 

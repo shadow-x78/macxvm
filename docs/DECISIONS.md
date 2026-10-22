@@ -2,7 +2,7 @@
 
 # Decisions Log - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.2.2-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -108,3 +108,4 @@ The whole project was audited in October 2026. The findings, the evidence and th
 | A56 | The sources of the assets | The installer comes from the recovery service of Apple, the same one that the tool `macrecovery` of OpenCorePkg uses. The chunk list and the signature of Apple are checked before the image is used, because the service of Apple answers over plain HTTP. The boot loader and the firmware of QEMU come from the repository of OSX-KVM, which holds the pair that belongs together |
 | A57 | The image of the installer | The service of Apple hands a DMG, and QEMU cannot boot a DMG. The tool converts it with `dmg2img` into a raw disk. The tool does not implement the format of the DMG itself, because the converter is a small program that every distribution of Linux already has or can install |
 | A58 | The size of the binary | The limit of the CI moves from 6 MB to 8 MB. The command `image prepare` needs a client of HTTP and the arithmetic of big numbers for the signature of Apple, and both grow the binary by about three megabytes. The alternative, a hand written client of HTTP and a program of the shell for the downloads, costs more than the megabytes and is less safe |
+| A59 | The appearance of the guest | The guest of the example uses the dark appearance, and the background of the login window is the black colour of the system, so that a guest that cannot draw the video wallpaper of Sonoma does not show a white screen. The look is set in the guest, not in the tool, because the tool does not touch the system of a guest |
