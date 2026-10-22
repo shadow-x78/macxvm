@@ -9,11 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.2.1] - 2026-10-22
 
-### Fixed
-- fix: the check of the KVM accelerator of `macxvm doctor` no longer depends on
-  the host that runs the tests. The check of the binary and the probe of the
-  accelerator are replaced by the tests, so that the suite passes on a host
-  without QEMU
+### Changed
+- the version of the tool and the badges of the documents are 0.2.1
 
 ## [v0.2.0] - 2026-10-22
 
@@ -33,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every other wrong argument
 - fix: the public key is added to the guest only once
 - fix: the console log of a machine holds the messages of the last start only
+- fix: the check of the KVM accelerator of `macxvm doctor` does not depend on
+  the host that runs the tests. The check of the binary and the probe of the
+  accelerator are replaced by the tests, so that the suite passes on a host
+  without QEMU
 
 ### Changed
 - the console log of a machine is written with the mode 0600
