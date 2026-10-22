@@ -164,13 +164,14 @@ The args file is the machine definition you bring. MacXVM substitutes a few plac
 
 ```bash
 qemu-system-x86_64 \
+  -accel kvm \
   -cpu host \
   -smp {{CPUS}} \
   -m {{RAM_MIB}} \
   -drive file={{DISK_IMG}},format=qcow2,{{DISK_OPTS}} \
   -drive file={{ASSETS}}/efi.img,format=raw \
   -netdev {{NETDEV}} \
-  -device virtio-net-pci,mac={{MAC}}
+  -device virtio-net-pci,netdev=net0,mac={{MAC}}
 
 #install -drive file={{ASSETS}}/installer.img,format=raw
 ```

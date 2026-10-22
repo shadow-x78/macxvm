@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- fix: the example of the args file attaches the network card to the network of
+  QEMU with `netdev=net0`. Without it the card stays outside the network, the
+  port of SSH is never forwarded, and every command that needs the guest fails
+- fix: the example names the accelerator of QEMU with `-accel kvm`, so that a
+  machine that asks for the host processor does not fall back to the software
+  emulation of the processor
+
 ## [v0.2.1] - 2026-10-22
 
 ### Changed

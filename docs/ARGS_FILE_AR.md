@@ -52,13 +52,14 @@ MacXVM لا يعرف شيئًا عن macOS على QEMU. لا طراز معالج
 
 ```
 qemu-system-x86_64 \
+  -accel kvm \
   -cpu host \
   -smp {{CPUS}} \
   -m {{RAM_MIB}} \
   -drive file={{DISK_IMG}},format=qcow2,{{DISK_OPTS}} \
   -drive file={{ASSETS}}/efi.img,format=raw \
   -netdev {{NETDEV}} \
-  -device virtio-net-pci,mac={{MAC}}
+  -device virtio-net-pci,netdev=net0,mac={{MAC}}
 
 #install -drive file={{ASSETS}}/installer.img,format=raw
 ```
@@ -81,6 +82,10 @@ qemu-system-x86_64 \
 يُستبدل العنصر داخل أي رمز، فيعمل `-smp {{CPUS}}` و`-smp={{CPUS}}` معًا. العنصر المجهول خطأ صريح، ولا يتحول أبدًا إلى نص فارغ.
 
 `{{NVRAM}}` و`{{ASSETS}}` يفشلان إن لم يكن للجهاز ملف NVRAM أو مجلد أصول. أنشئ الجهاز بالخيارين `--nvram-template` و`--assets` إن احتجتهما.
+
+شبكة الضيف تحتاج سطرين معًا. سطر `-netdev` يبني شبكة QEMU باسم `net0`، وسطر `-device` يجب أن يشير إلى ذلك الاسم بـ `netdev=net0`. بدونه تبقى البطاقة خارج الشبكة، ويكتب QEMU `netdev net0 has no peer` في سجل الكونسول، ولا يُوجَّه منفذ SSH أبدًا، فيفشل كل أمر يحتاج الضيف.
+
+سطر `-accel kvm` يسمّي مسرّع QEMU. بعض بناءات QEMU لا تستعمل KVM إلا حين يُسمّى، والضيف الذي يقع على المحاكاة البرمجية للمعالج أبطأ بكثير من أن يكون قابلًا للاستعمال. يخبرك `macxvm doctor` متى يجب تسمية المسرّع.
 
 <a id="required-placeholders"></a>
 ## العناصر النائبة المطلوبة
