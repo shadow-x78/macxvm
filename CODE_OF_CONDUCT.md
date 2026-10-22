@@ -1,4 +1,17 @@
-# Contributor Covenant Code of Conduct
+<div align="center">
+
+# Code of Conduct - MacXVM
+
+[![Version](https://img.shields.io/badge/version-0.1.0-007AFF?style=flat-square&logo=semver)](CHANGELOG.md)
+[![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](LICENSE)
+![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
+![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
+
+</div>
+
+---
+
+## Contributor Covenant Code of Conduct
 
 ## Our Pledge
 
