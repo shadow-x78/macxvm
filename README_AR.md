@@ -23,7 +23,7 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 
 شغّل ضيوف macOS خفيفين مع Xcode على مضيف Linux.
 
-[![الإصدار](https://img.shields.io/badge/version-0.3.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.3.1-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -286,7 +286,7 @@ macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile c
 <a id="screenshots"></a>
 ## صور من التشغيل
 
-الصور أدناه من تشغيل حقيقي للأداة على مضيف Linux، بـ `macxvm image prepare` و`macxvm start --install --vnc` و`macxvm slim`. وهي شاشة الضيف كما هي. الضيف macOS 14.8.9 بأربعة معالجات وثمانية غيغابايت من الذاكرة، والقرص يحمل 9.6 غيغابايت بعد التثبيت.
+الصور أدناه من تشغيل حقيقي للأداة على مضيف Linux، بـ `macxvm image prepare` و`macxvm start --install --vnc` و`macxvm slim`. وهي شاشة الضيف كما هي. الضيف macOS 14.8.9 بأربعة معالجات وثمانية غيغابايت من الذاكرة، والقرص يحمل 9.6 غيغابايت بعد التثبيت. ويستعمل الضيف المظهر الداكن، وسطح المكتب وشاشة الدخول سوداوان، لأن الضيف بلا معالج رسومي يرسم خلفية Sonoma المتحركة سطحًا أبيض.
 
 <div dir="ltr" align="left">
 
