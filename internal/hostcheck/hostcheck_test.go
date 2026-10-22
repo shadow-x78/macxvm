@@ -3,7 +3,11 @@
 
 package hostcheck
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/shadow-x78/macxvm/internal/exitcode"
+)
 
 func TestProtectWithRAM(t *testing.T) {
 	// 4096 MiB out of 8192 MiB is exactly 50 % and is allowed.
@@ -33,6 +37,16 @@ func TestProtectWithCores(t *testing.T) {
 	}
 	if err := ProtectWith(1024, 8, 8192, 8, true); err != nil {
 		t.Fatalf("ProtectWith(force) = %v", err)
+	}
+}
+
+func TestProtectRefusalCarriesTheUsageCode(t *testing.T) {
+	err := ProtectWith(1024, 99, 8192, 8, false)
+	if err == nil {
+		t.Fatal("ProtectWith() = nil error, want an error")
+	}
+	if code := exitcode.Code(err); code != exitcode.Usage {
+		t.Fatalf("the code of the refusal = %d, want %d", code, exitcode.Usage)
 	}
 }
 

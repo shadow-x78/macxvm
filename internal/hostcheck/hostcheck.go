@@ -14,6 +14,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/shadow-x78/macxvm/internal/exitcode"
 )
 
 // Runner executes host commands. Tests inject a fake implementation to
@@ -214,7 +216,9 @@ func ProtectWith(ramMiB, cpus, totalRAMMiB, cores int, force bool) error {
 	if totalRAMMiB > 0 {
 		if ramMiB*100 > totalRAMMiB*75 {
 			if !force {
-				return fmt.Errorf("refusing to use %d MiB of RAM (more than 75%% of the host's %d MiB); use --force", ramMiB, totalRAMMiB)
+				return exitcode.New(exitcode.Usage,
+					"refusing to use %d MiB of RAM (more than 75%% of the host's %d MiB); use --force",
+					ramMiB, totalRAMMiB)
 			}
 		} else if ramMiB*100 > totalRAMMiB*50 {
 			fmt.Fprintf(os.Stderr, "macxvm: warning: %d MiB of RAM is more than 50%% of the host's %d MiB\n", ramMiB, totalRAMMiB)
@@ -222,7 +226,8 @@ func ProtectWith(ramMiB, cpus, totalRAMMiB, cores int, force bool) error {
 	}
 	if cores > 0 && cpus > cores-1 {
 		if !force {
-			return fmt.Errorf("refusing to use %d CPUs (the host has %d cores); use --force", cpus, cores)
+			return exitcode.New(exitcode.Usage,
+				"refusing to use %d CPUs (the host has %d cores); use --force", cpus, cores)
 		}
 	}
 	return nil
