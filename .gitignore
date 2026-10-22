@@ -1,4 +1,12 @@
+# ─────────────────────────────────────────────
+# MacXVM - Git Ignore
+# https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+
+# ── Build Artefacts ──
 bin/
 /macxvm
+
+# ── Temporary Files ──
 *.tmp
 .DS_Store

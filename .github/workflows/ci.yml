@@ -3,12 +3,14 @@
 # https://github.com/shadow-x78/macxvm
 # ─────────────────────────────────────────────
 
+# ── Workflow ──
 name: ci
 
 on:
   push:
   pull_request:
 
+# ── Job ──
 jobs:
   test:
     runs-on: ubuntu-latest
