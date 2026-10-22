@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   6 MB to 8 MB
 
 ### Fixed
+- fix: the request to the recovery service of Apple sends the parameters
+  separated by lines, which is the form the service accepts. The form of the
+  query string was refused with "Request parameters malformed", so the tool
+  could never fetch an installer by itself
 - fix: the example of the args file attaches the network card to the network of
   QEMU with `netdev=net0`. Without it the card stays outside the network, the
   port of SSH is never forwarded, and every command that needs the guest fails

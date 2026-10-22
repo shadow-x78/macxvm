@@ -11,7 +11,6 @@ import (
 	"io"
 	"math/big"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -96,16 +95,17 @@ func newSession(client *http.Client) (string, error) {
 }
 
 func fetchInfo(client *http.Client, session string, rel release) (recoveryInfo, error) {
-	form := url.Values{}
-	form.Set("cid", randomID(16))
-	form.Set("sn", "00000000000000000")
-	form.Set("bid", rel.Board)
-	form.Set("k", randomID(64))
-	form.Set("fg", randomID(64))
-	form.Set("os", rel.OSType)
+	body := strings.Join([]string{
+		"cid=" + randomID(16),
+		"sn=00000000000000000",
+		"bid=" + rel.Board,
+		"k=" + randomID(64),
+		"fg=" + randomID(64),
+		"os=" + rel.OSType,
+	}, "\n")
 
 	req, err := http.NewRequest(http.MethodPost, "http://"+recoveryHost+recoveryPath,
-		strings.NewReader(form.Encode()))
+		strings.NewReader(body))
 	if err != nil {
 		return recoveryInfo{}, err
 	}
@@ -120,16 +120,17 @@ func fetchInfo(client *http.Client, session string, rel release) (recoveryInfo, 
 			"cannot ask the recovery service of Apple for %s: %v", rel.Name, err)
 	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	answer, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return recoveryInfo{}, exitcode.New(exitcode.Generic, "cannot read the answer of Apple: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return recoveryInfo{}, exitcode.New(exitcode.Generic,
-			"the recovery service of Apple answered %s for %s", resp.Status, rel.Name)
+			"the recovery service of Apple answered %s for %s: %s", resp.Status, rel.Name,
+			strings.TrimSpace(string(answer)))
 	}
 	info := recoveryInfo{}
-	for _, line := range strings.Split(string(body), "\n") {
+	for _, line := range strings.Split(string(answer), "\n") {
 		key, value, ok := strings.Cut(strings.TrimSpace(line), ": ")
 		if !ok {
 			continue
