@@ -56,7 +56,7 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 | `*.xcworkspace` | xcode | `xcodebuild -workspace ...` |
 | `*.xcodeproj` | xcode | `xcodebuild -project ...` |
 | `Package.swift` | swiftPackage | `swift build` |
-| لا شيء من ذلك | — | خطأ `unsupported project` |
+| لا شيء من ذلك | لا ينطبق | خطأ `unsupported project` |
 
 يُتجاهل ملف `.xcodeproj` داخل مساحة عمل، وتُقدَّم مساحة العمل على المشروع.
 

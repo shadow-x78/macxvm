@@ -2,36 +2,55 @@
   <!-- ─────────────────────────────────────────────
        MacXVM - Project Banner (MIT)
        https://github.com/shadow-x78/macxvm
-       ─────────────────────────────────────────────
-       The macOS palette: system blue #007AFF, indigo
-       #5E5CE6, graphite #1D1D1F and the text
-       colours #F5F5F7 and #A1A1A6.
        ───────────────────────────────────────────── -->
   <defs>
-    <style>
-      .mxvm-f{fill:#5E5CE6;}
-      .mxvm-g{fill:#007AFF;}
-      .mxvm-s{fill:none;stroke:#007AFF;}
-      .mxvm-t{fill:#F5F5F7;}
-      .mxvm-d{fill:#A1A1A6;}
-    </style>
     <linearGradient id="mxvm-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#1D1D1F"/>
-      <stop offset="100%" stop-color="#0B0B0C"/>
+      <stop offset="0%" stop-color="#0C0C16"/>
+      <stop offset="100%" stop-color="#08080F"/>
     </linearGradient>
+    <linearGradient id="mxvm-ring" x1="0.1" y1="0.1" x2="0.9" y2="0.9">
+      <stop offset="0%" stop-color="#7FC4FF"/>
+      <stop offset="55%" stop-color="#0A84FF"/>
+      <stop offset="100%" stop-color="#007AFF"/>
+    </linearGradient>
+    <linearGradient id="mxvm-guest" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8E8CE6"/>
+      <stop offset="100%" stop-color="#5E5CE6"/>
+    </linearGradient>
+    <linearGradient id="mxvm-word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7FC4FF"/>
+      <stop offset="100%" stop-color="#0A84FF"/>
+    </linearGradient>
+    <pattern id="mxvm-grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#FFFFFF" stroke-width="1" opacity="0.035"/>
+    </pattern>
   </defs>
-  <rect width="1280" height="400" fill="url(#mxvm-bg)"/>
 
-  <g transform="translate(96 84) scale(0.45)">
-    <rect class="mxvm-s" x="86" y="106" width="340" height="234" rx="28" stroke-width="40"/>
-    <path class="mxvm-s" d="M256 340v56M186 396h140" stroke-width="40" stroke-linecap="round"/>
-    <rect class="mxvm-f" x="268" y="212" width="116" height="88" rx="18"/>
-    <circle class="mxvm-g" cx="126" cy="152" r="16"/>
+  <rect width="1280" height="400" rx="14" fill="url(#mxvm-bg)"/>
+  <rect width="1280" height="400" rx="14" fill="url(#mxvm-grid)"/>
+  <rect x="0.5" y="0.5" width="1279" height="399" rx="14" fill="none" stroke="#232338" stroke-width="1"/>
+
+  <g transform="translate(96 42) scale(0.62)">
+    <circle cx="256" cy="256" r="212" fill="none" stroke="#3A3A55" stroke-width="2" stroke-dasharray="7 11" opacity="0.75"/>
+    <circle cx="256" cy="256" r="170" fill="none" stroke="url(#mxvm-ring)" stroke-width="54"/>
+    <rect x="300" y="300" width="104" height="104" rx="26" fill="url(#mxvm-guest)" stroke="#08080F" stroke-width="8"/>
   </g>
 
-  <text class="mxvm-t" x="400" y="196" font-family="DejaVu Sans, Verdana, sans-serif" font-size="86" font-weight="700">MacXVM</text>
-  <text class="mxvm-d" x="404" y="252" font-family="DejaVu Sans, Verdana, sans-serif" font-size="30">Run slim macOS guests with Xcode on a Linux host</text>
-  <text class="mxvm-d" x="404" y="300" font-family="DejaVu Sans, Verdana, sans-serif" font-size="24">QEMU/KVM &#183; one static binary &#183; no daemon</text>
+  <text x="520" y="170" font-family="Open Sans, DejaVu Sans, sans-serif" font-size="82" font-weight="800" letter-spacing="1" fill="#F5F5F7">MAC<tspan fill="url(#mxvm-word)">XVM</tspan></text>
+  <text x="522" y="222" font-family="Open Sans, DejaVu Sans, sans-serif" font-size="28" font-weight="600" fill="#E4E4F0">Run slim macOS guests with Xcode on a Linux host</text>
+  <text x="522" y="266" font-family="Open Sans, DejaVu Sans, sans-serif" font-size="20" fill="#8A8AA6">Open-source &#183; QEMU/KVM &#183; One static binary &#183; No daemon</text>
 
-  <rect x="404" y="330" width="300" height="8" rx="4" fill="#007AFF" opacity="0.5"/>
+  <g font-family="Open Sans, DejaVu Sans, sans-serif" font-size="17" font-weight="600">
+    <rect x="520" y="298" width="196" height="44" rx="12" fill="#0A84FF" fill-opacity="0.10" stroke="#0A84FF" stroke-width="1.5"/>
+    <path d="M549 312 L543 323 L548 323 L546 333 L553 320 L548 320 Z" fill="#5AC8FA"/>
+    <text x="568" y="326" fill="#7FC4FF">Instant Overlays</text>
+
+    <rect x="730" y="298" width="182" height="44" rx="12" fill="#5E5CE6" fill-opacity="0.10" stroke="#5E5CE6" stroke-width="1.5"/>
+    <text x="752" y="326" fill="#8E8CE6">&#9635;</text>
+    <text x="778" y="326" fill="#A9A7F0">x86_64 Linux</text>
+
+    <rect x="926" y="298" width="186" height="44" rx="12" fill="#30A46C" fill-opacity="0.10" stroke="#30A46C" stroke-width="1.5"/>
+    <text x="948" y="326" fill="#5DD39E">&#9998;</text>
+    <text x="974" y="326" fill="#6EE7B7">Xcode Builds</text>
+  </g>
 </svg>

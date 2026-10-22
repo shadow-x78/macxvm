@@ -3,24 +3,24 @@
        MacXVM - Project Logo (MIT)
        https://github.com/shadow-x78/macxvm
        ─────────────────────────────────────────────
-       A virtual display drawn as a rounded screen,
-       with a smaller guest window riding its lower
-       right corner: the guest lives inside the host.
-       Flat, two macOS accents (system blue #007AFF
-       and indigo #5E5CE6), three role classes
-       (.mxvm-s stroke, .mxvm-f fill, .mxvm-g fill).
-       Square content box, dead centered on the 512
-       canvas by construction.
+       A ring drawn in a macOS blue gradient, with a
+       guest window riding its edge: the guest lives
+       inside the host. One dashed circle frames the
+       mark, the way the other projects of the owner
+       frame theirs.
        ───────────────────────────────────────────── -->
   <defs>
-    <style>
-      .mxvm-f{fill:#5E5CE6;}
-      .mxvm-g{fill:#007AFF;}
-      .mxvm-s{fill:none;stroke:#007AFF;}
-    </style>
+    <linearGradient id="mxvm-ring" x1="0.1" y1="0.1" x2="0.9" y2="0.9">
+      <stop offset="0%" stop-color="#7FC4FF"/>
+      <stop offset="55%" stop-color="#0A84FF"/>
+      <stop offset="100%" stop-color="#007AFF"/>
+    </linearGradient>
+    <linearGradient id="mxvm-guest" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8E8CE6"/>
+      <stop offset="100%" stop-color="#5E5CE6"/>
+    </linearGradient>
   </defs>
-  <rect class="mxvm-s" x="86" y="106" width="340" height="234" rx="28" stroke-width="40"/>
-  <path class="mxvm-s" d="M256 340v56M186 396h140" stroke-width="40" stroke-linecap="round"/>
-  <rect class="mxvm-f" x="268" y="212" width="116" height="88" rx="18"/>
-  <circle class="mxvm-g" cx="126" cy="152" r="16"/>
+  <circle cx="256" cy="256" r="212" fill="none" stroke="#3A3A55" stroke-width="2" stroke-dasharray="7 11" opacity="0.75"/>
+  <circle cx="256" cy="256" r="170" fill="none" stroke="url(#mxvm-ring)" stroke-width="54"/>
+  <rect x="300" y="300" width="104" height="104" rx="26" fill="url(#mxvm-guest)" stroke="#0B0B12" stroke-width="8"/>
 </svg>

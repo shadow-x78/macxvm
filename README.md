@@ -3,11 +3,11 @@
 
 MacXVM stands on the shoulders of the people who made running macOS on QEMU possible in the first place. It ships no Apple software, no firmware, no boot loader and no keys, and it launches only what you provide.
 
-- **[OSX-KVM](https://github.com/kholia/OSX-KVM)** by *kholia* — the original guide and boot script for running macOS on QEMU/KVM, and the reference for the machine definition that the args file adapts.
-- **[ultimate-macOS-KVM](https://github.com/Coopydood/ultimate-macOS-KVM)** by *Coopydood* — the maintained guide that turns the boot script into a complete, reproducible installation.
-- **[QEMU](https://www.qemu.org)** — the emulator that runs the guest.
-- **[OpenCore](https://github.com/acidanthera/OpenCorePkg)** — the boot loader used by those guides, installed and configured by you.
-- **[Apple](https://www.apple.com)** — macOS, Xcode and iOS, which are trademarks of Apple Inc. and are neither distributed nor endorsed by this project.
+- **[OSX-KVM](https://github.com/kholia/OSX-KVM)** by *kholia*: the original guide and boot script for running macOS on QEMU/KVM, and the reference for the machine definition that the args file adapts.
+- **[ultimate-macOS-KVM](https://github.com/Coopydood/ultimate-macOS-KVM)** by *Coopydood*: the maintained guide that turns the boot script into a complete, reproducible installation.
+- **[QEMU](https://www.qemu.org)**: the emulator that runs the guest.
+- **[OpenCore](https://github.com/acidanthera/OpenCorePkg)**: the boot loader used by those guides, installed and configured by you.
+- **[Apple](https://www.apple.com)**: macOS, Xcode and iOS, which are trademarks of Apple Inc. and are neither distributed nor endorsed by this project.
 
 MacXVM is an independent open-source project, not affiliated with or endorsed by Apple Inc.
 
@@ -23,10 +23,10 @@ MacXVM is an independent open-source project, not affiliated with or endorsed by
 
 Run slim macOS guests with Xcode on a Linux host.
 
-[![Version](https://img.shields.io/badge/version-0.1.0-007AFF?style=flat-square&logo=semver)](CHANGELOG.md)
-[![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](LICENSE)
-![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
-![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
+[![Version](https://img.shields.io/badge/version-0.1.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
+![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
+![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
 
 </div>
 
@@ -129,6 +129,8 @@ make build
 make install          # installs ~/.local/bin/macxvm
 ```
 
+**Release:** download `macxvm-v0.1.0-linux-amd64` from [GitHub Releases](https://github.com/shadow-x78/macxvm/releases) and run it.
+
 The binary is about 4 MB, static and built for `linux/amd64`. It needs no daemon and no service.
 The full guide, including the state directory and the removal, is in [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
@@ -176,7 +178,7 @@ qemu-system-x86_64 \
 | `{{MAC}}` | the MAC address of the machine |
 | `{{NETDEV}}` | `user,id=net0,hostfwd=tcp:127.0.0.1:<port>-:22` |
 
-`{{DISK_IMG}}`, `{{NETDEV}}`, `{{MAC}}`, `{{RAM_MIB}}` and `{{CPUS}}` are required. MacXVM injects `-name`, `-pidfile`, `-qmp`, `-display` and `-vnc` itself, so the args file must not contain them — most boot scripts of other projects use `-monitor stdio`, delete that line.
+`{{DISK_IMG}}`, `{{NETDEV}}`, `{{MAC}}`, `{{RAM_MIB}}` and `{{CPUS}}` are required. MacXVM injects `-name`, `-pidfile`, `-qmp`, `-display` and `-vnc` itself, so the args file must not contain them. Most boot scripts of other projects use `-monitor stdio`, delete that line.
 
 The full guide, including how to adapt an upstream boot script, is in [docs/ARGS_FILE.md](docs/ARGS_FILE.md).
 
@@ -242,11 +244,11 @@ macxvm build --vm work --project . --scheme App
 | `cli` | slim macOS + Command Line Tools | 2 CPU / 4096 MiB / 32 GiB | Swift packages for macOS, Homebrew, scripts |
 
 | | `cli` | `xcode` |
-|---|---|---|
-| `swift build` / `swift test` for macOS | yes | yes |
-| Homebrew packages, git, scripts | yes | yes |
-| `xcodebuild`, `.xcodeproj`, `.xcworkspace` | no (exit 9) | yes |
-| iOS SDK and iOS Simulator | no (the Command Line Tools have the macOS SDK only) | yes, software rendered |
+| :--- | :---: | :---: |
+| `swift build` / `swift test` for macOS | ✅ | ✅ |
+| Homebrew packages, git, scripts | ✅ | ✅ |
+| `xcodebuild`, `.xcodeproj`, `.xcworkspace` | ❌ exit 9 | ✅ |
+| iOS SDK and iOS Simulator | ❌ the Command Line Tools have the macOS SDK only | ✅ software rendered |
 
 <a id="slimming"></a>
 ## Slimming

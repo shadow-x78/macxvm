@@ -3,11 +3,11 @@
 
 تقف MacXVM على أكتاف من جعلوا تشغيل macOS على QEMU ممكنًا أصلًا. لا توزّع أي برنامج من Apple، ولا برامج ثابتة، ولا محمّل إقلاع، ولا مفاتيح، ولا تُشغّل إلا ما تقدّمه أنت.
 
-- **[OSX-KVM](https://github.com/kholia/OSX-KVM)** لـ *kholia* — الدليل وسكربت الإقلاع الأصليين لتشغيل macOS على QEMU/KVM، والمرجع الذي يتكيّف معه ملف الوسائط.
-- **[ultimate-macOS-KVM](https://github.com/Coopydood/ultimate-macOS-KVM)** لـ *Coopydood* — الدليل المُصان الذي يحوّل سكربت الإقلاع إلى تثبيت كامل قابل للتكرار.
-- **[QEMU](https://www.qemu.org)** — المحاكي الذي يشغّل الضيف.
-- **[OpenCore](https://github.com/acidanthera/OpenCorePkg)** — محمّل الإقلاع الذي تستخدمه الأدلّة، يثبّته ويضبطه أنت.
-- **[Apple](https://www.apple.com)** — macOS وXcode وiOS، علامات تجارية لشركة Apple Inc.، لا يوزّعها هذا المشروع ولا يقرّبه.
+- **[OSX-KVM](https://github.com/kholia/OSX-KVM)** لـ *kholia*: الدليل وسكربت الإقلاع الأصليين لتشغيل macOS على QEMU/KVM، والمرجع الذي يتكيّف معه ملف الوسائط.
+- **[ultimate-macOS-KVM](https://github.com/Coopydood/ultimate-macOS-KVM)** لـ *Coopydood*: الدليل المُصان الذي يحوّل سكربت الإقلاع إلى تثبيت كامل قابل للتكرار.
+- **[QEMU](https://www.qemu.org)**: المحاكي الذي يشغّل الضيف.
+- **[OpenCore](https://github.com/acidanthera/OpenCorePkg)**: محمّل الإقلاع الذي تستخدمه الأدلّة، يثبّته ويضبطه أنت.
+- **[Apple](https://www.apple.com)**: macOS وXcode وiOS، علامات تجارية لشركة Apple Inc.، لا يوزّعها هذا المشروع ولا يقرّبه.
 
 MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشركة Apple Inc. وغير معتمد منها.
 
@@ -16,17 +16,17 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 <div align="center">
 
 <a href="https://github.com/shadow-x78/macxvm">
-  <img src="https://raw.githubusercontent.com/shadow-x78/macxvm/main/assets/logo/macxvm-banner.png" alt="MacXVM banner" width="100%" />
+  <img src="https://raw.githubusercontent.com/shadow-x78/macxvm/main/assets/logo/macxvm-banner-ar.png" alt="شعار MacXVM" width="100%" />
 </a>
 
 # MacXVM
 
 شغّل ضيوف macOS خفيفين مع Xcode على مضيف Linux.
 
-[![الإصدار](https://img.shields.io/badge/version-0.1.0-007AFF?style=flat-square&logo=semver)](CHANGELOG.md)
-[![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](LICENSE)
-![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
-![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
+[![الإصدار](https://img.shields.io/badge/version-0.1.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
+![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
+![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
 
 </div>
 
@@ -40,22 +40,22 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 
 ## فهرس المحتويات
 
-- [نظرة عامة](#overview)
-- [الإطار القانوني والحدود](#legal)
-- [المتطلبات](#requirements)
-- [التثبيت](#installation)
-- [المزايا](#features)
-- [ملف الوسائط](#args-file)
-- [البدء السريع](#quick-start)
-- [الملفات التعريفية](#profiles)
-- [التخفيف](#slimming)
-- [بناء المشاريع](#building)
-- [مرجع الأوامر](#commands)
-- [السرعة](#speed)
-- [تنظيم المشروع](#project-structure)
-- [التوثيق](#documentation)
-- [المساهمة](#contributing)
-- [الترخيص](#license)
+- [نظرة عامة](#نظرة-عامة)
+- [الإطار القانوني والحدود](#الإطار-القانوني-والحدود)
+- [المتطلبات](#المتطلبات)
+- [التثبيت](#التثبيت)
+- [المزايا](#المزايا)
+- [ملف الوسائط](#ملف-الوسائط)
+- [البدء السريع](#البدء-السريع)
+- [الملفات التعريفية](#الملفات-التعريفية)
+- [التخفيف](#التخفيف)
+- [بناء المشاريع](#بناء-المشاريع)
+- [مرجع الأوامر](#مرجع-الأوامر)
+- [السرعة](#السرعة)
+- [تنظيم المشروع](#تنظيم-المشروع)
+- [التوثيق](#التوثيق)
+- [المساهمة](#المساهمة)
+- [الترخيص](#الترخيص)
 
 ---
 
@@ -66,6 +66,8 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 
 الأداة ملف تنفيذي واحد ثابت بحجم نحو 4 ميغابايت بلا خادم دائم. العملية الوحيدة التي تبقى حيّة هي QEMU نفسها، فلا يحمل المضيف الخامل شيئًا إطلاقًا.
 
+<div dir="ltr" align="left">
+
 ```
 macxvm create demo --args-file ./args.txt --assets ./assets
 macxvm start demo --install --vnc
@@ -75,6 +77,8 @@ macxvm xcode install demo --xip ./Xcode.xip
 macxvm base seal demo
 macxvm build --project . --scheme App
 ```
+
+</div>
 
 صورة أساس ختم مع طبقات qcow2 هي ما يجعل هذا سريعًا: الجهاز الجديد يكلّف بضعة مئات كيلوبايت وثانية واحدة، لا نسخة من مئة غيغابايت. وتختفي الطبقات مع `macxvm run`، الذي يشغّل جهازًا مؤقتًا وينفّذ أمرًا واحدًا فيه ثم يحذفه.
 
@@ -97,6 +101,8 @@ macxvm build --project . --scheme App
 <a id="requirements"></a>
 ## المتطلبات
 
+<div dir="rtl" align="right">
+
 | المتطلب | التفصيل |
 |----------|---------|
 | المضيف | Linux x86_64، محاكاة افتراضية عتادية، و`/dev/kvm` يستطيع مستخدمك استعماله |
@@ -105,29 +111,45 @@ macxvm build --project . --scheme App
 | الضيف | macOS بمعمارية x86_64 ≤ 26، تثبّته أنت، مع تفعيل Remote Login |
 | Go | 1.22 أو أحدث، لبناء MacXVM فقط |
 
+</div>
+
 افحص كل ذلك بـ:
+
+<div dir="ltr" align="left">
 
 ```bash
 macxvm doctor
 ```
+
+</div>
 
 <a id="installation"></a>
 ## التثبيت
 
 **من المصدر:**
 
+<div dir="ltr" align="left">
+
 ```bash
 git clone https://github.com/shadow-x78/macxvm.git ~/MacXVM
 cd ~/MacXVM && ./scripts/install.sh
 ```
 
+</div>
+
 **بـ Makefile:**
+
+<div dir="ltr" align="left">
 
 ```bash
 git clone https://github.com/shadow-x78/macxvm.git && cd macxvm
 make build
 make install          # يثبّت في ~/.local/bin/macxvm
 ```
+
+</div>
+
+**الإصدار:** نزّل `macxvm-v0.1.0-linux-amd64` من [GitHub Releases](https://github.com/shadow-x78/macxvm/releases) وشغّله.
 
 الملف التنفيذي بحجم نحو 4 ميغابايت، ثابت ومبني لـ `linux/amd64`. لا يحتاج خادمًا دائمًا ولا خدمة. الدليل الكامل، بما فيه مجلد الحالة والحذف، في [docs/INSTALLATION_AR.md](docs/INSTALLATION_AR.md).
 
@@ -150,6 +172,8 @@ make install          # يثبّت في ~/.local/bin/macxvm
 
 ملف الوسائط هو تعريف الجهاز الذي يأتي بك. يستبدل MacXVM فيه عددًا قليلًا من العناصر النائبة ويضيف الأعلام التي يحتاجها لإدارة الجهاز.
 
+<div dir="ltr" align="left">
+
 ```bash
 qemu-system-x86_64 \
   -cpu host \
@@ -163,6 +187,10 @@ qemu-system-x86_64 \
 #install -drive file={{ASSETS}}/installer.img,format=raw
 ```
 
+</div>
+
+<div dir="rtl" align="right">
+
 | العنصر | القيمة |
 |--------|--------|
 | `{{CPUS}}` | عدد أنوية المعالج في الجهاز |
@@ -175,12 +203,16 @@ qemu-system-x86_64 \
 | `{{MAC}}` | عنوان MAC للجهاز |
 | `{{NETDEV}}` | `user,id=net0,hostfwd=tcp:127.0.0.1:<port>-:22` |
 
-العناصر `{{DISK_IMG}}` و`{{NETDEV}}` و`{{MAC}}` و`{{RAM_MIB}}` و`{{CPUS}}` مطلوبة. ويضيف MacXVM بنفسه `-name` و`-pidfile` و`-qmp` و`-display` و`-vnc`، فلا يجوز أن يحتويها ملف الوسائط — وأغلب سكربتات الإقلاع في المشاريع الأخرى تستخدم `-monitor stdio`، فاحذف ذلك السطر.
+</div>
+
+العناصر `{{DISK_IMG}}` و`{{NETDEV}}` و`{{MAC}}` و`{{RAM_MIB}}` و`{{CPUS}}` مطلوبة. ويضيف MacXVM بنفسه `-name` و`-pidfile` و`-qmp` و`-display` و`-vnc`، فلا يجوز أن يحتويها ملف الوسائط. وأغلب سكربتات الإقلاع في المشاريع الأخرى تستخدم `-monitor stdio`، فاحذف ذلك السطر.
 
 الدليل الكامل، بما فيه تكييف سكربت إقلاع جاهز، في [docs/ARGS_FILE_AR.md](docs/ARGS_FILE_AR.md).
 
 <a id="quick-start"></a>
 ## البدء السريع
+
+<div dir="ltr" align="left">
 
 ```bash
 # 1. سجّل الجهاز
@@ -192,6 +224,8 @@ macxvm start demo --install --vnc
 #    التثبيت الخاص بالمشروع الذي جاءت منه أصولك
 ```
 
+</div>
+
 <a id="first-boot-checklist"></a>
 ### قائمة إقلاع أول مرة
 
@@ -199,17 +233,27 @@ macxvm start demo --install --vnc
 2. إعدادات النظام، ثم عام، ثم المشاركة، ثم **Remote Login**: مفعّل.
 3. في طرفية داخل الضيف:
 
+<div dir="ltr" align="left">
+
 ```bash
 sudo sh -c 'echo "admin ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/admin'
 ```
 
+</div>
+
 4. على المضيف، سلّم مفتاح MacXVM إلى الضيف:
+
+<div dir="ltr" align="left">
 
 ```bash
 macxvm ssh-key --install demo
 ```
 
+</div>
+
 5. خفّف الضيف وثبّت الأدوات:
+
+<div dir="ltr" align="left">
 
 ```bash
 macxvm slim demo --level 1
@@ -218,43 +262,65 @@ macxvm xcode install demo --xip ./Xcode.xip
 macxvm slim demo --level 2
 ```
 
+</div>
+
 6. احتفظ بالنتيجة كصورة أساس:
+
+<div dir="ltr" align="left">
 
 ```bash
 macxvm stop demo
 macxvm base seal demo
 ```
 
+</div>
+
 7. ابنِ:
+
+<div dir="ltr" align="left">
 
 ```bash
 macxvm clone demo work
 macxvm build --vm work --project . --scheme App
 ```
 
+</div>
+
 <a id="profiles"></a>
 ## الملفات التعريفية
+
+<div dir="rtl" align="right">
 
 | الملف | المحتوى | الموارد الافتراضية | الاستخدام |
 |-------|---------|---------------------|-----------|
 | `xcode` (افتراضي) | macOS خفيف + أدوات سطر الأوامر + Xcode | 4 أنوية / 8192 MiB / 100 GiB | `xcodebuild` والمحاكيات وملفات `.xcodeproj` و`.xcworkspace` |
 | `cli` | macOS خفيف + أدوات سطر الأوامر | 2 أنوية / 4096 MiB / 32 GiB | حزم Swift لمنصة macOS وHomebrew والسكربتات |
 
+</div>
+
+<div dir="rtl" align="right">
+
 | | `cli` | `xcode` |
-|---|---|---|
-| `swift build` / `swift test` لمنصة macOS | نعم | نعم |
-| حزم Homebrew وgit والسكربتات | نعم | نعم |
-| `xcodebuild` و`.xcodeproj` و`.xcworkspace` | لا (رمز الخروج 9) | نعم |
-| حزمة iOS SDK ومحاكي iOS | لا (أدوات سطر الأوامر فيها حزمة macOS فقط) | نعم، بعرض برمجي |
+| :--- | :---: | :---: |
+| `swift build` / `swift test` لمنصة macOS | ✅ | ✅ |
+| حزم Homebrew وgit والسكربتات | ✅ | ✅ |
+| `xcodebuild` و`.xcodeproj` و`.xcworkspace` | ❌ رمز الخروج 9 | ✅ |
+| حزمة iOS SDK ومحاكي iOS | ❌ أدوات سطر الأوامر فيها حزمة macOS فقط | ✅ بعرض برمجي |
+
+</div>
 
 <a id="slimming"></a>
 ## التخفيف
+
+<div dir="ltr" align="left">
 
 ```bash
 macxvm slim demo --level 1
 macxvm slim demo --level 2 --measure
 macxvm slim demo --restore
 ```
+
+</div>
 
 المستوى الأول يطفئ فهرسة Spotlight وTime Machine والتحديثات التلقائية والحركات ومؤقتات النوم. والمستوى الثاني يعطّل أيضًا مهام launchd المذكورة في `resources/slim-labels.txt`، ويتخطّى كل مهمة غير موجودة في إصدار macOS لديك.
 
@@ -265,20 +331,30 @@ macxvm slim demo --restore
 <a id="building"></a>
 ## بناء المشاريع
 
+<div dir="ltr" align="left">
+
 ```bash
 macxvm build --project . --scheme App
 ```
 
+</div>
+
 يُنسخ المشروع إلى الضيف بـ `rsync -a`، ويجري البناء هناك بـ `xcodebuild` أو `swift build`، وتُبثّ المخرجات. ولا يُشغَّل الجهاز إلا إن لم يكن يعمل، ويُوقف من جديد بعدها حتى عند فشل البناء.
+
+<div dir="ltr" align="left">
 
 ```bash
 macxvm build --ephemeral --from base-xcode --project . --scheme App
 ```
 
+</div>
+
 يبني في طبقة مؤقتة تُحذف بعدها. الدليل الكامل، بما فيه ملف المشروع وجلب النتائج، في [docs/BUILDING_AR.md](docs/BUILDING_AR.md).
 
 <a id="commands"></a>
 ## مرجع الأوامر
+
+<div dir="rtl" align="right">
 
 | الأمر | الغرض |
 |-------|-------|
@@ -309,10 +385,14 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 | `macxvm version` | طباعة الإصدار |
 | `macxvm completion bash\|zsh` | طباعة سكربت إكمال الصدفة |
 
+</div>
+
 رموز الخروج: `0` نجاح، `1` خطأ، `2` استخدام خاطئ، `3` غير موجود، `4` يعمل بالفعل، `5` لا يعمل، `6` مضيف غير مدعوم، `7` انتهاء المهلة، `8` ملف وسائط غير صالح، `9` عدم تطابق الملف التعريفي أو الأدوات.
 
 <a id="speed"></a>
 ## السرعة
+
+<div dir="rtl" align="right">
 
 | العملية | الهدف | المقاس على المضيف المرجعي |
 |---------|-------|----------------------------|
@@ -321,10 +401,14 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 | نسخ طبقة فوق أساس ختم | أقل من ثانية | أقل من ثانية، وبضعة مئات كيلوبايت على القرص |
 | الكلفة الخاملة على المضيف | لا شيء | لا تبقى أي عملية من MacXVM |
 
+</div>
+
 قِيست هذه الأرقام على الجهاز الذي يبني هذا المشروع، وفيه أربعة أجهزة مسجّلة.depends على تعريف جهازك في ملف الوسائط وعلى قرص الضيف. ويقيس `scripts/bench.sh BASE` النسخ والإقلاع والتشغيل المؤقت على مضيفك.
 
 <a id="project-structure"></a>
 ## تنظيم المشروع
+
+<div dir="ltr" align="left">
 
 ```
 macxvm/
@@ -361,8 +445,12 @@ macxvm/
 └── README.md, README_AR.md        # نقطتا الدخول
 ```
 
+</div>
+
 <a id="documentation"></a>
 ## التوثيق
+
+<div dir="rtl" align="right">
 
 | المستند | الوصف |
 |---------|-------|
@@ -373,6 +461,8 @@ macxvm/
 | [BUILDING_AR.md](docs/BUILDING_AR.md) | سير عمل البناء وملف المشروع والمزامنة والبناء المؤقت |
 | [TROUBLESHOOTING_AR.md](docs/TROUBLESHOOTING_AR.md) | مشكلات المضيف والجهاز والضيف والبناء الشائعة |
 | [DECISIONS.md](docs/DECISIONS.md) | كل انحراف عن المواصفة وكل غموض حُلّ |
+
+</div>
 
 كل مستند موجود بالإنجليزية والعربية.
 
