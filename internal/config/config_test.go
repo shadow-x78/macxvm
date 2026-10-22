@@ -93,6 +93,17 @@ func TestLoadNewerSchema(t *testing.T) {
 	}
 }
 
+func TestLoadRejectsANameThatLeavesTheStateDirectory(t *testing.T) {
+	dir := t.TempDir()
+	raw := `{"name":"../../doomed","id":"abcd1234"}`
+	if err := os.WriteFile(filepath.Join(dir, "config.json"), []byte(raw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Load(dir); err == nil {
+		t.Fatal("Load() = nil error, want an error")
+	}
+}
+
 func TestJSONKeys(t *testing.T) {
 	c := Defaults(ProfileCLI)
 	c.Name = "demo"
