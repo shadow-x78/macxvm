@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.1] - 2026-10-22
+
+### Fixed
+- fix: the check of the KVM accelerator of `macxvm doctor` no longer depends on
+  the host that runs the tests. The check of the binary and the probe of the
+  accelerator are replaced by the tests, so that the suite passes on a host
+  without QEMU
+
 ## [v0.2.0] - 2026-10-22
 
 ### Fixed
