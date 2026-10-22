@@ -1,7 +1,6 @@
 // MacXVM - QEMU Control (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package qemu starts and stops the QEMU process of a virtual machine.
 package qemu
 
 import (
@@ -20,13 +19,10 @@ import (
 	"github.com/shadow-x78/macxvm/internal/runstate"
 )
 
-// ErrEarlyExit reports that QEMU stopped before it was ready to use.
 var ErrEarlyExit = errors.New("the QEMU process exited before it was ready")
 
-// maxSocketPath is the longest QMP socket path that fits into sun_path.
 const maxSocketPath = 100
 
-// Preflight checks that the QEMU binary is usable.
 func Preflight(bin string) error {
 	if bin == "" {
 		bin = config.DefaultQemuBinary
@@ -38,7 +34,6 @@ func Preflight(bin string) error {
 	return nil
 }
 
-// QmpSocketPath returns the path of the QMP socket of a VM.
 func QmpSocketPath(runDir, id string) (string, error) {
 	path := filepath.Join(runDir, id+".sock")
 	if len(path) >= maxSocketPath {
@@ -48,8 +43,6 @@ func QmpSocketPath(runDir, id string) (string, error) {
 	return path, nil
 }
 
-// BuildArgv appends the management flags of MacXVM to the arguments of the
-// user.
 func BuildArgv(cfg *config.VMConfig, userArgs []string, sock string, vncDisplay int) []string {
 	argv := make([]string, 0, len(userArgs)+8)
 	argv = append(argv, userArgs...)
@@ -65,15 +58,11 @@ func BuildArgv(cfg *config.VMConfig, userArgs []string, sock string, vncDisplay 
 	return argv
 }
 
-// Spawn starts QEMU in its own session and returns its process identifier.
-// The process is not waited for: QEMU outlives the command.
 func Spawn(cfg *config.VMConfig, argv []string, logPath string) (int, error) {
 	logFile, err := os.OpenFile(logPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return 0, err
 	}
-	// The mode of a file that exists is not changed by the open, so it is
-	// set again for the logs of the older versions.
 	if err := os.Chmod(logPath, 0o600); err != nil {
 		logFile.Close()
 		return 0, err
@@ -100,7 +89,6 @@ func Spawn(cfg *config.VMConfig, argv []string, logPath string) (int, error) {
 	return pid, nil
 }
 
-// WaitReady waits until QEMU wrote its pid file and created the QMP socket.
 func WaitReady(procRoot string, cfg *config.VMConfig, pid int, sock string, timeout time.Duration) error {
 	pidFile := runstate.PidFile(cfg.Dir())
 	deadline := time.Now().Add(timeout)
@@ -121,7 +109,6 @@ func WaitReady(procRoot string, cfg *config.VMConfig, pid int, sock string, time
 	}
 }
 
-// Kill sends SIGKILL to a process.
 func Kill(pid int) error {
 	if pid <= 0 {
 		return nil
@@ -129,7 +116,6 @@ func Kill(pid int) error {
 	return syscall.Kill(pid, syscall.SIGKILL)
 }
 
-// FreeVNCDisplay returns the first free VNC display number, starting at 1.
 func FreeVNCDisplay() (int, error) {
 	for display := 1; display < 100; display++ {
 		l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", 5900+display))
@@ -142,7 +128,6 @@ func FreeVNCDisplay() (int, error) {
 	return 0, fmt.Errorf("no free VNC display found")
 }
 
-// LogTail returns the last lines of the console log of a VM.
 func LogTail(path string, lines int) []string {
 	b, err := os.ReadFile(path)
 	if err != nil {

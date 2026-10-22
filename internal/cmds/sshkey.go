@@ -60,8 +60,6 @@ fi
 rm -f "$KEY"
 `
 	argsList := sshx.SSHArgs(cfg, sshx.RemoteCommand(command))
-	// Password authentication is needed once, so that the user can type the
-	// password of the guest.
 	argsList = append([]string{"-o", "PubkeyAuthentication=no"}, argsList...)
 	cmd := exec.Command("ssh", argsList...)
 	cmd.Stdin = strings.NewReader(public + "\n")

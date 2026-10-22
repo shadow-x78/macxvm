@@ -10,8 +10,6 @@ import (
 	"testing"
 )
 
-// fakeSSH puts a program named "ssh" in front of the PATH that records its
-// arguments, so that the tests can check what would really be run.
 func fakeSSH(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -38,8 +36,6 @@ func TestOutputRunsSSHWithTheArgumentsOnly(t *testing.T) {
 	if len(args) == 0 {
 		t.Fatal("the program was called without arguments")
 	}
-	// The program name must not be repeated, otherwise SSH would use it as
-	// the host name.
 	if args[0] == "ssh" {
 		t.Fatalf("the arguments start with the program name: %v", args)
 	}

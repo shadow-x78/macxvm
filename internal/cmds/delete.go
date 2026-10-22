@@ -52,7 +52,6 @@ func cmdDelete(args []string) error {
 	return nil
 }
 
-// confirm asks the user a yes or no question on the terminal.
 func confirm(question string) (bool, error) {
 	fmt.Fprintf(os.Stderr, "%s [y/N] ", question)
 	reader := bufio.NewReader(os.Stdin)

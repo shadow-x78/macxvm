@@ -64,7 +64,6 @@ func cmdCopy(args []string) error {
 	return nil
 }
 
-// guestName returns the name of the guest a path belongs to.
 func guestName(paths ...string) string {
 	for _, p := range paths {
 		idx := strings.Index(p, ":")
@@ -79,7 +78,6 @@ func guestName(paths ...string) string {
 	return ""
 }
 
-// expandGuestPath turns a path of the form NAME:/path into an SCP target.
 func expandGuestPath(cfg *config.VMConfig, path string) (string, error) {
 	if !strings.HasPrefix(path, cfg.Name+":") {
 		return path, nil

@@ -1,7 +1,6 @@
 // MacXVM - Size Parsing (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package sizeparse parses memory sizes given on the command line.
 package sizeparse
 
 import (
@@ -13,8 +12,6 @@ import (
 
 var pattern = regexp.MustCompile(`^([0-9]+)([GgMm])?$`)
 
-// Parse converts a size string into MiB. Accepted forms are "4096" (MiB),
-// "4096M" and "8G".
 func Parse(s string) (int, error) {
 	m := pattern.FindStringSubmatch(s)
 	if m == nil {

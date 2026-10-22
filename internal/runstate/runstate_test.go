@@ -13,8 +13,6 @@ import (
 	"github.com/shadow-x78/macxvm/internal/config"
 )
 
-// fakeProc creates a proc root with one process whose command line contains
-// the given marker.
 func fakeProc(t *testing.T, pid int, cmdline string) string {
 	t.Helper()
 	root := t.TempDir()
