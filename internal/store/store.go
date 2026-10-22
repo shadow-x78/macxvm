@@ -185,7 +185,11 @@ func Clone(src *config.VMConfig, dst string, full bool, r hostcheck.Runner) (*co
 	srcDisk := src.File("disk.qcow2")
 	dstDisk := filepath.Join(dstDir, "disk.qcow2")
 	if full {
-		if err := r.Run("cp", "--reflink=auto", "--sparse=always", srcDisk, dstDisk); err != nil {
+		// A copy of the file would keep the pointer to the base image in the
+		// header of the qcow2, and the copy would break as soon as the base
+		// is gone. The conversion flattens the chain of the base images.
+		args := []string{"convert", "-O", "qcow2", srcDisk, dstDisk}
+		if err := r.Run("qemu-img", args...); err != nil {
 			return nil, exitcode.New(exitcode.Generic, "cannot copy the disk of '%s': %v", src.Name, err)
 		}
 	} else {
