@@ -75,7 +75,7 @@ func cmdImage(args []string) error {
 		return err
 	}
 
-	return cmdCreate([]string{
+	err = cmdCreate([]string{
 		name,
 		"--args-file", filepath.Join(abs, image.ArgsName),
 		"--assets", abs,
@@ -85,6 +85,19 @@ func cmdImage(args []string) error {
 		"--profile", *profile,
 		"--force",
 	})
+	if err != nil {
+		return err
+	}
+	cfg, err := store.Load(name)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Writing the partition table of the disk")
+	if err := image.PrepareDisk(cfg.File("disk.qcow2"), hostcheck.ExecRunner{}); err != nil {
+		return err
+	}
+	fmt.Println("The disk of the machine is ready for the installer of Apple")
+	return nil
 }
 
 func printImageLinks(version string) error {

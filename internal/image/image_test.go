@@ -9,6 +9,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/binary"
+	"hash/crc32"
 	"os"
 	"path/filepath"
 	"testing"
@@ -207,5 +208,52 @@ func TestVerifySignature(t *testing.T) {
 	other := sha256.Sum256([]byte("another payload"))
 	if err := verifySignature(other[:], le, modulus); err == nil {
 		t.Fatal("verifySignature() = nil error, want an error")
+	}
+}
+
+func TestWriteGPT(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "disk.raw")
+	const sectors = 2048
+	if err := os.WriteFile(path, make([]byte, sectors*sectorSize), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeGPT(path); err != nil {
+		t.Fatalf("writeGPT() = %v", err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if raw[0x1FE] != 0x55 || raw[0x1FF] != 0xAA {
+		t.Fatal("the protective MBR has no signature")
+	}
+	if raw[0x1BE+4] != 0xEE {
+		t.Fatalf("the type of the protective MBR = %#x, want 0xEE", raw[0x1BE+4])
+	}
+	if string(raw[512:520]) != "EFI PART" {
+		t.Fatal("the primary header has no signature")
+	}
+	header := raw[512 : 512+gptHeaderLen]
+	if binary.LittleEndian.Uint32(header[12:16]) != gptHeaderLen {
+		t.Fatal("the size of the header is wrong")
+	}
+	stored := binary.LittleEndian.Uint32(header[16:20])
+	copyHeader := append([]byte{}, header...)
+	binary.LittleEndian.PutUint32(copyHeader[16:20], 0)
+	if crc32.ChecksumIEEE(copyHeader) != stored {
+		t.Fatal("the CRC of the header does not match")
+	}
+	entries := raw[1024 : 1024+gptEntries*gptEntrySize]
+	if crc32.ChecksumIEEE(entries) != binary.LittleEndian.Uint32(header[88:92]) {
+		t.Fatal("the CRC of the entries does not match")
+	}
+	first := binary.LittleEndian.Uint64(entries[32:40])
+	last := binary.LittleEndian.Uint64(entries[40:48])
+	if first != 34 || last != sectors-34 {
+		t.Fatalf("the partition is %d..%d, want 34..%d", first, last, sectors-34)
+	}
+	if string(raw[(sectors-1)*sectorSize:(sectors-1)*sectorSize+8]) != "EFI PART" {
+		t.Fatal("the backup header has no signature")
 	}
 }

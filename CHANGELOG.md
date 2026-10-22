@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat: `macxvm image prepare --cpu host` uses the processor of the host, which
   is the fastest, and `macxvm xcode install` leaves out the platform runtime
   unless it is asked for
+- feat: `macxvm image prepare` writes a GUID partition table on the disk of the
+  machine, so that the firmware and the installer of Apple see the disk. A disk
+  of QEMU starts as a file of zeros and the installer does not list it
 
 ### Changed
 - the binary is 7.32 MB now, because the command `image prepare` needs a client

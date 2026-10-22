@@ -229,6 +229,7 @@ macxvm start demo --install --vnc
 | The OpenCore boot loader | The repository of the community of OSX-KVM |
 | The UEFI firmware of QEMU | The same repository, the pair `OVMF_CODE_4M.fd` and `OVMF_VARS-1920x1080.fd` |
 | The args file of the machine | Written into the assets directory, with the flags that macOS needs on KVM. Edit it as you like |
+| The partition table of the disk | Written by the tool, so that the firmware and macOS see the disk before anything is installed on it |
 
 The assets land in `~/.local/share/macxvm/assets` and are shared by every machine. Nothing is
 downloaded without your command, and the repository of the project ships no Apple software.
