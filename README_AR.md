@@ -47,6 +47,7 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 - [المزايا](#المزايا)
 - [ملف الوسائط](#ملف-الوسائط)
 - [البدء السريع](#البدء-السريع)
+- [صور من التشغيل](#screenshots)
 - [الملفات التعريفية](#الملفات-التعريفية)
 - [التخفيف](#التخفيف)
 - [بناء المشاريع](#بناء-المشاريع)
@@ -281,6 +282,27 @@ macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile c
 
 الإصدارات: `high-sierra` و`mojave` و`catalina` و`big-sur` و`monterey` و`ventura`
 و`sonoma` و`sequoia` و`tahoe`.
+
+<a id="screenshots"></a>
+## صور من التشغيل
+
+الصور أدناه من تشغيل حقيقي للأداة على مضيف Linux، بـ `macxvm image prepare` و`macxvm start --install --vnc`. وهي شاشة الضيف كما هي.
+
+<div dir="ltr" align="left">
+
+| The boot loader of the community | The environment of the recovery |
+|---|---|
+| ![The picker of OpenCore](assets/screenshots/opencore-picker.png) | ![The recovery of macOS](assets/screenshots/macos-recovery.png) |
+
+| The installer sees the disk of the machine | The installation runs |
+|---|---|
+| ![The disk of the machine](assets/screenshots/installer-disk.png) | ![The installation](assets/screenshots/installer-progress.png) |
+
+| A terminal inside the guest |
+|---|
+| ![The terminal of the guest](assets/screenshots/macos-terminal.png) |
+
+</div>
 
 <a id="first-boot-checklist"></a>
 ### قائمة إقلاع أول مرة
