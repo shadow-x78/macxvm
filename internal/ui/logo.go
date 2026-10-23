@@ -10,13 +10,12 @@ import (
 
 var markShape = []string{
 	"llllllllllllllll",
-	"BBuuuuuuuuuuuuBB",
-	"BB            BB",
-	"BB      lllll BB",
-	"BB      PPPPP BB",
-	"BB      uuuuu BB",
-	"BB            BB",
-	"BBBBBBBBBBBBBBBB",
+	"V              R",
+	"V        lllll R",
+	"V        PPPPP R",
+	"V        uuuuu R",
+	"V              R",
+	"uuuuuuuuuuuuuuuu",
 	"   BBBBBBBBBB",
 }
 
@@ -45,6 +44,10 @@ func markLines(version string) []string {
 				line += colourText(guestLow, "▀")
 			case 'q':
 				line += colourText(guestLow, "▄")
+			case 'V':
+				line += colourText(screenDeep, "▌")
+			case 'R':
+				line += colourText(screenDeep, "▐")
 			}
 		}
 		lines[i] = line
@@ -53,7 +56,6 @@ func markLines(version string) []string {
 		2: fmt.Sprintf("%s%sMacXVM%s %s%s%s", Bold, Text, Reset, Lavender, "v"+version, Reset),
 		4: fmt.Sprintf("%s%s%s", Subtext, "slim macOS guests with Xcode", Reset),
 		5: fmt.Sprintf("%s%s%s", Subtext, "on a Linux host under QEMU/KVM", Reset),
-		7: fmt.Sprintf("%s%s%s", Dim, "macxvm <command> [arguments]", Reset),
 	}
 	for row, text := range side {
 		if row < len(lines) {
