@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	markCols = 44
-	markRows = 15
+	markCols = 22
+	markRows = 7
 )
 
 type pixel struct {
@@ -62,9 +62,9 @@ func markGrid() [][]pixel {
 	for y := range grid {
 		grid[y] = make([]pixel, w)
 	}
-	screenX0, screenY0 := 2.0, 1.0
-	screenX1, screenY1 := float64(w)-3, float64(h)-7
-	bezel := 2.2
+	screenX0, screenY0 := 1.0, 0.5
+	screenX1, screenY1 := float64(w)-2, float64(h)-4.5
+	bezel := 1.6
 
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
@@ -79,10 +79,10 @@ func markGrid() [][]pixel {
 		}
 	}
 
-	winX0 := screenX1 - bezel - 15
-	winY0 := screenY0 + bezel + 3.5
-	winX1 := screenX1 - bezel - 1.5
-	winY1 := screenY1 - bezel - 3.0
+	winX0 := screenX1 - bezel - 7.5
+	winY0 := screenY0 + bezel + 1.2
+	winX1 := screenX1 - bezel - 1.2
+	winY1 := screenY1 - bezel - 1.0
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			px, py := float64(x)+0.5, float64(y)+0.5
@@ -95,11 +95,10 @@ func markGrid() [][]pixel {
 		}
 	}
 
-	standX0 := (screenX0 + screenX1) / 2
-	standY0 := screenY1 + 0.6
-	standX1 := standX0 + 9
-	standY1 := float64(h) - 0.8
-	standX0 -= 9
+	standX0 := (screenX0+screenX1)/2 - 3.2
+	standY0 := screenY1 + 0.4
+	standX1 := standX0 + 6.4
+	standY1 := float64(h) - 0.6
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			px, py := float64(x)+0.5, float64(y)+0.5
@@ -141,8 +140,9 @@ func Mark(w io.Writer, version, tagline string) {
 	}
 
 	side := map[int]string{
-		4: fmt.Sprintf("%s%sMAC%s%sXVM%s %s%s%s", Bold, Text, Reset, Blue, Reset, Lavender, "v"+version, Reset),
-		5: fmt.Sprintf("%s%s%s", Subtext, tagline, Reset),
+		2: fmt.Sprintf("%s%sMAC%s%sXVM%s %s%s%s", Bold, Text, Reset, Blue, Reset, Lavender, "v"+version, Reset),
+		3: fmt.Sprintf("%s%s%s", Subtext, tagline, Reset),
+		4: fmt.Sprintf("%s%s%s", Dim, "macxvm <command> [arguments]", Reset),
 	}
 	for row, line := range lines {
 		if text, ok := side[row]; ok {

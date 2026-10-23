@@ -27,9 +27,6 @@ var Groups = []struct {
 func Usage(w io.Writer) {
 	ui.Banner(w, Version, tagline)
 
-	ui.Card(w, "Usage", []string{ui.LineRaw("macxvm <command> [arguments]")})
-	ui.Blank(w)
-
 	for _, group := range Groups {
 		width := 0
 		for _, name := range group.Commands {

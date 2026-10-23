@@ -76,9 +76,9 @@ func TestRunReturnsChecks(t *testing.T) {
 		names[c.Name] = true
 	}
 	for _, wanted := range []string{
-		"host operating system", "/dev/kvm", "CPU virtualization", "QEMU",
-		"QEMU KVM", "KVM ignore_msrs", "host tools", "free disk space",
-		"host memory", "registered virtual machines",
+		"host system", "/dev/kvm", "CPU", "QEMU",
+		"QEMU KVM", "ignore_msrs", "tools", "disk",
+		"memory", "machines",
 	} {
 		if !names[wanted] {
 			t.Errorf("the report misses the check %q", wanted)

@@ -75,9 +75,9 @@ func Run() []Check {
 	var checks []Check
 
 	if hostcheck.IsLinuxX86_64() {
-		checks = append(checks, Check{"host operating system", OK, "Linux x86_64"})
+		checks = append(checks, Check{"host system", OK, "Linux x86_64"})
 	} else {
-		checks = append(checks, Check{"host operating system", Fail,
+		checks = append(checks, Check{"host system", Fail,
 			"MacXVM needs an x86_64 Linux host with KVM and QEMU (run: macxvm doctor)"})
 	}
 
@@ -99,11 +99,11 @@ func Run() []Check {
 	vmx, svm := hostcheck.CPUVirtFlags()
 	switch {
 	case vmx:
-		checks = append(checks, Check{"CPU virtualization", OK, "vmx"})
+		checks = append(checks, Check{"CPU", OK, "vmx"})
 	case svm:
-		checks = append(checks, Check{"CPU virtualization", OK, "svm"})
+		checks = append(checks, Check{"CPU", OK, "svm"})
 	default:
-		checks = append(checks, Check{"CPU virtualization", Fail,
+		checks = append(checks, Check{"CPU", Fail,
 			"neither vmx nor svm in /proc/cpuinfo (hardware virtualization is required)"})
 	}
 
@@ -149,16 +149,16 @@ func kvmAccelCheck() Check {
 	usable, isDefault := kvmProbe(bin)
 	switch {
 	case !usable:
-		return Check{name, Fail, "QEMU cannot use the KVM accelerator"}
+		return Check{name, Fail, "QEMU cannot use the accelerator of KVM"}
 	case !isDefault:
 		return Check{name, Warn,
-			"QEMU does not select KVM by default; add '-accel kvm' to the args file of the machine"}
+			"add '-accel kvm' to the args file"}
 	}
 	return Check{name, OK, "QEMU uses KVM"}
 }
 
 func kvmModuleCheck() Check {
-	const name = "KVM ignore_msrs"
+	const name = "ignore_msrs"
 	switch {
 	case !hostcheck.HaveKVMModule():
 		return Check{name, Warn, "the KVM module is not loaded"}
@@ -170,7 +170,7 @@ func kvmModuleCheck() Check {
 }
 
 func toolsCheck() Check {
-	const name = "host tools"
+	const name = "tools"
 	var missing []string
 	for _, tool := range []string{"ssh", "scp", "rsync", "ssh-keygen"} {
 		if !hostcheck.HaveBinary(tool) {
@@ -180,11 +180,11 @@ func toolsCheck() Check {
 	if len(missing) > 0 {
 		return Check{name, Fail, "not in PATH: " + strings.Join(missing, ", ")}
 	}
-	return Check{name, OK, "ssh, scp, rsync and ssh-keygen are available"}
+	return Check{name, OK, "ssh, scp, rsync and ssh-keygen"}
 }
 
 func diskCheck() Check {
-	const name = "free disk space"
+	const name = "disk"
 	path := paths.Home()
 	if _, err := os.Stat(path); err != nil {
 		path = filepath.Dir(path)
@@ -194,20 +194,19 @@ func diskCheck() Check {
 		return Check{name, Warn, "cannot read the free space of " + path}
 	}
 	if free < 60 {
-		return Check{name, Warn, fmt.Sprintf("%d GiB free in %s, 60 GiB are recommended", free, path)}
+		return Check{name, Warn, fmt.Sprintf("%d GiB free, 60 GiB are recommended", free)}
 	}
-	return Check{name, OK, fmt.Sprintf("%d GiB free in %s", free, path)}
+	return Check{name, OK, fmt.Sprintf("%d GiB free", free)}
 }
 
 func memoryCheck() Check {
-	const name = "host memory"
+	const name = "memory"
 	total := hostcheck.RAMTotalMiB()
 	available := hostcheck.RAMAvailableMiB()
 	if total == 0 {
 		return Check{name, Warn, "cannot read the memory of the host"}
 	}
-	detail := fmt.Sprintf("%d MiB total, %d MiB available; the xcode profile uses 8192 MiB and the cli profile 4096 MiB",
-		total, available)
+	detail := fmt.Sprintf("%d MiB total, %d MiB available", total, available)
 	if available < 4096 {
 		return Check{name, Warn, detail}
 	}
@@ -215,7 +214,7 @@ func memoryCheck() Check {
 }
 
 func vmCheck() Check {
-	const name = "registered virtual machines"
+	const name = "machines"
 	vms, err := store.List()
 	if err != nil {
 		return Check{name, Warn, "cannot read the virtual machines"}
