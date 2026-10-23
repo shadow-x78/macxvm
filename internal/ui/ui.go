@@ -68,7 +68,7 @@ func Banner(w io.Writer, version, tagline string) {
 	Blank(w)
 }
 
-const Content = 70
+const Content = 66
 
 func Card(w io.Writer, title string, lines []string) {
 	titleWidth := visibleLen(title)
