@@ -12,6 +12,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -66,7 +67,7 @@ func baseSeal(args []string) error {
 	if err := store.Save(cfg); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot save the configuration: %v", err)
 	}
-	fmt.Printf("Sealed '%s'; it can now be used as the base of overlays\n", name)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("sealed '%s', it can be the base of overlays", name))
 	return nil
 }
 
@@ -97,7 +98,7 @@ func baseUnseal(args []string) error {
 	if err := store.Save(cfg); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot save the configuration: %v", err)
 	}
-	fmt.Printf("Unsealed '%s'\n", name)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("unsealed '%s'", name))
 	return nil
 }
 

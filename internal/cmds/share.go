@@ -15,6 +15,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/share"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -94,7 +95,7 @@ func shareAdd(args []string) error {
 	if err := store.Save(cfg); err != nil {
 		return err
 	}
-	fmt.Printf("Shared %s with '%s' at %s\n", entry.Host, name, entry.Guest)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("shared %s with '%s' at %s", entry.Host, name, entry.Guest))
 	return nil
 }
 

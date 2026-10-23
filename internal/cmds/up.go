@@ -11,6 +11,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/hostcheck"
 	"github.com/shadow-x78/macxvm/internal/project"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -59,7 +60,7 @@ func cmdUp(args []string) error {
 		if _, err := store.Clone(base, file.VM, false, hostcheck.ExecRunner{}); err != nil {
 			return err
 		}
-		fmt.Printf("Cloned '%s' into '%s'\n", file.Base, file.VM)
+		ui.Say(os.Stdout, "ok", fmt.Sprintf("cloned '%s' into '%s'", file.Base, file.VM))
 	}
 	cfg, err := store.Load(file.VM)
 	if err != nil {
@@ -70,6 +71,6 @@ func cmdUp(args []string) error {
 		return err
 	}
 	_ = started
-	fmt.Printf("Started '%s' (ssh: 127.0.0.1:%d)\n", cfg.Name, cfg.SSHPort)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("started '%s', ssh 127.0.0.1:%d", cfg.Name, cfg.SSHPort))
 	return nil
 }

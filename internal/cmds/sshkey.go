@@ -12,6 +12,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/sshx"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -69,6 +70,6 @@ rm -f "$KEY"
 	if err := cmd.Run(); err != nil {
 		return remoteError(err)
 	}
-	fmt.Printf("Installed the public key in '%s'\n", cfg.Name)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("installed the public key in '%s'", cfg.Name))
 	return nil
 }

@@ -5,9 +5,11 @@ package cmds
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 	"github.com/shadow-x78/macxvm/internal/xcode"
 )
 
@@ -60,7 +62,7 @@ func xcodeInstall(args []string) error {
 	if err := xcode.Install(cfg, *xip, *platform); err != nil {
 		return err
 	}
-	fmt.Printf("Installed Xcode in '%s'\n", cfg.Name)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("installed Xcode in '%s'", cfg.Name))
 	return nil
 }
 

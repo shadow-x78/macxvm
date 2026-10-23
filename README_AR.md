@@ -1,15 +1,15 @@
 <a id="credits"></a>
 # الشكر
 
-تقف MacXVM على أكتاف من جعلوا تشغيل macOS على QEMU ممكنًا أصلًا. لا توزّع أي برنامج من Apple، ولا برامج ثابتة، ولا محمّل إقلاع، ولا مفاتيح، ولا تُشغّل إلا ما تقدّمه أنت.
+تقف MacXVM على أكتاف من جعلوا تشغيل macOS على QEMU ممكنا أصلا. لا توزع أي برنامج من Apple، ولا برامج ثابتة، ولا محمل إقلاع، ولا مفاتيح، ولا تشغل إلا ما تقدمه أنت.
 
-- **[OSX-KVM](https://github.com/kholia/OSX-KVM)** لـ *kholia*: الدليل وسكربت الإقلاع الأصليين لتشغيل macOS على QEMU/KVM، والمرجع الذي يتكيّف معه ملف الوسائط.
-- **[ultimate-macOS-KVM](https://github.com/Coopydood/ultimate-macOS-KVM)** لـ *Coopydood*: الدليل المُصان الذي يحوّل سكربت الإقلاع إلى تثبيت كامل قابل للتكرار.
-- **[QEMU](https://www.qemu.org)**: المحاكي الذي يشغّل الضيف.
-- **[OpenCore](https://github.com/acidanthera/OpenCorePkg)**: محمّل الإقلاع الذي تستخدمه الأدلّة، يثبّته ويضبطه أنت.
-- **[Apple](https://www.apple.com)**: macOS وXcode وiOS، علامات تجارية لشركة Apple Inc.، لا يوزّعها هذا المشروع ولا يقرّبه.
+- **[OSX-KVM](https://github.com/kholia/OSX-KVM)** ل *kholia*: الدليل وسكربت الإقلاع الأصليين لتشغيل macOS على QEMU/KVM، والمرجع الذي يتكيف معه ملف الوسائط.
+- **[ultimate-macOS-KVM](https://github.com/Coopydood/ultimate-macOS-KVM)** ل *Coopydood*: الدليل المصان الذي يحول سكربت الإقلاع إلى تثبيت كامل قابل للتكرار.
+- **[QEMU](https://www.qemu.org)**: المحاكي الذي يشغل الضيف.
+- **[OpenCore](https://github.com/acidanthera/OpenCorePkg)**: محمل الإقلاع الذي تستخدمه الأدلة، يثبته ويضبطه أنت.
+- **[Apple](https://www.apple.com)**: macOS وXcode وiOS، علامات تجارية لشركة Apple Inc.، لا يوزعها هذا المشروع ولا يقربه.
 
-MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشركة Apple Inc. وغير معتمد منها.
+‏MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشركة Apple Inc. وغير معتمد منها.
 
 ---
 
@@ -21,7 +21,7 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 
 # MacXVM
 
-شغّل ضيوف macOS خفيفين مع Xcode على مضيف Linux.
+شغل ضيوف macOS خفيفين مع Xcode على مضيف Linux.
 
 [![الإصدار](https://img.shields.io/badge/version-0.5.3-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
@@ -64,9 +64,9 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 <a id="overview"></a>
 ## نظرة عامة
 
-تحوّل MacXVM جهاز Linux إلى مزرعة بناء لمشاريع macOS. تسجّل ضيوف macOS، وتشغّلهم تحت QEMU/KVM، وتخفّفهم حتى يهدأوا في وضع الخمول، وتثبّت Xcode داخلهم، وتبني مشاريعك من Linux عبر `rsync` و`ssh`.
+تحول MacXVM جهاز Linux إلى مزرعة بناء لمشاريع macOS. تسجل ضيوف macOS، وتشغلهم تحت QEMU/KVM، وتخففهم حتى يهدأوا في وضع الخمول، وتثبت Xcode داخلهم، وتبني مشاريعك من Linux عبر `rsync` و`ssh`.
 
-الأداة ملف تنفيذي واحد ثابت بحجم نحو 4 ميغابايت بلا خادم دائم. العملية الوحيدة التي تبقى حيّة هي QEMU نفسها، فلا يحمل المضيف الخامل شيئًا إطلاقًا.
+الأداة ملف تنفيذي واحد ثابت بحجم نحو 4 ميغابايت بلا خادم دائم. العملية الوحيدة التي تبقى حية هي QEMU نفسها، فلا يحمل المضيف الخامل شيئا إطلاقا.
 
 <div dir="ltr" align="left">
 
@@ -82,24 +82,24 @@ macxvm build --project . --scheme App
 
 </div>
 
-صورة أساس ختم مع طبقات qcow2 هي ما يجعل هذا سريعًا: الجهاز الجديد يكلّف بضعة مئات كيلوبايت وثانية واحدة، لا نسخة من مئة غيغابايت. وتختفي الطبقات مع `macxvm run`، الذي يشغّل جهازًا مؤقتًا وينفّذ أمرًا واحدًا فيه ثم يحذفه.
+صورة أساس ختم مع طبقات qcow2 هي ما يجعل هذا سريعا: الجهاز الجديد يكلف بضعة مئات كيلوبايت وثانية واحدة، لا نسخة من مئة غيغابايت. وتختفي الطبقات مع `macxvm run`، الذي يشغل جهازا مؤقتا وينفذ أمرا واحدا فيه ثم يحذفه.
 
-لا تصف MacXVM جهاز macOS بنفسها أبدًا. تعريف الجهاز يعيش في ملف وسائط تكتبه أنت، ف تستبدل MacXVM فيه عددًا قليلًا من العناصر النائبة وتشغّل QEMU بالنتيجة.
+لا تصف MacXVM جهاز macOS بنفسها أبدا. تعريف الجهاز يعيش في ملف وسائط تكتبه أنت، ف تستبدل MacXVM فيه عددا قليلا من العناصر النائبة وتشغل QEMU بالنتيجة.
 
 <a id="legal"></a>
 ## الإطار القانوني والحدود
 
-> MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشركة Apple Inc. وغير معتمد منها. macOS وXcode وiOS علامات تجارية لشركة Apple Inc. لا يوزّع MacXVM أي برنامج من Apple؛ المستخدم يقدّم كل برمجيات Apple ويتحمّل مسؤوليتها والامتثال لشروط ترخيصها.
+> MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشركة Apple Inc. وغير معتمد منها. macOS وXcode وiOS علامات تجارية لشركة Apple Inc. لا يوزع MacXVM أي برنامج من Apple؛ المستخدم يقدم كل برمجيات Apple ويتحمل مسؤوليتها والامتثال لشروط ترخيصها.
 
-اقرأ هذا قبل أن تثبّت شيئًا:
+اقرأ هذا قبل أن تثبت شيئا:
 
-1. **ترخيص macOS من Apple يسمح بتشغيل macOS داخل جهاز افتراضي على أجهزة من إنتاج Apple فقط.** تشغيل macOS تحت QEMU/KVM على حاسوب مكتبي خرق لترخيص Apple، وقد نفّذته Apple أمام القضاء. MacXVM مُشغِّل فقط: لا يوزّع أي برنامج من Apple ولا برامج ثابتة ولا مفاتيح ولا محمّلات إقلاع، ولا يشغّل إلا ما تقدّمه. **المسؤولية عليك.** والبدائل المطابقة هي جهاز Mac (استخدم مواصفة أجهزة Apple) أو Mac مستأجر في السحابة.
-2. **x86_64 فقط.** الضيف نظام macOS بمعمارية x86_64. تدعم Apple أجهزة Intel حتى macOS 26، فيقصر الضيف على macOS ≤ 26 وبالتالي على إصدارات Xcode التي تعمل عليه. اختر إصدار macOS وإصدار Xcode معًا بالرجوع إلى ملاحظات إصدار Xcode. لا يثبّت هذا المشروع أزواج إصدارات بشكل ثابت.
-3. **المضيف.** Linux بمعمارية x86_64 مع المحاكاة الافتراضية (Intel VT-x أو AMD-V)، و`/dev/kvm` يستطيع مستخدمك استعماله، وQEMU بإصدار 6.0 أو أحدث. لا دعم لمضيف Linux بمعمارية ARM.
-4. **لا تسريع رسومي.** واجهة المستخدم ومحاكي iOS يُعرضان برمجيًا. البناء سليم، والمحاكي بطيء.
-5. **الهشاشة.** قد يكسر تحديث نظام macOS داخل جهاز افتراضي كهذا الإقلاع. المستوى الأول من التخفيف يطفئ التحديثات التلقائية، ولا ينبغي أن تشغّل تحديثات النظام داخل الضيف.
-6. **أصول الإقلاع مسؤوليتك.** تعريف الجهاز ومحمّل الإقلاع والبرامج الثابتة وصورة مثبّت macOS تأتي منك، مثلًا باتباع توثيق المشاريع المفتوحة المذكورة في [الشكر](#credits). لا ينسخ MacXVM أي محتوى منها.
-7. **لا يُخزَّن أي برنامج من Apple في هذا المستودع ولا في أي إصدار منه.** يطبع `macxvm image link` عناوين أصول الإقلاع، ويجلبها `macxvm image prepare` إلى مجلد حالة MacXVM على جهازك، حين تطلب ذلك فقط. يأتي مثبّت Apple من خدمة استعادة Apple ويُفحص مقابل توقيع Apple قبل استعماله. لا شيء من Apple يُودَع ولا يُوسَم ولا يُرفع، فلا يحتوي المستودع على أي محتوى من Apple ولا يمكن إغلاقه بسببه.
+- ‏ **ترخيص macOS من Apple يسمح بتشغيل macOS داخل جهاز افتراضي على أجهزة من إنتاج Apple فقط.** تشغيل macOS تحت QEMU/KVM على حاسوب مكتبي خرق لترخيص Apple، وقد نفذته Apple أمام القضاء. MacXVM مشغل فقط: لا يوزع أي برنامج من Apple ولا برامج ثابتة ولا مفاتيح ولا محملات إقلاع، ولا يشغل إلا ما تقدمه. **المسؤولية عليك.** والبدائل المطابقة هي جهاز Mac (استخدم مواصفة أجهزة Apple) أو Mac مستأجر في السحابة.
+- ‏ **x86_64 فقط.** الضيف نظام macOS بمعمارية x86_64. تدعم Apple أجهزة Intel حتى macOS 26، فيقصر الضيف على macOS ≤ 26 وبالتالي على إصدارات Xcode التي تعمل عليه. اختر إصدار macOS وإصدار Xcode معا بالرجوع إلى ملاحظات إصدار Xcode. لا يثبت هذا المشروع أزواج إصدارات بشكل ثابت.
+- ‏ **المضيف.** Linux بمعمارية x86_64 مع المحاكاة الافتراضية (Intel VT-x أو AMD-V)، و`/dev/kvm` يستطيع مستخدمك استعماله، وQEMU بإصدار 6.0 أو أحدث. لا دعم لمضيف Linux بمعمارية ARM.
+- ‏ **لا تسريع رسومي.** واجهة المستخدم ومحاكي iOS يعرضان برمجيا. البناء سليم، والمحاكي بطيء.
+- ‏ **الهشاشة.** قد يكسر تحديث نظام macOS داخل جهاز افتراضي كهذا الإقلاع. المستوى الأول من التخفيف يطفئ التحديثات التلقائية، ولا ينبغي أن تشغل تحديثات النظام داخل الضيف.
+- ‏ **أصول الإقلاع مسؤوليتك.** تعريف الجهاز ومحمل الإقلاع والبرامج الثابتة وصورة مثبت macOS تأتي منك، مثلا باتباع توثيق المشاريع المفتوحة المذكورة في [الشكر](#credits). لا ينسخ MacXVM أي محتوى منها.
+- ‏ **لا يخزن أي برنامج من Apple في هذا المستودع ولا في أي إصدار منه.** يطبع `macxvm image link` عناوين أصول الإقلاع، ويجلبها `macxvm image prepare` إلى مجلد حالة MacXVM على جهازك، حين تطلب ذلك فقط. يأتي مثبت Apple من خدمة استعادة Apple ويفحص مقابل توقيع Apple قبل استعماله. لا شيء من Apple يودع ولا يوسم ولا يرفع، فلا يحتوي المستودع على أي محتوى من Apple ولا يمكن إغلاقه بسببه.
 
 <a id="requirements"></a>
 ## المتطلبات
@@ -111,12 +111,12 @@ macxvm build --project . --scheme App
 | المضيف | Linux x86_64، محاكاة افتراضية عتادية، و`/dev/kvm` يستطيع مستخدمك استعماله |
 | QEMU | `qemu-system-x86_64` و`qemu-img`، بإصدار 6.0 أو أحدث |
 | أدوات المضيف | `ssh` و`scp` و`rsync` و`ssh-keygen` |
-| الضيف | macOS بمعمارية x86_64 ≤ 26، تثبّته أنت، مع تفعيل Remote Login |
+| الضيف | macOS بمعمارية x86_64 ≤ 26، تثبته أنت، مع تفعيل Remote Login |
 | Go | 1.22 أو أحدث، لبناء MacXVM فقط |
 
 </div>
 
-افحص كل ذلك بـ:
+افحص كل ذلك ب:
 
 <div dir="ltr" align="left">
 
@@ -126,8 +126,8 @@ macxvm doctor
 
 </div>
 
-كما يخبرك الفحص حين لا يختار QEMU مسرّع KVM من تلقاء نفسه. بعض البناءات لا تستعمل KVM إلا حين
-يُسمّى صراحة، والجهاز الذي يطلب معالج المضيف يحتاجه. أضف `-accel kvm` إلى ملف وسائط الجهاز في تلك الحالة:
+كما يخبرك الفحص حين لا يختار QEMU مسرع KVM من تلقاء نفسه. بعض البناءات لا تستعمل KVM إلا حين
+يسمى صراحة، والجهاز الذي يطلب معالج المضيف يحتاجه. أضف `-accel kvm` إلى ملف وسائط الجهاز في تلك الحالة:
 
 <div dir="ltr" align="left">
 
@@ -154,38 +154,38 @@ cd ~/MacXVM && ./scripts/install.sh
 
 </div>
 
-**بـ Makefile:**
+**ب Makefile:**
 
 <div dir="ltr" align="left">
 
 ```bash
 git clone https://github.com/shadow-x78/macxvm.git && cd macxvm
 make build
-make install          # يثبّت في ~/.local/bin/macxvm
+make install          # يثبت في ~/.local/bin/macxvm
 ```
 
 </div>
 
-الملف التنفيذي بحجم نحو 7 ميغابايت، ثابت ومبني لـ `linux/amd64`. لا يحتاج خادمًا دائمًا ولا خدمة. الدليل الكامل، بما فيه مجلد الحالة والحذف، في [docs/INSTALLATION_AR.md](docs/INSTALLATION_AR.md).
+الملف التنفيذي بحجم نحو 7 ميغابايت، ثابت ومبني ل `linux/amd64`. لا يحتاج خادما دائما ولا خدمة. الدليل الكامل، بما فيه مجلد الحالة والحذف، في [docs/INSTALLATION_AR.md](docs/INSTALLATION_AR.md).
 
 <a id="features"></a>
 ## المزايا
 
 - تسجيل ضيوف macOS وإقلاعهم وإيقافهم ونسخهم وحذفهم تحت QEMU/KVM
 - ملف وسائط من المستخدم كتعريف للجهاز: بلا طراز معالج ثابت، ولا مفاتيح SMC، ولا قيم SMBIOS، ولا إعدادات OpenCore، ولا مسارات برامج ثابتة
-- صور أساس ختم مع طبقات qcow2: الجهاز الجديد يكلّف بضعة مئات كيلوبايت وثانية واحدة
-- أجهزة مؤقتة عبر `macxvm run`: تُحذف الطبقة بعدها، حتى عند مقاطعة الأمر
-- مستويان من التخفيف يخفّضان كلفة الخمول في الضيف، مع قائمة منع تحمي SSH والشبكة، واستعادة تعكس التغيير
+- صور أساس ختم مع طبقات qcow2: الجهاز الجديد يكلف بضعة مئات كيلوبايت وثانية واحدة
+- أجهزة مؤقتة عبر `macxvm run`: تحذف الطبقة بعدها، حتى عند مقاطعة الأمر
+- مستويان من التخفيف يخفضان كلفة الخمول في الضيف، مع قائمة منع تحمي SSH والشبكة، واستعادة تعكس التغيير
 - تثبيت أدوات سطر الأوامر وHomebrew وXcode داخل الضيف من المضيف
 - `xcodebuild` و`swift build` على ضيف بعيد، مع الاحتفاظ بالبيانات المشتقة بين البناءات
 - ملف مشروع يحمل قيم البناء والجهاز وصورة الأساس الافتراضية
-- وضع بلا واجهة افتراضيًا، وشاشة VNC على واجهة loopback حين تحتاج رؤية الشاشة
+- وضع بلا واجهة افتراضيا، وشاشة VNC على واجهة loopback حين تحتاج رؤية الشاشة
 - ملف تنفيذي واحد ثابت بحجم نحو 4 ميغابايت، بمكتبة Go القياسية فقط، بلا وحدات خارجية، بلا خادم دائم، بلا عملية خلفية
 
 <a id="args-file"></a>
 ## ملف الوسائط
 
-ملف الوسائط هو تعريف الجهاز الذي يأتي بك. يستبدل MacXVM فيه عددًا قليلًا من العناصر النائبة ويضيف الأعلام التي يحتاجها لإدارة الجهاز.
+ملف الوسائط هو تعريف الجهاز الذي يأتي بك. يستبدل MacXVM فيه عددا قليلا من العناصر النائبة ويضيف الأعلام التي يحتاجها لإدارة الجهاز.
 
 <div dir="ltr" align="left">
 
@@ -214,7 +214,7 @@ qemu-system-x86_64 \
 | `{{RAM_MIB}}` | ذاكرة الجهاز بالميغابايت |
 | `{{DISK_IMG}}` | المسار المطلق لقرص الجهاز |
 | `{{DISK_OPTS}}` | `cache=writeback`، أو `cache=unsafe` لجهاز مؤقت |
-| `{{NVRAM}}` | المسار المطلق لملف NVRAM، فقط حين يملك الجهاز واحدًا |
+| `{{NVRAM}}` | المسار المطلق لملف NVRAM، فقط حين يملك الجهاز واحدا |
 | `{{ASSETS}}` | مجلد أصول الجهاز |
 | `{{MAC}}` | عنوان MAC للجهاز |
 | `{{NETDEV}}` | `user,id=net0,hostfwd=tcp:127.0.0.1:<port>-:22` |
@@ -228,17 +228,17 @@ qemu-system-x86_64 \
 <a id="quick-start"></a>
 ## البدء السريع
 
-الطريقة السريعة: دع MacXVM يجلب أصول الإقلاع ويسجّل الجهاز.
+الطريقة السريعة: دع MacXVM يجلب أصول الإقلاع ويسجل الجهاز.
 
 <div dir="ltr" align="left">
 
 ```bash
-# 1. اجلب مثبّت Apple ومحمّل الإقلاع OpenCore، وسجّل الجهاز بهما
+# 1. اجلب مثبت Apple ومحمل الإقلاع OpenCore، وسجل الجهاز بهما
 macxvm image prepare demo --macos sequoia
 
-# 2. ثبّت macOS داخل الضيف
+# 2. ثبت macOS داخل الضيف
 macxvm start demo --install --vnc
-#    صل بعميل VNC بالعنوان 127.0.0.1:<المنفذ الذي يطبعه macxvm> واتّبع دليل
+#    صل بعميل VNC بالعنوان 127.0.0.1:<المنفذ الذي يطبعه macxvm> واتبع دليل
 #    التثبيت الخاص بالمشروع الذي جاءت منه أصولك
 ```
 
@@ -249,12 +249,12 @@ macxvm start demo --install --vnc
 <div dir="ltr" align="left">
 
 ```bash
-# 1. سجّل الجهاز
+# 1. سجل الجهاز
 macxvm create demo --args-file ./args.txt --assets ./assets
 
-# 2. ثبّت macOS داخل الضيف
+# 2. ثبت macOS داخل الضيف
 macxvm start demo --install --vnc
-#    صل بعميل VNC بالعنوان 127.0.0.1:<المنفذ الذي يطبعه macxvm> واتّبع دليل
+#    صل بعميل VNC بالعنوان 127.0.0.1:<المنفذ الذي يطبعه macxvm> واتبع دليل
 #    التثبيت الخاص بالمشروع الذي جاءت منه أصولك
 ```
 
@@ -264,13 +264,13 @@ macxvm start demo --install --vnc
 
 | الخطوة | المصدر |
 |--------|--------|
-| مثبّت macOS | خدمة الاستعادة من Apple، عبر جلسة الخدمة. تُفحص قائمة الأجزاء وتوقيع Apple، ثم تُحوَّل الصورة إلى قرص خام بـ `dmg2img` |
-| محمّل الإقلاع OpenCore | مستودع مجتمع OSX-KVM |
-| برمجية UEFI لـ QEMU | نفس المستودع، الزوج `OVMF_CODE_4M.fd` و`OVMF_VARS-1920x1080.fd` |
-| ملف وسائط الجهاز | يُكتب في مجلد الأصول بالرايات التي يحتاجها macOS على KVM، وعدّله كما شئت |
+| مثبت macOS | خدمة الاستعادة من Apple، عبر جلسة الخدمة. تفحص قائمة الأجزاء وتوقيع Apple، ثم تحول الصورة إلى قرص خام ب `dmg2img` |
+| محمل الإقلاع OpenCore | مستودع مجتمع OSX-KVM |
+| برمجية UEFI ل QEMU | نفس المستودع، الزوج `OVMF_CODE_4M.fd` و`OVMF_VARS-1920x1080.fd` |
+| ملف وسائط الجهاز | يكتب في مجلد الأصول بالرايات التي يحتاجها macOS على KVM، وعدله كما شئت |
 | جدول تقسيم القرص | تكتبه الأداة، ليرى firmware وmacOS القرص قبل تثبيت أي شيء عليه |
 
-تقع الأصول في `~/.local/share/macxvm/assets` ويشاركها كل الأجهزة. لا يُنزَّل شيء بلا أمر منك،
+تقع الأصول في `~/.local/share/macxvm/assets` ويشاركها كل الأجهزة. لا ينزل شيء بلا أمر منك،
 ومستودع المشروع لا يضم أي برنامج من Apple.
 
 <div dir="ltr" align="left">
@@ -287,36 +287,36 @@ macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile c
 <a id="screenshots"></a>
 ## صور من التشغيل
 
-الصور أدناه من تشغيل حقيقي للأداة على مضيف Linux، بـ `macxvm image prepare` و`macxvm start --install --vnc` و`macxvm slim`. وهي شاشة الضيف كما هي. الضيف macOS 14.8.9 بأربعة معالجات وثمانية غيغابايت من الذاكرة، والقرص يحمل 9.6 غيغابايت بعد التثبيت. ويستعمل الضيف المظهر الداكن، وسطح المكتب وشاشة الدخول سوداوان، لأن الضيف بلا معالج رسومي يرسم خلفية Sonoma المتحركة سطحًا أبيض.
+الصور أدناه من تشغيل حقيقي للأداة على مضيف Linux، ب `macxvm image prepare` و`macxvm start --install --vnc` و`macxvm slim`. وهي شاشة الضيف كما هي. الضيف macOS 14.8.9 بأربعة معالجات وثمانية غيغابايت من الذاكرة، والقرص يحمل 9.6 غيغابايت بعد التثبيت. ويستعمل الضيف المظهر الداكن، وسطح المكتب وشاشة الدخول سوداوان، لأن الضيف بلا معالج رسومي يرسم خلفية Sonoma المتحركة سطحا أبيض.
 
-<div dir="ltr" align="left">
+<div dir="rtl" align="right">
 
-| The boot loader of the community | The environment of the recovery |
+| محمل الإقلاع | بيئة الاستعادة |
 |---|---|
-| ![The picker of OpenCore](assets/screenshots/opencore-picker.png) | ![The recovery of macOS](assets/screenshots/macos-recovery.png) |
+| ![منتقي OpenCore](assets/screenshots/opencore-picker.png) | ![استعادة macOS](assets/screenshots/macos-recovery.png) |
 
-| The installer sees the disk of the machine | The installation runs |
+| المثبت يرى قرص الجهاز | التثبيت جار |
 |---|---|
-| ![The disk of the machine](assets/screenshots/installer-disk.png) | ![The installation](assets/screenshots/installer-progress.png) |
+| ![قرص الجهاز](assets/screenshots/installer-disk.png) | ![التثبيت](assets/screenshots/installer-progress.png) |
 
-| The desktop of the guest | Safari of the guest |
+| سطح مكتب الضيف | سفاري في الضيف |
 |---|---|
-| ![The desktop](assets/screenshots/macos-desktop.png) | ![Safari](assets/screenshots/macos-safari.png) |
+| ![سطح المكتب](assets/screenshots/macos-desktop.png) | ![سفاري](assets/screenshots/macos-safari.png) |
 
-| A terminal inside the guest | Xcode in the guest |
+| طرفية داخل الضيف | Xcode في الضيف |
 |---|---|
-| ![The terminal of the guest](assets/screenshots/macos-terminal.png) | ![Xcode](assets/screenshots/macos-xcode.png) |
+| ![الطرفية](assets/screenshots/macos-terminal.png) | ![Xcode](assets/screenshots/macos-xcode.png) |
 
-| The login window, with the dark appearance and no wallpaper |
+| شاشة الدخول، بالمظهر الداكن وبلا خلفية |
 |---|
-| ![The login window](assets/screenshots/macos-login-dark.png) |
+| ![شاشة الدخول](assets/screenshots/macos-login-dark.png) |
 
 </div>
 
 <a id="first-boot-checklist"></a>
 ### قائمة إقلاع أول مرة
 
-0. في بيئة الاستعادة، امسح قرص الجهاز، لأن المثبّت لا يعرض إلا حجمًا بصيغة APFS. افتح **Disk Utility**، واختر قرص الجهاز على اليسار، ثم **Erase**، واختر **APFS** وامسحه. وفي طرفية بيئة الاستعادة يكون الأمر سطرًا واحدًا:
+- ‏ في بيئة الاستعادة، امسح قرص الجهاز، لأن المثبت لا يعرض إلا حجما بصيغة APFS. افتح **Disk Utility**، واختر قرص الجهاز على اليسار، ثم **Erase**، واختر **APFS** وامسحه. وفي طرفية بيئة الاستعادة يكون الأمر سطرا واحدا:
 
 <div dir="ltr" align="left">
 
@@ -326,9 +326,9 @@ diskutil eraseDisk APFS "Macintosh HD" GPTFormat /dev/disk2
 
 </div>
 
-1. أنشئ المستخدم `admin` بكلمة مرور، وتخطَّ Apple ID وiCloud وSiri والتحليلات.
-2. إعدادات النظام، ثم عام، ثم المشاركة، ثم **Remote Login**: مفعّل.
-3. في طرفية داخل الضيف:
+- ‏ أنشئ المستخدم `admin` بكلمة مرور، وتخط Apple ID وiCloud وSiri والتحليلات.
+- ‏ إعدادات النظام، ثم عام، ثم المشاركة، ثم **Remote Login**: مفعل.
+- ‏ في طرفية داخل الضيف:
 
 <div dir="ltr" align="left">
 
@@ -338,7 +338,7 @@ sudo sh -c 'echo "admin ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/admin'
 
 </div>
 
-4. على المضيف، سلّم مفتاح MacXVM إلى الضيف:
+- ‏ على المضيف، سلم مفتاح MacXVM إلى الضيف:
 
 <div dir="ltr" align="left">
 
@@ -348,7 +348,7 @@ macxvm ssh-key --install demo
 
 </div>
 
-5. خفّف الضيف وثبّت الأدوات:
+- ‏ خفف الضيف وثبت الأدوات:
 
 <div dir="ltr" align="left">
 
@@ -361,7 +361,7 @@ macxvm slim demo --level 2
 
 </div>
 
-6. احتفظ بالنتيجة كصورة أساس:
+- ‏ احتفظ بالنتيجة كصورة أساس:
 
 <div dir="ltr" align="left">
 
@@ -372,7 +372,7 @@ macxvm base seal demo
 
 </div>
 
-7. ابنِ:
+7. ابن:
 
 <div dir="ltr" align="left">
 
@@ -420,9 +420,9 @@ macxvm slim demo --restore
 
 </div>
 
-المستوى الأول يطفئ فهرسة Spotlight وTime Machine والتحديثات التلقائية والحركات ومؤقتات النوم. والمستوى الثاني يعطّل أيضًا مهام launchd المذكورة في `resources/slim-labels.txt`، ويتخطّى كل مهمة غير موجودة في إصدار macOS لديك. والمستوى الثالث يحذف التطبيقات التي لا يحتاجها جهاز البناء، وبقايا التثبيت، والتحديثات، والمخابئ، والسجلات، ومَشغِّلات المحاكي. ويبقى Safari وXcode.
+المستوى الأول يطفئ فهرسة Spotlight وTime Machine والتحديثات التلقائية والحركات ومؤقتات النوم. والمستوى الثاني يعطل أيضا مهام launchd المذكورة في `resources/slim-labels.txt`، ويتخطى كل مهمة غير موجودة في إصدار macOS لديك. والمستوى الثالث يحذف التطبيقات التي لا يحتاجها جهاز البناء، وبقايا التثبيت، والتحديثات، والمخابئ، والسجلات، ومشغلات المحاكي. ويبقى Safari وXcode.
 
-لا يُمَس في المستوى الثاني إلا التسميات الموجودة في ذلك الملف. وقائمة منع في الشيفرة تحذف كل تسمية تكسر SSH أو الشبكة أو خادم النوافذ. لا يُعدَّل مجلد النظام أبدًا، ولا تُغيَّر SIP. والمستوى الثالث يحذف تطبيقات `/Applications` والمخابئ فقط.
+لا يمس في المستوى الثاني إلا التسميات الموجودة في ذلك الملف. وقائمة منع في الشيفرة تحذف كل تسمية تكسر SSH أو الشبكة أو خادم النوافذ. لا يعدل مجلد النظام أبدا، ولا تغير SIP. والمستوى الثالث يحذف تطبيقات `/Applications` والمخابئ فقط.
 
 التفاصيل في [docs/SLIM_AR.md](docs/SLIM_AR.md).
 
@@ -430,7 +430,7 @@ macxvm slim demo --restore
 <a id="sharing"></a>
 ## مشاركة مجلد
 
-يمكن إبقاء مجلد من المضيف متزامنًا مع مجلد في الضيف. تنسخ الأداة في الاتجاهين بـ `rsync` عبر SSH الخاص بالجهاز، فلا يعمل شيء جديد على المضيف ولا تحتاج خدمة في الضيف.
+يمكن إبقاء مجلد من المضيف متزامنا مع مجلد في الضيف. تنسخ الأداة في الاتجاهين ب `rsync` عبر SSH الخاص بالجهاز، فلا يعمل شيء جديد على المضيف ولا تحتاج خدمة في الضيف.
 
 <div dir="ltr" align="left">
 
@@ -445,17 +445,17 @@ macxvm share sync demo --watch --interval 3
 
 | الأمر | ما يفعله |
 |-------|----------|
-| `share add NAME --host DIR [--guest DIR]` | يشارك مجلدًا من المضيف، وفي الضيف عند `~/Shared/<name>` افتراضيًا |
+| `share add NAME --host DIR [--guest DIR]` | يشارك مجلدا من المضيف، وفي الضيف عند `~/Shared/<name>` افتراضيا |
 | `share list NAME` | يعرض المجلدات المشاركة لجهاز |
-| `share sync NAME [--id ID]` | ينسخ في الاتجاهين ويُبقي أحدث ملف من الاثنين |
+| `share sync NAME [--id ID]` | ينسخ في الاتجاهين ويبقي أحدث ملف من الاثنين |
 | `share sync NAME --watch` | المثل، مرة بعد مرة، حتى تضغط Ctrl-C |
 | `share push NAME [--delete]` | ينسخ مجلد المضيف إلى الضيف |
 | `share pull NAME [--delete]` | ينسخ مجلد الضيف إلى المضيف |
-| `share remove NAME --id ID` | يوقف مشاركة مجلد ويُبقي الملفات |
+| `share remove NAME --id ID` | يوقف مشاركة مجلد ويبقي الملفات |
 
-المزامنة في الاتجاهين تُبقي أحدث ملف من الاثنين ولا تحذف ملفًا أبدًا، لأن الملف الذي لا يملكه أحد الطرفين قد يكون ملفًا جديدًا أنشأه الطرف الآخر. ولا يُنسخ الحذف إلا عند تشغيل `push` أو `pull` مع `--delete`، فيكون اتجاه الحذف صريحًا.
+المزامنة في الاتجاهين تبقي أحدث ملف من الاثنين ولا تحذف ملفا أبدا، لأن الملف الذي لا يملكه أحد الطرفين قد يكون ملفا جديدا أنشأه الطرف الآخر. ولا ينسخ الحذف إلا عند تشغيل `push` أو `pull` مع `--delete`، فيكون اتجاه الحذف صريحا.
 
-المشاركة تستثني المخابئ وشجرات البناء ومستودعات git وصور الأجهزة (`.cache` و`node_modules` و`.git` و`*.qcow2` وغيرها)، وتستثني دائمًا مجلد حالة MacXVM. ويُضاف نمط خاص بك بالخيار `--exclude`، ويمكن تكراره:
+المشاركة تستثني المخابئ وشجرات البناء ومستودعات git وصور الأجهزة (`.cache` و`node_modules` و`.git` و`*.qcow2` وغيرها)، وتستثني دائما مجلد حالة MacXVM. ويضاف نمط خاص بك بالخيار `--exclude`، ويمكن تكراره:
 
 <div dir="ltr" align="left">
 
@@ -465,9 +465,9 @@ macxvm share add demo --host ~/code/project --exclude target --exclude "*.log"
 
 </div>
 
-وقبل النسخ تقيس الأداة حجم المجلد والمساحة الحرة في الضيف، وترفض نسخًا لا يتسع له، لأن نسخًا يملأ قرص الضيف يترك جهازًا لا يُقلع.
+وقبل النسخ تقيس الأداة حجم المجلد والمساحة الحرة في الضيف، وترفض نسخا لا يتسع له، لأن نسخا يملأ قرص الضيف يترك جهازا لا يقلع.
 
-لا يحتاج `share add` أو `share list` إلى جهاز يعمل، و`share sync` يُشغّل الجهاز إن كان متوقفًا.
+لا يحتاج `share add` أو `share list` إلى جهاز يعمل، و`share sync` يشغل الجهاز إن كان متوقفا.
 
 ## بناء المشاريع
 
@@ -479,7 +479,7 @@ macxvm build --project . --scheme App
 
 </div>
 
-يُنسخ المشروع إلى الضيف بـ `rsync -a`، ويجري البناء هناك بـ `xcodebuild` أو `swift build`، وتُبثّ المخرجات. ولا يُشغَّل الجهاز إلا إن لم يكن يعمل، ويُوقف من جديد بعدها حتى عند فشل البناء.
+ينسخ المشروع إلى الضيف ب `rsync -a`، ويجري البناء هناك ب `xcodebuild` أو `swift build`، وتبث المخرجات. ولا يشغل الجهاز إلا إن لم يكن يعمل، ويوقف من جديد بعدها حتى عند فشل البناء.
 
 <div dir="ltr" align="left">
 
@@ -489,7 +489,7 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 
 </div>
 
-يبني في طبقة مؤقتة تُحذف بعدها. الدليل الكامل، بما فيه ملف المشروع وجلب النتائج، في [docs/BUILDING_AR.md](docs/BUILDING_AR.md).
+يبني في طبقة مؤقتة تحذف بعدها. الدليل الكامل، بما فيه ملف المشروع وجلب النتائج، في [docs/BUILDING_AR.md](docs/BUILDING_AR.md).
 
 <a id="commands"></a>
 ## مرجع الأوامر
@@ -505,7 +505,7 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 | `macxvm start NAME [--install] [--vnc] [--force]` | تشغيل QEMU |
 | `macxvm stop NAME [--force] [--timeout SECONDS]` | إيقاف الضيف، بلطف إن أمكن |
 | `macxvm delete NAME [--yes]` | حذف جهاز |
-| `macxvm clone SRC DST [--full]` | استنساخ جهاز، وافتراضيًا طبقة فوق أساس ختم |
+| `macxvm clone SRC DST [--full]` | استنساخ جهاز، وافتراضيا طبقة فوق أساس ختم |
 | `macxvm compact NAME` | تقليص قرص جهاز متوقف |
 | `macxvm base seal NAME` / `unseal NAME` / `list` | إدارة صور الأساس |
 | `macxvm prune [--all]` | حذف بقايا الأجهزة المؤقتة |
@@ -531,14 +531,14 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 |-------|-------|
 | `macxvm ssh NAME [-- ARGS...]` | جلسة SSH تفاعلية |
 | `macxvm ssh-key [--install NAME]` | عرض مفتاح SSH أو تثبيته |
-| `macxvm exec NAME -- CMD...` | تشغيل أمر، ورمز الخروج يُمرَّر كما هو |
+| `macxvm exec NAME -- CMD...` | تشغيل أمر، ورمز الخروج يمرر كما هو |
 | `macxvm cp SRC DST` | نسخ ملفات، ومسارات الضيف `NAME:/path` |
 | `macxvm share add NAME --host DIR [...]` | مشاركة مجلد بين المضيف والضيف |
-| `macxvm share sync NAME [--watch]` | إبقاء المجلد المشارك متزامنًا في الاتجاهين |
+| `macxvm share sync NAME [--watch]` | إبقاء المجلد المشارك متزامنا في الاتجاهين |
 | `macxvm slim NAME [--level 1\|2\|3] [--measure] [--restore]` | تخفيف الضيف |
 | `macxvm tools install NAME clt\|brew` | تثبيت Command Line Tools أو Homebrew |
 | `macxvm tools brew NAME PKG...` | تثبيت حزم Homebrew |
-| `macxvm tools list NAME` | عرض الأدوات المثبَّتة |
+| `macxvm tools list NAME` | عرض الأدوات المثبتة |
 | `macxvm xcode install NAME --xip PATH [--platform iOS]` | تثبيت Xcode |
 | `macxvm xcode clean NAME` | حذف مخابئ Xcode |
 
@@ -585,7 +585,7 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 
 </div>
 
-قِيست هذه الأرقام على الجهاز الذي يبني هذا المشروع، وفيه أربعة أجهزة مسجّلة. depends على تعريف جهازك في ملف الوسائط وعلى قرص الضيف. ويقيس `scripts/bench.sh BASE` النسخ والإقلاع والتشغيل المؤقت على مضيفك.
+قيست هذه الأرقام على الجهاز الذي يبني هذا المشروع، وفيه أربعة أجهزة مسجلة. depends على تعريف جهازك في ملف الوسائط وعلى قرص الضيف. ويقيس `scripts/bench.sh BASE` النسخ والإقلاع والتشغيل المؤقت على مضيفك.
 
 ### سرعة الضيف
 
@@ -595,13 +595,13 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 |--------|-----------|
 | `-accel kvm` | معالج المضيف بتسريع العتاد |
 | `-cpu host,-hypervisor,...` | ميزات معالج المضيف، مع إخفاء بت hypervisor، فلا يأخذ macOS المسار البطيء لجهاز داخل جهاز افتراضي |
-| `-global kvm-pit.lost_tick_policy=discard` | مؤقّت الضيف، بلا تأخير يجعل الواجهة بطيئة |
+| `-global kvm-pit.lost_tick_policy=discard` | مؤقت الضيف، بلا تأخير يجعل الواجهة بطيئة |
 | `-global ICH9-LPC.acpi-pci-hotplug-with-bridge-support=off` | جدول ACPI الذي يحتاجه macOS |
 | `-smp {{CPUS}},cores={{CORES}},sockets=1` | شكل المعالجات الذي يتوقعه مجدول macOS |
-| `-device vmware-svga` | بطاقة العرض، أسرع ما يقوده macOS جيدًا |
-| الأقراص على متحكم `ich9-ahci` | لا يملك macOS مشغّلًا لأقراص النواة، فلا يجوز أن تكون `virtio` |
+| `-device vmware-svga` | بطاقة العرض، أسرع ما يقوده macOS جيدا |
+| الأقراص على متحكم `ich9-ahci` | لا يملك macOS مشغلا لأقراص النواة، فلا يجوز أن تكون `virtio` |
 
-يجب أن يبقى نموذج المعالج نفسه بين تثبيت macOS وكل إقلاع بعده، لأن macOS يبني نفسه للمعالج الذي يراه. ويستخدم `macxvm image prepare --cpu host` معالج المضيف وهو الأسرع، لكن حينها يجب أن يُثبَّت macOS معه.
+يجب أن يبقى نموذج المعالج نفسه بين تثبيت macOS وكل إقلاع بعده، لأن macOS يبني نفسه للمعالج الذي يراه. ويستخدم `macxvm image prepare --cpu host` معالج المضيف وهو الأسرع، لكن حينها يجب أن يثبت macOS معه.
 
 <a id="project-structure"></a>
 ## تنظيم المشروع
@@ -618,12 +618,12 @@ macxvm/
 │   ├── sizeparse/                 # تحليل قيم --ram
 │   ├── config/                    # وصف الجهاز المحفوظ
 │   ├── store/                     # التسجيل والنسخ والختم والحذف
-│   ├── argsfile/                  # محلّل ملف الوسائط وتوسيعه
+│   ├── argsfile/                  # محلل ملف الوسائط وتوسيعه
 │   ├── runstate/                  # كشف العملية وقفل العمليات
 │   ├── qmp/                       # عميل QMP
 │   ├── qemu/                      # التشغيل والجاهزية وبناء وسائط QEMU
-│   ├── sshx/                      # بُناة وسائط SSH وSCP وrsync
-│   ├── slim/                      # سياسة التخفيف ومنفّذه
+│   ├── sshx/                      # بناة وسائط SSH وSCP وrsync
+│   ├── slim/                      # سياسة التخفيف ومنفذه
 │   ├── tools/                     # أدوات سطر الأوامر وHomebrew
 │   ├── xcode/                     # تثبيت Xcode
 │   ├── project/                   # كشف المشروع وملف macxvm.json
@@ -639,7 +639,7 @@ macxvm/
 ├── CHANGELOG.md                   # ملاحظات الإصدارات
 ├── CONTRIBUTING.md                # كيف تساهم
 ├── CODE_OF_CONDUCT.md             # قواعد المجتمع
-├── SECURITY.md                    # كيف تبلّغ عن ثغرة
+├── SECURITY.md                    # كيف تبلغ عن ثغرة
 └── README.md, README_AR.md        # نقطتا الدخول
 ```
 
@@ -658,7 +658,7 @@ macxvm/
 | [SLIM_AR.md](docs/SLIM_AR.md) | مستويات التخفيف وقائمة المنع والاستعادة والقياس |
 | [BUILDING_AR.md](docs/BUILDING_AR.md) | سير عمل البناء وملف المشروع والمزامنة والبناء المؤقت |
 | [TROUBLESHOOTING_AR.md](docs/TROUBLESHOOTING_AR.md) | مشكلات المضيف والجهاز والضيف والبناء الشائعة |
-| [DECISIONS.md](docs/DECISIONS.md) | كل انحراف عن المواصفة وكل غموض حُلّ |
+| [DECISIONS.md](docs/DECISIONS.md) | كل انحراف عن المواصفة وكل غموض حل |
 
 </div>
 
@@ -667,17 +667,17 @@ macxvm/
 <a id="contributing"></a>
 ## المساهمة
 
-1. انسخ المستودع وأنشئ فرعًا (`feature/` أو `fix/` أو `docs/` أو `chore/`).
-2. أبقِ `go vet ./...` و`go test ./...` و`make build` خضراء، وأبقِ ترويسات الملفات والتنسيق كما هما.
-3. أضف مدخلًا في `CHANGELOG.md`.
-4. اكتب رسالة الالتزام `macxvm | <type>: <description>` وافتح طلب سحب ضد `main`.
+- ‏ انسخ المستودع وأنشئ فرعا (`feature/` أو `fix/` أو `docs/` أو `chore/`).
+- ‏ أبق `go vet ./...` و`go test ./...` و`make build` خضراء، وأبق ترويسات الملفات والتنسيق كما هما.
+- ‏ أضف مدخلا في `CHANGELOG.md`.
+- ‏ اكتب رسالة الالتزام `macxvm | <type>: <description>` وافتح طلب سحب ضد `main`.
 
-اقرأ [دليل المساهمة](CONTRIBUTING.md) و[ميثاق السلوك](CODE_OF_CONDUCT.md). بلّغ عن المشكلات عبر [Issues على GitHub](https://github.com/shadow-x78/macxvm/issues).
+اقرأ [دليل المساهمة](CONTRIBUTING.md) و[ميثاق السلوك](CODE_OF_CONDUCT.md). بلغ عن المشكلات عبر [Issues على GitHub](https://github.com/shadow-x78/macxvm/issues).
 
 <a id="license"></a>
 ## الترخيص
 
-موزّع بموجب [رخصة MIT](LICENSE).
+موزع بموجب [رخصة MIT](LICENSE).
 
 ---
 

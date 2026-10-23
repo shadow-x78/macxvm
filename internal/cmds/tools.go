@@ -5,11 +5,13 @@ package cmds
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/store"
 	"github.com/shadow-x78/macxvm/internal/tools"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -62,7 +64,7 @@ func toolsInstall(args []string) error {
 		if err := tools.InstallCLT(cfg); err != nil {
 			return err
 		}
-		fmt.Printf("Installed the Command Line Tools in '%s'\n", cfg.Name)
+		ui.Say(os.Stdout, "ok", fmt.Sprintf("installed the Command Line Tools in '%s'", cfg.Name))
 	case "brew":
 		if err := tools.InstallBrew(cfg); err != nil {
 			return err
@@ -87,7 +89,7 @@ func toolsBrew(args []string) error {
 	if err := tools.BrewInstall(cfg, args[1:]); err != nil {
 		return err
 	}
-	fmt.Printf("Installed %s in '%s'\n", strings.Join(args[1:], ", "), cfg.Name)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("installed %s in '%s'", strings.Join(args[1:], ", "), cfg.Name))
 	return nil
 }
 

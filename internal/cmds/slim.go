@@ -10,6 +10,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/slim"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -79,6 +80,6 @@ func cmdSlim(args []string) error {
 		}
 		fmt.Printf("Wrote the measurements to %s\n", cfg.File("slim-report.txt"))
 	}
-	fmt.Printf("Slimmed '%s' (level %d)\n", name, *level)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("slimmed '%s' at level %d", name, *level))
 	return nil
 }

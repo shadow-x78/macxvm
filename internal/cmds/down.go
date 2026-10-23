@@ -10,6 +10,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/project"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -73,6 +74,6 @@ func cmdDown(args []string) error {
 	if err := store.Delete(cfg.Name); err != nil {
 		return err
 	}
-	fmt.Printf("Deleted '%s'\n", cfg.Name)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("deleted '%s'", cfg.Name))
 	return nil
 }
