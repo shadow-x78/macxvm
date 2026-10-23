@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -138,7 +139,7 @@ func shareSync(args []string) error {
 	if err != nil {
 		return err
 	}
-	entry, err := pickShare(cfg, *id)
+	entries, err := sharesToUse(cfg, *id)
 	if err != nil {
 		return err
 	}
@@ -148,15 +149,30 @@ func shareSync(args []string) error {
 		return err
 	}
 	if !*watch {
-		if err := preflight(cfg, entry); err != nil {
-			return err
+		var failed []string
+		for _, entry := range entries {
+			if err := preflight(cfg, entry); err != nil {
+				failed = append(failed, fmt.Sprintf("%s: %v", entry.ID, err))
+				continue
+			}
+			if err := share.Sync(cfg, entry); err != nil {
+				failed = append(failed, fmt.Sprintf("%s: %v", entry.ID, err))
+				continue
+			}
+			fmt.Printf("The shared folder '%s' is in step\n", entry.ID)
 		}
-		if err := share.Sync(cfg, entry); err != nil {
-			return err
+		if len(failed) > 0 {
+			return exitcode.New(exitcode.Generic,
+				"%d shared folder(s) did not sync: %s", len(failed),
+				strings.Join(failed, "; "))
 		}
-		fmt.Printf("The shared folder '%s' is in step\n", entry.ID)
 		return nil
 	}
+	if len(entries) != 1 {
+		return exitcode.New(exitcode.Usage,
+			"the watch syncs one shared folder, name it with --id")
+	}
+	entry := entries[0]
 	stop := make(chan struct{})
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
@@ -185,7 +201,7 @@ func shareCopy(args []string, toGuest bool) error {
 	if err != nil {
 		return err
 	}
-	entry, err := pickShare(cfg, *id)
+	entries, err := sharesToUse(cfg, *id)
 	if err != nil {
 		return err
 	}
@@ -194,18 +210,27 @@ func shareCopy(args []string, toGuest bool) error {
 	if err != nil {
 		return err
 	}
-	if toGuest {
-		if err := preflight(cfg, entry); err != nil {
-			return err
+	var failed []string
+	for _, entry := range entries {
+		if toGuest {
+			if err := preflight(cfg, entry); err != nil {
+				failed = append(failed, fmt.Sprintf("%s: %v", entry.ID, err))
+				continue
+			}
+			err = share.Push(cfg, entry, *remove)
+		} else {
+			err = share.Pull(cfg, entry, *remove)
 		}
-		err = share.Push(cfg, entry, *remove)
-	} else {
-		err = share.Pull(cfg, entry, *remove)
+		if err != nil {
+			failed = append(failed, fmt.Sprintf("%s: %v", entry.ID, err))
+			continue
+		}
+		fmt.Printf("The shared folder '%s' was copied\n", entry.ID)
 	}
-	if err != nil {
-		return err
+	if len(failed) > 0 {
+		return exitcode.New(exitcode.Generic,
+			"%d shared folder(s) did not copy: %s", len(failed), strings.Join(failed, "; "))
 	}
-	fmt.Printf("The shared folder '%s' was copied\n", entry.ID)
 	return nil
 }
 
@@ -272,17 +297,19 @@ func humanSize(n int64) string {
 	return fmt.Sprintf("%.1f %ciB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
-func pickShare(cfg *config.VMConfig, id string) (config.Share, error) {
+// sharesToUse returns the share that --id names, or every share of the
+// machine when no identifier is given.
+func sharesToUse(cfg *config.VMConfig, id string) ([]config.Share, error) {
 	if id != "" {
-		return share.Find(cfg, id)
+		entry, err := share.Find(cfg, id)
+		if err != nil {
+			return nil, err
+		}
+		return []config.Share{entry}, nil
 	}
-	switch len(cfg.Shares) {
-	case 0:
-		return config.Share{}, exitcode.New(exitcode.NotFound,
+	if len(cfg.Shares) == 0 {
+		return nil, exitcode.New(exitcode.NotFound,
 			"'%s' has no shared folder (run: macxvm share add %s --host DIR)", cfg.Name, cfg.Name)
-	case 1:
-		return cfg.Shares[0], nil
 	}
-	return config.Share{}, exitcode.New(exitcode.Usage,
-		"'%s' has %d shared folders, name one with --id", cfg.Name, len(cfg.Shares))
+	return cfg.Shares, nil
 }

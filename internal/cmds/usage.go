@@ -29,48 +29,45 @@ var Groups = []struct {
 func Usage(w io.Writer) {
 	ui.Banner(w, Version, tagline)
 
-	ui.Section(w, "Usage")
-	ui.RowRaw(w, "macxvm <command> [arguments]")
-	ui.Close(w)
+	ui.Card(w, "Usage", []string{ui.LineRaw("macxvm <command> [arguments]")})
 	ui.Blank(w)
 
 	for _, group := range Groups {
-		ui.Section(w, group.Title)
 		width := 0
 		for _, name := range group.Commands {
 			if len(name) > width {
 				width = len(name)
 			}
 		}
+		lines := make([]string, 0, len(group.Commands))
 		for _, name := range group.Commands {
 			c, ok := registry[name]
 			if !ok {
 				continue
 			}
-			fmt.Fprintf(w, "%s│%s  %s%s%-*s%s  %s%s%s\n", ui.Sapphire, ui.Reset,
-				ui.Bold, ui.Green, width, name, ui.Reset, ui.Text, c.Summary, ui.Reset)
+			lines = append(lines, fmt.Sprintf("%s%s%-*s%s  %s%s%s",
+				ui.Bold, ui.Blue, width, name, ui.Reset, ui.Text, c.Summary, ui.Reset))
 		}
-		ui.Close(w)
+		ui.Card(w, group.Title, lines)
 		ui.Blank(w)
 	}
 
-	ui.SectionWith(w, "Get started", [][2]string{
+	ui.Card(w, "Get started", ui.Lines([][2]string{
 		{"macxvm doctor", "check this host"},
 		{"macxvm image link", "see where the boot assets come from"},
 		{"macxvm image prepare", "fetch them and register a machine"},
 		{"macxvm start", "start the machine with a screen"},
-	})
+	}))
 	ui.Blank(w)
 	ui.Note(w, "Run \"macxvm <command> -h\" for the options of a command.")
 }
 
 func Help(w io.Writer, c Command) {
-	ui.Section(w, c.Name)
-	ui.RowRaw(w, c.Usage)
+	lines := []string{ui.LineRaw(c.Usage)}
 	if c.Summary != "" {
-		ui.RowRaw(w, strings.TrimSpace(c.Summary))
+		lines = append(lines, ui.LineRaw(strings.TrimSpace(c.Summary)))
 	}
-	ui.Close(w)
+	ui.Card(w, c.Name, lines)
 }
 
 func Completions() []string {
