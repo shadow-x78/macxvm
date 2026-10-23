@@ -1,8 +1,6 @@
 // MacXVM - Image Preparation (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package image prepares the boot assets of a macOS guest: the installer of
-// Apple and the OpenCore boot loader of the community.
 package image
 
 import (
@@ -27,7 +25,6 @@ type Options struct {
 	Runner hostcheck.Runner
 }
 
-// Link is one of the places a boot asset comes from.
 type Link struct {
 	What    string
 	From    string
@@ -35,9 +32,6 @@ type Link struct {
 	Command string
 }
 
-// Links returns the places the boot assets of a version of macOS come from.
-// The files themselves never belong to the repository or to a release of the
-// project, only these places.
 func Links(version string) ([]Link, error) {
 	rel, err := lookupRelease(version)
 	if err != nil {

@@ -23,7 +23,7 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 
 شغّل ضيوف macOS خفيفين مع Xcode على مضيف Linux.
 
-[![الإصدار](https://img.shields.io/badge/version-0.5.1-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.5.2-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)

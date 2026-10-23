@@ -19,9 +19,6 @@ import (
 
 const DefaultGuestRoot = "~/Shared"
 
-// DefaultExcludes holds the folders that are never copied, because they are
-// caches, build trees or images of a machine, and a copy of them is either
-// useless or larger than the disk of the guest.
 var DefaultExcludes = []string{
 	".cache", ".gradle", ".m2", ".npm", ".cargo", ".rustup", ".nix-profile",
 	".mozilla", ".thunderbird", ".steam", ".var", ".unsloth", ".android",
@@ -30,7 +27,6 @@ var DefaultExcludes = []string{
 	"*.qcow2", "*.raw", "*.iso", "*.img", "*.vmdk", "*.xip",
 }
 
-// Add registers a folder of the host in the configuration of a machine.
 func Add(cfg *config.VMConfig, host, guest string) (config.Share, error) {
 	abs, err := filepath.Abs(host)
 	if err != nil {
@@ -64,12 +60,10 @@ func Add(cfg *config.VMConfig, host, guest string) (config.Share, error) {
 	return entry, nil
 }
 
-// AddExcludes appends patterns to the excludes of a share.
 func AddExcludes(s *config.Share, patterns []string) {
 	s.Exclude = append(s.Exclude, patterns...)
 }
 
-// Remove drops a share from the configuration. The files stay where they are.
 func Remove(cfg *config.VMConfig, id string) (config.Share, error) {
 	for i, s := range cfg.Shares {
 		if s.ID == id {
@@ -89,8 +83,6 @@ func Find(cfg *config.VMConfig, id string) (config.Share, error) {
 	return config.Share{}, exitcode.New(exitcode.NotFound, "no shared folder '%s'", id)
 }
 
-// ValidateGuestPath refuses a guest path that is not absolute, because a
-// relative path would land in the home directory of whoever runs the shell.
 func ValidateGuestPath(guest string) error {
 	if !strings.HasPrefix(guest, "/") && !strings.HasPrefix(guest, "~/") {
 		return exitcode.New(exitcode.Usage,
@@ -105,8 +97,6 @@ func ValidateGuestPath(guest string) error {
 	return nil
 }
 
-// guestAbsolute turns a path of the guest into a path without a tilde,
-// because rsync does not expand a tilde in the remote side.
 func guestAbsolute(cfg *config.VMConfig, guest string) string {
 	if strings.HasPrefix(guest, "~/") {
 		user := cfg.SSHUser
@@ -118,20 +108,14 @@ func guestAbsolute(cfg *config.VMConfig, guest string) string {
 	return guest
 }
 
-// Push copies the host folder into the guest. With remove, the guest loses
-// every file that the host does not have.
 func Push(cfg *config.VMConfig, s config.Share, remove bool) error {
 	return copyDir(cfg, s, true, remove, false)
 }
 
-// Pull copies the guest folder onto the host.
 func Pull(cfg *config.VMConfig, s config.Share, remove bool) error {
 	return copyDir(cfg, s, false, remove, false)
 }
 
-// Sync copies both ways and keeps the newer file of the two. It never deletes
-// a file, because a deletion on one side cannot be told apart from a file that
-// the other side created.
 func Sync(cfg *config.VMConfig, s config.Share) error {
 	if err := copyDir(cfg, s, true, false, true); err != nil {
 		return err
@@ -161,8 +145,6 @@ func copyDir(cfg *config.VMConfig, s config.Share, toGuest, remove, update bool)
 	return nil
 }
 
-// SizeOf measures a folder of the host, without the paths that the excludes
-// name. It reads the metadata only, never the content of a file.
 func SizeOf(dir string, excludes []string) (int64, error) {
 	skip := map[string]bool{}
 	for _, e := range excludes {
@@ -184,7 +166,6 @@ func SizeOf(dir string, excludes []string) (int64, error) {
 	return total, err
 }
 
-// FreeInGuest reads the free space of the root of the guest in bytes.
 func FreeInGuest(cfg *config.VMConfig) (int64, error) {
 	out, err := sshx.Output(cfg, "df -k / | tail -1 | awk '{print $4}'")
 	if err != nil {
@@ -205,8 +186,6 @@ func mkdirInGuest(cfg *config.VMConfig, guest string) error {
 	return nil
 }
 
-// Watch runs a two-way sync again and again until the signal arrives. It is
-// the only mode that keeps the process of MacXVM alive, and it is opt-in.
 func Watch(cfg *config.VMConfig, s config.Share, interval time.Duration, stop <-chan struct{}, out func(string)) error {
 	out(fmt.Sprintf("Watching %s <-> %s every %s", s.Host, s.Guest, interval))
 	last := ""
@@ -230,8 +209,6 @@ func Watch(cfg *config.VMConfig, s config.Share, interval time.Duration, stop <-
 	}
 }
 
-// fingerprint describes the newest change of a folder, without reading the
-// content of the files.
 func fingerprint(dir string) string {
 	newest := time.Time{}
 	count := 0

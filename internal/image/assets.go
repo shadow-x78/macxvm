@@ -145,9 +145,6 @@ func writeArgs(opts Options) error {
 	return nil
 }
 
-// CPU models of the guest. The model of the processor has to stay the same
-// between the installation of macOS and every later start, because macOS
-// builds itself for the processor it sees.
 const (
 	CPUSkylake = "Skylake-Client,-hle,-rtm,kvm=on,vendor=GenuineIntel," +
 		"+invtsc,vmware-cpuid-freq=on,+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,check"

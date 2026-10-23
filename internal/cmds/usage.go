@@ -13,8 +13,6 @@ import (
 
 const tagline = "slim macOS guests with Xcode on a Linux host"
 
-// Groups is the order of the sections of the help, and the order of the
-// commands inside each section.
 var Groups = []struct {
 	Title    string
 	Commands []string
