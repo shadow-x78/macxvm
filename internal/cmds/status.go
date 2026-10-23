@@ -5,12 +5,12 @@ package cmds
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
-	"text/tabwriter"
+	"strconv"
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -46,9 +46,13 @@ func cmdStatus(args []string) error {
 		}
 		return nil
 	}
-	w := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
-	fmt.Fprintln(w, "NAME\tPROFILE\tSTATE\tCPU\tRAM\tDISK\tSSH")
-	fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%d\t%d\t127.0.0.1:%d\n",
-		cfg.Name, cfg.Profile, stateOf(cfg), cfg.CPUs, cfg.MemoryMiB, cfg.DiskGiB, cfg.SSHPort)
-	return w.Flush()
+	ui.Card(os.Stdout, cfg.Name, ui.Lines([][2]string{
+		{"profile", cfg.Profile},
+		{"state", stateOf(cfg)},
+		{"cpu", strconv.Itoa(cfg.CPUs)},
+		{"memory", strconv.Itoa(cfg.MemoryMiB) + " MiB"},
+		{"disk", strconv.Itoa(cfg.DiskGiB) + " GiB"},
+		{"ssh", "127.0.0.1:" + strconv.Itoa(cfg.SSHPort)},
+	}))
+	return nil
 }

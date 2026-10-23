@@ -63,11 +63,6 @@ func enabled() bool {
 	return info.Mode()&os.ModeCharDevice != 0
 }
 
-func Banner(w io.Writer, version, tagline string) {
-	Mark(w, version, tagline)
-	Blank(w)
-}
-
 const Content = 66
 
 func Card(w io.Writer, title string, lines []string) {
@@ -233,6 +228,17 @@ func visibleLen(s string) int {
 		n++
 	}
 	return n
+}
+
+func Say(w io.Writer, kind, text string) {
+	badge := Ok()
+	switch kind {
+	case "warn":
+		badge = Warn()
+	case "fail":
+		badge = Fail()
+	}
+	fmt.Fprintf(w, "%s %s%s%s\n", badge, Text, text, Reset)
 }
 
 func Note(w io.Writer, text string) {

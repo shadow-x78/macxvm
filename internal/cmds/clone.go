@@ -5,10 +5,12 @@ package cmds
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/hostcheck"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -43,7 +45,7 @@ func cmdClone(args []string) error {
 	if *full {
 		kind = "full copy"
 	}
-	fmt.Printf("Cloned '%s' into '%s' (%s, ssh 127.0.0.1:%d)\n",
-		src.Name, cfg.Name, kind, cfg.SSHPort)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("cloned '%s' into '%s' (%s, ssh 127.0.0.1:%d)",
+		src.Name, cfg.Name, kind, cfg.SSHPort))
 	return nil
 }

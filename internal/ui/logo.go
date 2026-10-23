@@ -112,7 +112,8 @@ func markGrid() [][]pixel {
 	return grid
 }
 
-func Mark(w io.Writer, version, tagline string) {
+// markLines returns the lines of the mark, with their colours.
+func markLines() []string {
 	grid := markGrid()
 	lines := make([]string, markRows)
 	for row := 0; row < markRows; row++ {
@@ -137,19 +138,27 @@ func Mark(w io.Writer, version, tagline string) {
 		}
 		lines[row] = strings.TrimRight(b.String(), " ")
 	}
+	return lines
+}
 
+// Banner prints the mark of the project and its title in a card, like the
+// rest of the console.
+func Banner(w io.Writer, version, tagline string) {
+	mark := markLines()
 	side := map[int]string{
-		2: fmt.Sprintf("%s%sMAC%s%sXVM%s %s%s%s", Bold, Text, Reset, Blue, Reset, Lavender, "v"+version, Reset),
-		3: fmt.Sprintf("%s%s%s", Subtext, tagline, Reset),
+		2: fmt.Sprintf("%s%s%s", Subtext, tagline, Reset),
 		4: fmt.Sprintf("%s%s%s", Dim, "macxvm <command> [arguments]", Reset),
 	}
-	for row, line := range lines {
+	lines := make([]string, 0, len(mark))
+	for row, line := range mark {
 		if text, ok := side[row]; ok {
-			fmt.Fprintf(w, "%s  %s\n", line, text)
+			lines = append(lines, line+"  "+text)
 			continue
 		}
-		fmt.Fprintf(w, "%s\n", line)
+		lines = append(lines, line)
 	}
+	Card(w, "MacXVM v"+version, lines)
+	Blank(w)
 }
 
 func colour(p pixel, text string) string {

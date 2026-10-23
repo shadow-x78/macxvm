@@ -35,36 +35,36 @@
 macxvm doctor
 ```
 
-يفحص التقرير نظام التشغيل و`/dev/kvm` وعلامات المحاكاة الافتراضية في المعالج وQEMU ووحدة KVM وأدوات المضيف ومساحة القرص الحرة وذاكرة المضيف والأجهزة المسجّلة. وينتهي بالتنببيه القانوني.
+يفحص التقرير نظام التشغيل و`/dev/kvm` وعلامات المحاكاة الافتراضية في المعالج وQEMU ووحدة KVM وأدوات المضيف ومساحة القرص الحرة وذاكرة المضيف والأجهزة المسجلة. وينتهي بالتنببيه القانوني.
 
 <a id="host"></a>
 ## المضيف
 
 **`cannot use /dev/kvm (add your user to the 'kvm' group and log in again)`**
 
-لا يستطيع مستخدمك استعمال جهاز KVM. أضف نفسك إلى المجموعة وسجّل الدخول من جديد:
+لا يستطيع مستخدمك استعمال جهاز KVM. أضف نفسك إلى المجموعة وسجل الدخول من جديد:
 
 ```bash
 sudo usermod -aG kvm $USER
 ```
 
-اخرج من الجلسة وادخل فيها، أو افتح جلسة جديدة. صدفة جديدة لا تكفي، فالمجموعة تُقرأ عند بدء الجلسة.
+اخرج من الجلسة وادخل فيها، أو افتح جلسة جديدة. صدفة جديدة لا تكفي، فالمجموعة تقرأ عند بدء الجلسة.
 
 **`MacXVM needs an x86_64 Linux host with KVM and QEMU (run: macxvm doctor)`**
 
-إما أن المضيف ليس Linux بمعمارية x86_64، أو أن QEMU غير مثبّت. على Fedora:
+إما أن المضيف ليس Linux بمعمارية x86_64، أو أن QEMU غير مثبت. على Fedora:
 
 ```bash
 sudo dnf install qemu-system-x86_64 qemu-img
 ```
 
-**ينبّه `doctor` على `ignore_msrs`.**
+**ينبه `doctor` على `ignore_msrs`.**
 
-عدة أدلة لتشغيل macOS على KVM تحتاج أن تتجاهل وحدة KVM سجلات المعالج الفريدة. راجع README المشروع الذي جاءت منه أصول الإقلاع. لا يغيّر MacXVM هذا الإعداد نيابة عنك.
+عدة أدلة لتشغيل macOS على KVM تحتاج أن تتجاهل وحدة KVM سجلات المعالج الفريدة. راجع README المشروع الذي جاءت منه أصول الإقلاع. لا يغير MacXVM هذا الإعداد نيابة عنك.
 
-**ينبّه `doctor` أن QEMU لا يختار KVM تلقائيًا.**
+**ينبه `doctor` أن QEMU لا يختار KVM تلقائيا.**
 
-بعض بناءات QEMU لا تستعمل KVM إلا حين يُسمّى المسرّع صراحة، والجهاز الذي يطلب معالج المضيف يحتاجه. أضف `-accel kvm` إلى ملف وسائط الجهاز:
+بعض بناءات QEMU لا تستعمل KVM إلا حين يسمى المسرع صراحة، والجهاز الذي يطلب معالج المضيف يحتاجه. أضف `-accel kvm` إلى ملف وسائط الجهاز:
 
 ```bash
 qemu-system-x86_64 \
@@ -75,7 +75,7 @@ qemu-system-x86_64 \
 
 **`run directory path too long; set MACXVM_RUN to a shorter path`**
 
-يجب أن يناسب مسار مقبس QMP حجم `sun_path`. وجّه `MACXVM_RUN` إلى مجلد أقصر:
+يجب أن يناسب مسار مقبس QMP حجم `sun_path`. وجه `MACXVM_RUN` إلى مجلد أقصر:
 
 ```bash
 export MACXVM_RUN=/tmp/macxvm
@@ -90,15 +90,15 @@ export MACXVM_RUN=/tmp/macxvm
 
 **`'X' is a sealed base image; clone it first (macxvm clone X NEW)`**
 
-الأساس الختم ملف backing للطبقات ولا يُقلع أبدًا. انسخه واقلِع النسخة.
+الأساس الختم ملف backing للطبقات ولا يقلع أبدا. انسخه واقلع النسخة.
 
 **`only sealed base images can be overlay-cloned; use --full or seal it first`**
 
-ختم الأساس أولًا بـ `macxvm base seal X`، أو انسخه بالخيار `--full` الذي ينسخ القرص كله.
+ختم الأساس أولا ب `macxvm base seal X`، أو انسخه بالخيار `--full` الذي ينسخ القرص كله.
 
 **`'X' is the base of other VMs (a, b); delete them first`**
 
-الأساس ما زال مستخدمًا. احذف الطبقات أولًا، أو ألغِ الختم بـ `macxvm base unseal X`.
+الأساس ما زال مستخدما. احذف الطبقات أولا، أو ألغ الختم ب `macxvm base unseal X`.
 
 **`another macxvm operation is running on 'X'`**
 
@@ -106,31 +106,31 @@ export MACXVM_RUN=/tmp/macxvm
 
 **`VM 'X' is not running`**
 
-الجهاز متوقف. `macxvm start X` يشغّله. وإن كانت عملية QEMU ما زالت حيّة فقدت ملف المعرّف، فتجدها الأداة عبر سطر أوامرها وتوقفها على أي حال.
+الجهاز متوقف. `macxvm start X` يشغله. وإن كانت عملية QEMU ما زالت حية فقدت ملف المعرف، فتجدها الأداة عبر سطر أوامرها وتوقفها على أي حال.
 
-**الجهاز يبدأ ويتوقف فورًا.**
+**الجهاز يبدأ ويتوقف فورا.**
 اقرأ سجل الجهاز:
 
 ```bash
 tail -n 40 ~/.local/share/macxvm/vms/X/console.log
 ```
 
-السبب الأكثر شيوعًا مسار خاطئ في ملف الوسائط، أو ملف ناقص في مجلد الأصول.
+السبب الأكثر شيوعا مسار خاطئ في ملف الوسائط، أو ملف ناقص في مجلد الأصول.
 
 **`QEMU exited before it was ready (see ...)`**
 
-تُطبع آخر أسطر سجل الطرفية فوق الرسالة، وهي تذكر غالبًا الوسيط الذي لم يقبله QEMU.
+تطبع آخر أسطر سجل الطرفية فوق الرسالة، وهي تذكر غالبا الوسيط الذي لم يقبله QEMU.
 
 <a id="guest"></a>
 ## الضيف
 
 **`could not reach 'X' over SSH after 240 s (is Remote Login enabled? see README: First boot checklist)`**
 
-داخل الضيف افتح إعدادات النظام، ثم عام، ثم المشاركة، وفعّل **Remote Login**. يجب أن يملك مستخدم الجهاز كلمة مرور، وصلاحية sudo بلا كلمة مرور التي يطلبها [قائمة إقلاع أول مرة](../README_AR.md#قائمة-إقلاع-أول-مرة) تتيح لـ MacXVM تشغيل الأوامر التي تحتاج root.
+داخل الضيف افتح إعدادات النظام، ثم عام، ثم المشاركة، وفعل **Remote Login**. يجب أن يملك مستخدم الجهاز كلمة مرور، وصلاحية sudo بلا كلمة مرور التي يطلبها [قائمة إقلاع أول مرة](../README_AR.md#قائمة-إقلاع-أول-مرة) تتيح ل MacXVM تشغيل الأوامر التي تحتاج root.
 
 **`Command Line Tools are not installed in 'X' (run: macxvm tools install X clt)`**
 
-ثبّتها أولًا:
+ثبتها أولا:
 
 ```bash
 macxvm tools install X clt
@@ -138,10 +138,10 @@ macxvm tools install X clt
 
 **`this profile has no Xcode; use profile 'xcode'`**
 
-جهاز الملف التعريفي `cli` لا يحتوي Xcode. أنشئ جهازًا من الملف `xcode` لبناء مشروع Xcode.
+جهاز الملف التعريفي `cli` لا يحتوي Xcode. أنشئ جهازا من الملف `xcode` لبناء مشروع Xcode.
 
 **الضيف بطيء بعد تثبيت Xcode.**
-أول تشغيل لـ Xcode وأول بناء يملآن المخابئ. يستغرق ذلك وقتًا مرة واحدة، على قرص الضيف.
+أول تشغيل ل Xcode وأول بناء يملآن المخابئ. يستغرق ذلك وقتا مرة واحدة، على قرص الضيف.
 
 **الضيف لا يرد بعد التخفيف.**
 استعده وأعد تشغيله:
@@ -159,10 +159,10 @@ macxvm slim X --restore
 
 **`the project has several schemes (App, App-Staging), use --scheme`**
 
-سُئل الضيف عن سكيماته فوجد أكثر من واحد. اختر واحدًا بالخيار `--scheme`.
+سئل الضيف عن سكيماته فوجد أكثر من واحد. اختر واحدا بالخيار `--scheme`.
 
 **البناء لا يجد المشروع داخل الضيف.**
-مسار المشروع جزء من اسم مجلد العمل. فمساران مختلفان للمشروع نفسه يستعملان مجلدين مختلفين، فلا تُشارَك المخابئ. استخدم المسار نفسه دائمًا، أو استخدم رابطًا رمزيًا.
+مسار المشروع جزء من اسم مجلد العمل. فمساران مختلفان للمشروع نفسه يستعملان مجلدين مختلفين، فلا تشارك المخابئ. استخدم المسار نفسه دائما، أو استخدم رابطا رمزيا.
 
 **`the local path '~/.bashrc' must be relative to the project`**
 مسارات `fetch` يجب أن تبقى داخل المشروع. راجع [BUILDING_AR.md](BUILDING_AR.md#جلب-النتائج).
@@ -175,9 +175,9 @@ macxvm slim X --restore
 
 ```bash
 macxvm doctor                 # حالة المضيف
-macxvm list                    # كل الأجهزة المسجّلة
+macxvm list                    # كل الأجهزة المسجلة
 macxvm status X                # حالة جهاز واحد
-macxvm list --json             # الشيء نفسه، لبرمجيّة
+macxvm list --json             # الشيء نفسه، لبرمجية
 tail -n 40 ~/.local/share/macxvm/vms/X/console.log   # مخرجات QEMU
 cat ~/.local/share/macxvm/vms/X/config.json           # وصف الجهاز
 ```
@@ -186,7 +186,7 @@ cat ~/.local/share/macxvm/vms/X/config.json           # وصف الجهاز
 
 ```bash
 xcodebuild -version            # هل Xcode موجودة؟
-xcode-select -p                # أي مجلد مطوّرين نشط؟
-launchctl print system/com.apple.sshd   # هل SSH حيّ؟
+xcode-select -p                # أي مجلد مطورين نشط؟
+launchctl print system/com.apple.sshd   # هل SSH حي؟
 df -h                          # كم بقي من المساحة؟
 ```

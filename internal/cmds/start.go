@@ -19,6 +19,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/qmp"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -58,7 +59,7 @@ func cmdStart(args []string) error {
 	if !started {
 		return nil
 	}
-	fmt.Printf("Started '%s' (ssh: 127.0.0.1:%d)\n", name, cfg.SSHPort)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("started '%s', ssh 127.0.0.1:%d", name, cfg.SSHPort))
 	if *vnc {
 		fmt.Printf("VNC: 127.0.0.1:%d\n", 5900+lastVNCDisplay)
 	}

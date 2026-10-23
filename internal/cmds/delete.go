@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -49,7 +50,7 @@ func cmdDelete(args []string) error {
 	if err := store.Delete(name); err != nil {
 		return err
 	}
-	fmt.Printf("Deleted '%s'\n", name)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("deleted '%s'", name))
 	return nil
 }
 

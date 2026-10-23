@@ -5,10 +5,12 @@ package cmds
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -65,7 +67,7 @@ func pruneEphemeral(force, report bool) {
 			continue
 		}
 		if report {
-			fmt.Printf("Deleted '%s'\n", name)
+			ui.Say(os.Stdout, "ok", fmt.Sprintf("deleted '%s'", name))
 		}
 	}
 }

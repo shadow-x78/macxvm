@@ -11,6 +11,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/hostcheck"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
@@ -81,7 +82,7 @@ func cmdCompact(args []string) error {
 		}
 	}
 	after := fileSize(disk)
-	fmt.Printf("Compacted '%s': %s -> %s\n", name, before, after)
+	ui.Say(os.Stdout, "ok", fmt.Sprintf("compacted '%s': %s -> %s", name, before, after))
 	fmt.Println("Empty the free space in the guest first, otherwise the size does not change much")
 	return nil
 }
