@@ -11,15 +11,15 @@ import (
 var markShape = []string{
 	"llllllllllllllllllll",
 	"LLLLLLLLLLLLLLLLLLLL",
-	"LL  d             LL",
+	"LL                LL",
 	"LL          ppppp LL",
 	"LL          PPPPP LL",
 	"LL          qqqqq LL",
 	"LL                LL",
 	"LLLLLLLLLLLLLLLLLLLL",
 	"uuuuuuuuuuuuuuuuuuuu",
-	"       BBBBBB",
-	"    BBBBBBBBBBBB",
+	"     BBBBBBBBBB",
+	"     BBBBBBBBBB",
 }
 
 var (
