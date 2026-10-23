@@ -57,7 +57,8 @@ func cmdCreate(args []string) error {
 		return exitcode.New(exitcode.Usage, "unknown profile '%s' (use cli or xcode)", *profile)
 	}
 	if *argsFile == "" {
-		return exitcode.New(exitcode.Usage, "--args-file is required")
+		return exitcode.New(exitcode.Usage,
+			"--args-file is required (for a macOS guest, run: macxvm image prepare %s, which writes one)", name)
 	}
 	argsPath, err := filepath.Abs(*argsFile)
 	if err != nil {
