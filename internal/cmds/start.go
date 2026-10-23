@@ -67,8 +67,6 @@ func cmdStart(args []string) error {
 
 var lastVNCDisplay int
 
-// startVM starts the machine, and it reports whether it started it or found it
-// running already.
 func startVM(cfg *config.VMConfig, install, vnc, force bool) (bool, error) {
 	name := cfg.Name
 	lock, err := runstate.LockOp(cfg.File("op.lock"))

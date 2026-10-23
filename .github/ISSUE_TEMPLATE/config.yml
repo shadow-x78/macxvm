@@ -3,10 +3,8 @@
 # https://github.com/shadow-x78/macxvm
 # ─────────────────────────────────────────────
 
-# ── Issues ──
 blank_issues_enabled: false
 
-# ── Contact Links ──
 contact_links:
   - name: 💬 Community Discussions & Questions
     url: https://github.com/shadow-x78/macxvm/discussions

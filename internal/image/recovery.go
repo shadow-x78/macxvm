@@ -277,7 +277,6 @@ var digestInfoPrefix = []byte{
 	0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20,
 }
 
-// pkcs1v15 builds the block of the signature of PKCS 1 v1.5 for the digest.
 func pkcs1v15(digest []byte, size int) *big.Int {
 	padding := size - len(digestInfoPrefix) - len(digest) - 3
 	if padding < 8 {

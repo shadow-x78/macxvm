@@ -45,7 +45,6 @@ func init() {
 	Subtext = "\x1b[38;2;138;147;175m"
 }
 
-// Enabled reports whether the output should carry colours.
 func Enabled() bool {
 	return enabled()
 }
@@ -64,17 +63,13 @@ func enabled() bool {
 	return info.Mode()&os.ModeCharDevice != 0
 }
 
-// Banner prints the mark of the project with the version and the tagline.
 func Banner(w io.Writer, version, tagline string) {
 	Mark(w, version, tagline)
 	Blank(w)
 }
 
-// Content is the number of characters inside the frame.
 const Content = 70
 
-// Card draws a frame around the lines that are given, with one width for
-// every card. A line that is longer than the frame is wrapped.
 func Card(w io.Writer, title string, lines []string) {
 	titleWidth := visibleLen(title)
 	dashes := Content - 2 - titleWidth
@@ -96,15 +91,11 @@ func Card(w io.Writer, title string, lines []string) {
 	fmt.Fprintf(w, "%s╰%s╯%s\n", Sapphire, strings.Repeat("─", Content+2), Reset)
 }
 
-// Line builds a row of a card with a key and a value.
 func Line(key, value string) string {
 	return fmt.Sprintf("%s%s%-*s%s  %s%s%s", Bold, Lavender, keyWidth(key, value), key,
 		Reset, Text, value, Reset)
 }
 
-// Lines builds the rows of a card, with one width for the column of the keys.
-// A value that does not fit is wrapped, and the rest of it is indented under
-// the first line.
 func Lines(rows [][2]string) []string {
 	keyCol := 0
 	for _, row := range rows {
@@ -131,12 +122,10 @@ func Lines(rows [][2]string) []string {
 	return out
 }
 
-// LineRaw builds a row of a card without a key column.
 func LineRaw(text string) string {
 	return Text + text + Reset
 }
 
-// wrapText cuts a plain text at spaces so that no line is longer than width.
 func wrapText(text string, width int) []string {
 	if width < 12 {
 		width = 12
@@ -173,8 +162,6 @@ func wrapText(text string, width int) []string {
 	return out
 }
 
-// wrapVisible cuts a line that already carries colours. It only cuts at a
-// space of the visible text, and it repeats the colour prefix of the line.
 func wrapVisible(line string, width int) []string {
 	if visibleLen(line) <= width {
 		return []string{line}
@@ -229,7 +216,6 @@ func keyWidth(key, value string) int {
 	return 12
 }
 
-// visibleLen counts the characters of a text without its colour sequences.
 func visibleLen(s string) int {
 	n := 0
 	inEscape := false
@@ -249,17 +235,14 @@ func visibleLen(s string) int {
 	return n
 }
 
-// Note prints a dim line under a frame.
 func Note(w io.Writer, text string) {
 	fmt.Fprintf(w, "%s%s%s\n", Dim, text, Reset)
 }
 
-// Blank prints an empty line.
 func Blank(w io.Writer) {
 	fmt.Fprintln(w)
 }
 
-// Ok is the badge of a check that passed.
 func Ok() string {
 	if Enabled() {
 		return Green + "✔" + Reset + "      "
@@ -267,7 +250,6 @@ func Ok() string {
 	return "[ok]   "
 }
 
-// Warn is the badge of a check with a warning.
 func Warn() string {
 	if Enabled() {
 		return Yellow + "!" + Reset + "      "
@@ -275,7 +257,6 @@ func Warn() string {
 	return "[warn] "
 }
 
-// Fail is the badge of a check that failed.
 func Fail() string {
 	if Enabled() {
 		return Red + "✖" + Reset + "      "

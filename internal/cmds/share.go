@@ -264,8 +264,6 @@ func shareRemove(args []string) error {
 	return nil
 }
 
-// preflight refuses a copy that cannot fit in the guest, because a copy that
-// fills the disk of the guest leaves a machine that does not boot.
 func preflight(cfg *config.VMConfig, s config.Share) error {
 	size, err := share.SizeOf(s.Host, s.Exclude)
 	if err != nil {
@@ -297,8 +295,6 @@ func humanSize(n int64) string {
 	return fmt.Sprintf("%.1f %ciB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
-// sharesToUse returns the share that --id names, or every share of the
-// machine when no identifier is given.
 func sharesToUse(cfg *config.VMConfig, id string) ([]config.Share, error) {
 	if id != "" {
 		entry, err := share.Find(cfg, id)

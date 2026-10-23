@@ -26,10 +26,6 @@ var gptBasicData = [16]byte{
 	0x87, 0xC0, 0x68, 0xB6, 0xB7, 0x26, 0x99, 0xC7,
 }
 
-// PrepareDisk writes a GUID partition table on the disk of a machine, so that
-// the firmware and macOS see the disk before anything is installed on it. A
-// disk of QEMU starts as a file of zeros, and a system that looks for a
-// partition table finds nothing to show.
 func PrepareDisk(diskPath string, runner hostcheck.Runner) error {
 	if runner == nil {
 		runner = hostcheck.ExecRunner{}

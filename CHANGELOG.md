@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.5.2] - 2026-10-23
+
+### Fixed
+- fix: the mark of the help is the logo of the banner: the screen with its
+  bezel, the window of the guest inside it and the stand below, in the blue and
+  the purple of the logo
+- fix: the code carries no comment except the credit header and the directives
+  of the toolchain, and the configuration files carry the credit header only
+- fix: the guest of the example is dark everywhere: the login window and the
+  desktop are black, and Terminal, Safari and Xcode use their dark theme. A
+  LaunchAgent of the guest puts the black wallpaper back at every login,
+  because macOS 14 resets a wallpaper that was set outside System Settings
+
 ## [v0.5.1] - 2026-10-23
 
 ### Fixed

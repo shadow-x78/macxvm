@@ -259,7 +259,6 @@ func Print(w io.Writer, checks []Check) {
 	fmt.Fprintln(w, LegalNotice)
 }
 
-// wrap cuts a text at spaces, so that it fits in room characters.
 func wrap(text string, room int) []string {
 	if room < 20 {
 		room = 20

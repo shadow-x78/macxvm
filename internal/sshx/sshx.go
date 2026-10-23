@@ -76,9 +76,6 @@ func RSyncArgs(cfg *config.VMConfig, src, dst string, excludes []string) []strin
 	return append(args, transport(cfg, src, dst)...)
 }
 
-// RSyncShare returns the arguments of rsync for a shared folder. With update,
-// a file that is newer on the receiving side is kept. With remove, a file that
-// the sending side does not have is deleted.
 func RSyncShare(cfg *config.VMConfig, src, dst string, update, remove bool, excludes []string) []string {
 	args := []string{"-a", "--human-readable", "--itemize-changes"}
 	for _, pattern := range excludes {
