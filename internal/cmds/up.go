@@ -16,6 +16,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "up",
+		Group:   "Projects",
 		Usage:   "macxvm up",
 		Summary: "create and start the virtual machine of the project",
 		Run:     cmdUp,

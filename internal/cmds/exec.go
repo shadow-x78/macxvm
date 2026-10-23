@@ -15,6 +15,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "exec",
+		Group:   "Guests",
 		Usage:   "macxvm exec NAME -- CMD...",
 		Summary: "run a command in a guest",
 		Run:     cmdExec,

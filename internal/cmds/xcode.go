@@ -14,6 +14,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "xcode",
+		Group:   "Guests",
 		Usage:   "macxvm xcode install NAME --xip PATH [--platform iOS] | macxvm xcode clean NAME",
 		Summary: "install Xcode in a guest",
 		Run:     cmdXcode,

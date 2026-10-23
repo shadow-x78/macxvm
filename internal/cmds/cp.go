@@ -18,6 +18,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "cp",
+		Group:   "Guests",
 		Usage:   "macxvm cp SRC DST",
 		Summary: "copy files between the host and a guest",
 		Run:     cmdCopy,

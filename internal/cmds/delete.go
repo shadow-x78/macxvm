@@ -15,6 +15,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "delete",
+		Group:   "Machines",
 		Usage:   "macxvm delete NAME [--yes]",
 		Summary: "delete a virtual machine",
 		Run:     cmdDelete,

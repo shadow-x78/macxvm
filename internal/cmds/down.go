@@ -15,6 +15,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "down",
+		Group:   "Projects",
 		Usage:   "macxvm down [--delete] [--yes]",
 		Summary: "stop the virtual machine of the project",
 		Run:     cmdDown,

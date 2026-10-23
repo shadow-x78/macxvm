@@ -16,6 +16,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "compact",
+		Group:   "Machines",
 		Usage:   "macxvm compact NAME",
 		Summary: "shrink the disk of a stopped virtual machine",
 		Run:     cmdCompact,

@@ -19,6 +19,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "run",
+		Group:   "Projects",
 		Usage:   "macxvm run --from BASE [--cpus N] [--ram SIZE] [--project DIR] [--fetch REMOTE=LOCAL] [--keep] -- CMD ARGS...",
 		Summary: "run a command in a temporary virtual machine",
 		Run:     cmdRun,

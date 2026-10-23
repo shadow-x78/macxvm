@@ -17,6 +17,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "base",
+		Group:   "Machines",
 		Usage:   "macxvm base seal NAME | unseal NAME | list",
 		Summary: "manage sealed base images",
 		Run:     cmdBase,
@@ -26,6 +27,11 @@ func init() {
 func cmdBase(args []string) error {
 	if len(args) == 0 {
 		return exitcode.New(exitcode.Usage, "base needs a subcommand: seal, unseal or list")
+	}
+	if args[0] == "-h" || args[0] == "--help" {
+		c, _ := Lookup("base")
+		Help(os.Stdout, c)
+		return ErrHelp
 	}
 	switch args[0] {
 	case "seal":

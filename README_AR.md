@@ -23,7 +23,7 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 
 شغّل ضيوف macOS خفيفين مع Xcode على مضيف Linux.
 
-[![الإصدار](https://img.shields.io/badge/version-0.4.1-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.5.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -494,40 +494,78 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 <a id="commands"></a>
 ## مرجع الأوامر
 
+### الأجهزة
+
 <div dir="rtl" align="right">
 
 | الأمر | الغرض |
 |-------|-------|
 | `macxvm create NAME --args-file FILE [...]` | تسجيل جهاز افتراضي |
-| `macxvm image prepare NAME [--macos VERSION] [...]` | جلب أصول إقلاع ضيف macOS وتسجيل الجهاز |
-| `macxvm image link [--macos VERSION]` | طباعة عناوين أصول الإقلاع بلا تنزيل أي شيء |
-| `macxvm start NAME [--install] [--vnc] [--force]` | تشغيل QEMU |
-| `macxvm stop NAME [--force] [--timeout SECONDS]` | إيقاف الضيف بلطف إن أمكن |
 | `macxvm list [--json]` / `macxvm status NAME [--json]` | عرض الأجهزة |
+| `macxvm start NAME [--install] [--vnc] [--force]` | تشغيل QEMU |
+| `macxvm stop NAME [--force] [--timeout SECONDS]` | إيقاف الضيف، بلطف إن أمكن |
+| `macxvm delete NAME [--yes]` | حذف جهاز |
+| `macxvm clone SRC DST [--full]` | استنساخ جهاز، وافتراضيًا طبقة فوق أساس ختم |
+| `macxvm compact NAME` | تقليص قرص جهاز متوقف |
+| `macxvm base seal NAME` / `unseal NAME` / `list` | إدارة صور الأساس |
+| `macxvm prune [--all]` | حذف بقايا الأجهزة المؤقتة |
+
+</div>
+
+### أصول الإقلاع
+
+<div dir="rtl" align="right">
+
+| الأمر | الغرض |
+|-------|-------|
+| `macxvm image link [--macos VERSION]` | طباعة عناوين أصول الإقلاع بلا تنزيل أي شيء |
+| `macxvm image prepare NAME [--macos VERSION] [...]` | جلب أصول إقلاع ضيف macOS وتسجيل الجهاز |
+
+</div>
+
+### الضيف
+
+<div dir="rtl" align="right">
+
+| الأمر | الغرض |
+|-------|-------|
 | `macxvm ssh NAME [-- ARGS...]` | جلسة SSH تفاعلية |
-| `macxvm exec NAME -- CMD...` | تنفيذ أمر، مع تمرير رمز الخروج |
-| `macxvm cp SRC DST` | نسخ ملفات، ومسارات الضيف بصيغة `NAME:/path` |
 | `macxvm ssh-key [--install NAME]` | عرض مفتاح SSH أو تثبيته |
+| `macxvm exec NAME -- CMD...` | تشغيل أمر، ورمز الخروج يُمرَّر كما هو |
+| `macxvm cp SRC DST` | نسخ ملفات، ومسارات الضيف `NAME:/path` |
 | `macxvm share add NAME --host DIR [...]` | مشاركة مجلد بين المضيف والضيف |
 | `macxvm share sync NAME [--watch]` | إبقاء المجلد المشارك متزامنًا في الاتجاهين |
-| `macxvm clone SRC DST [--full]` | نسخ جهاز، بطبقة فوق أساس ختم افتراضيًا |
-| `macxvm delete NAME [--yes]` | حذف جهاز |
-| `macxvm slim NAME [--level 1\|2] [--measure] [--restore]` | تخفيف الضيف |
-| `macxvm tools install NAME clt\|brew` | تثبيت أدوات سطر الأوامر أو Homebrew |
+| `macxvm slim NAME [--level 1\|2\|3] [--measure] [--restore]` | تخفيف الضيف |
+| `macxvm tools install NAME clt\|brew` | تثبيت Command Line Tools أو Homebrew |
 | `macxvm tools brew NAME PKG...` | تثبيت حزم Homebrew |
-| `macxvm tools list NAME` | عرض الأدوات المثبّتة |
+| `macxvm tools list NAME` | عرض الأدوات المثبَّتة |
 | `macxvm xcode install NAME --xip PATH [--platform iOS]` | تثبيت Xcode |
 | `macxvm xcode clean NAME` | حذف مخابئ Xcode |
-| `macxvm base seal NAME` / `unseal NAME` / `list` | إدارة صور الأساس |
-| `macxvm run --from BASE [...] -- CMD...` | تنفيذ أمر في جهاز مؤقت |
-| `macxvm prune [--all]` | حذف بقايا الأجهزة المؤقتة |
-| `macxvm build [...]` | بناء مشروع داخل ضيف |
-| `macxvm compact NAME` | تصغير قرص جهاز متوقف |
-| `macxvm init [--profile P]` | كتابة ملف `macxvm.json` |
-| `macxvm up` / `macxvm down [--delete]` | تشغيل وإيقاف جهاز المشروع |
+
+</div>
+
+### المشاريع
+
+<div dir="rtl" align="right">
+
+| الأمر | الغرض |
+|-------|-------|
+| `macxvm init [--profile P]` | كتابة `macxvm.json` |
+| `macxvm up` / `macxvm down [--delete]` | تشغيل جهاز المشروع وإيقافه |
+| `macxvm build [...]` | بناء مشروع في ضيف |
+| `macxvm run --from BASE [...] -- CMD...` | تشغيل أمر في جهاز مؤقت |
+
+</div>
+
+### هذا المضيف
+
+<div dir="rtl" align="right">
+
+| الأمر | الغرض |
+|-------|-------|
 | `macxvm doctor` | فحص المضيف |
 | `macxvm version` | طباعة الإصدار |
-| `macxvm completion bash\|zsh` | طباعة سكربت إكمال الصدفة |
+| `macxvm completion bash\|zsh` | طباعة سكربت الإكمال للصدفة |
 
 </div>
 

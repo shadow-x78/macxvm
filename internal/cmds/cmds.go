@@ -12,12 +12,13 @@ import (
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 )
 
-const Version = "0.4.1"
+const Version = "0.5.0"
 
 type Command struct {
 	Name    string
 	Usage   string
 	Summary string
+	Group   string
 	Run     func(args []string) error
 }
 

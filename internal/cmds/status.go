@@ -16,6 +16,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "status",
+		Group:   "Machines",
 		Usage:   "macxvm status NAME [--json]",
 		Summary: "show the state of a virtual machine",
 		Run:     cmdStatus,

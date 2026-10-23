@@ -14,6 +14,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "clone",
+		Group:   "Machines",
 		Usage:   "macxvm clone SRC DST [--full]",
 		Summary: "clone a virtual machine",
 		Run:     cmdClone,

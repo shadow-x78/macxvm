@@ -22,6 +22,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "create",
+		Group:   "Machines",
 		Usage:   "macxvm create NAME --args-file FILE [--assets DIR] [--nvram-template FILE] [--profile cli|xcode] [--cpus N] [--ram SIZE] [--disk GiB] [--user NAME] [--qemu BIN] [--macos-version V] [--force]",
 		Summary: "register a virtual machine",
 		Run:     cmdCreate,

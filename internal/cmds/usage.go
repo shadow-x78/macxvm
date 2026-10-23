@@ -7,35 +7,70 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
-const tagline = "run slim macOS guests with Xcode on a Linux host (QEMU/KVM)"
+const tagline = "slim macOS guests with Xcode on a Linux host"
+
+// Groups is the order of the sections of the help, and the order of the
+// commands inside each section.
+var Groups = []struct {
+	Title    string
+	Commands []string
+}{
+	{"Machines", []string{"create", "list", "status", "start", "stop", "delete", "clone", "compact", "base", "prune"}},
+	{"Boot assets", []string{"image"}},
+	{"The guest", []string{"ssh", "ssh-key", "exec", "cp", "share", "slim", "tools", "xcode"}},
+	{"Projects", []string{"init", "up", "down", "build", "run"}},
+	{"This host", []string{"doctor", "version", "completion"}},
+}
 
 func Usage(w io.Writer) {
-	fmt.Fprintf(w, "macxvm — %s\n\n", tagline)
-	fmt.Fprintln(w, "Usage:")
-	fmt.Fprintln(w, "  macxvm <command> [arguments]")
-	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, "Commands:")
-	width := 0
-	for _, c := range All() {
-		if len(c.Name) > width {
-			width = len(c.Name)
+	ui.Banner(w, Version, tagline)
+
+	ui.Section(w, "Usage")
+	ui.RowRaw(w, "macxvm <command> [arguments]")
+	ui.Close(w)
+	ui.Blank(w)
+
+	for _, group := range Groups {
+		ui.Section(w, group.Title)
+		width := 0
+		for _, name := range group.Commands {
+			if len(name) > width {
+				width = len(name)
+			}
 		}
+		for _, name := range group.Commands {
+			c, ok := registry[name]
+			if !ok {
+				continue
+			}
+			fmt.Fprintf(w, "%s│%s  %s%s%-*s%s  %s%s%s\n", ui.Sapphire, ui.Reset,
+				ui.Bold, ui.Green, width, name, ui.Reset, ui.Text, c.Summary, ui.Reset)
+		}
+		ui.Close(w)
+		ui.Blank(w)
 	}
-	for _, c := range All() {
-		fmt.Fprintf(w, "  %-*s  %s\n", width, c.Name, c.Summary)
-	}
-	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, "Run \"macxvm <command> -h\" for the options of a command.")
-	fmt.Fprintln(w, "Run \"macxvm doctor\" to check this host.")
+
+	ui.SectionWith(w, "Get started", [][2]string{
+		{"macxvm doctor", "check this host"},
+		{"macxvm image link", "see where the boot assets come from"},
+		{"macxvm image prepare", "fetch them and register a machine"},
+		{"macxvm start", "start the machine with a screen"},
+	})
+	ui.Blank(w)
+	ui.Note(w, "Run \"macxvm <command> -h\" for the options of a command.")
 }
 
 func Help(w io.Writer, c Command) {
-	fmt.Fprintf(w, "%s\n\n", c.Usage)
+	ui.Section(w, c.Name)
+	ui.RowRaw(w, c.Usage)
 	if c.Summary != "" {
-		fmt.Fprintf(w, "%s\n\n", c.Summary)
+		ui.RowRaw(w, strings.TrimSpace(c.Summary))
 	}
+	ui.Close(w)
 }
 
 func Completions() []string {

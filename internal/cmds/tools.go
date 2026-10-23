@@ -15,6 +15,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "tools",
+		Group:   "Guests",
 		Usage:   "macxvm tools install NAME clt|brew | tools brew NAME PKG... | tools list NAME",
 		Summary: "install developer tools in a guest",
 		Run:     cmdTools,

@@ -42,11 +42,14 @@ func TestPrint(t *testing.T) {
 		{"/dev/kvm", Fail, "not writable"},
 	})
 	out := buf.String()
-	if !strings.Contains(out, "✓ host operating system") {
+	if !strings.Contains(out, "host operating system") || !strings.Contains(out, "Linux x86_64") {
 		t.Fatalf("the report misses the successful check:\n%s", out)
 	}
-	if !strings.Contains(out, "✗ /dev/kvm") {
+	if !strings.Contains(out, "/dev/kvm") || !strings.Contains(out, "not writable") {
 		t.Fatalf("the report misses the failed check:\n%s", out)
+	}
+	if !strings.Contains(out, "This host") {
+		t.Fatalf("the report has no frame:\n%s", out)
 	}
 	if !strings.Contains(out, "Legal notice") {
 		t.Fatalf("the report misses the legal notice:\n%s", out)

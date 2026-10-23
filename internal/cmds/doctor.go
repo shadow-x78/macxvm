@@ -13,6 +13,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "doctor",
+		Group:   "Host",
 		Usage:   "macxvm doctor",
 		Summary: "check whether this host can run macOS guests",
 		Run:     cmdDoctor,

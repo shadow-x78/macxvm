@@ -12,6 +12,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "version",
+		Group:   "Host",
 		Usage:   "macxvm version",
 		Summary: "print the version of macxvm",
 		Run:     cmdVersion,

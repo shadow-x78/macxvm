@@ -12,6 +12,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "completion",
+		Group:   "Host",
 		Usage:   "macxvm completion bash|zsh",
 		Summary: "print the shell completion script",
 		Run:     cmdCompletion,

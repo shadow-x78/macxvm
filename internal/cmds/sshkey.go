@@ -17,6 +17,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "ssh-key",
+		Group:   "Guests",
 		Usage:   "macxvm ssh-key [--install NAME]",
 		Summary: "show or install the SSH key of macxvm",
 		Run:     cmdSSHKey,
