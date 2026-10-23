@@ -13,10 +13,22 @@ import (
 
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
+	"github.com/shadow-x78/macxvm/internal/paths"
 	"github.com/shadow-x78/macxvm/internal/sshx"
 )
 
 const DefaultGuestRoot = "~/Shared"
+
+// DefaultExcludes holds the folders that are never copied, because they are
+// caches, build trees or images of a machine, and a copy of them is either
+// useless or larger than the disk of the guest.
+var DefaultExcludes = []string{
+	".cache", ".gradle", ".m2", ".npm", ".cargo", ".rustup", ".nix-profile",
+	".mozilla", ".thunderbird", ".steam", ".var", ".unsloth", ".android",
+	"node_modules", "__pycache__", ".venv", "venv", ".build", "DerivedData",
+	".git", ".hg", ".svn", "snap", "Trash",
+	"*.qcow2", "*.raw", "*.iso", "*.img", "*.vmdk", "*.xip",
+}
 
 // Add registers a folder of the host in the configuration of a machine.
 func Add(cfg *config.VMConfig, host, guest string) (config.Share, error) {
@@ -45,9 +57,16 @@ func Add(cfg *config.VMConfig, host, guest string) (config.Share, error) {
 			id = id + "-" + randomSuffix()
 		}
 	}
-	entry := config.Share{ID: id, Host: abs, Guest: guest}
+	excludes := append([]string{}, DefaultExcludes...)
+	excludes = append(excludes, paths.Home())
+	entry := config.Share{ID: id, Host: abs, Guest: guest, Exclude: excludes}
 	cfg.Shares = append(cfg.Shares, entry)
 	return entry, nil
+}
+
+// AddExcludes appends patterns to the excludes of a share.
+func AddExcludes(s *config.Share, patterns []string) {
+	s.Exclude = append(s.Exclude, patterns...)
 }
 
 // Remove drops a share from the configuration. The files stay where they are.
@@ -132,7 +151,7 @@ func copyDir(cfg *config.VMConfig, s config.Share, toGuest, remove, update bool)
 		src = sshx.Target(cfg) + ":" + guestAbsolute(cfg, s.Guest) + "/"
 		dst = s.Host + "/"
 	}
-	args := sshx.RSyncShare(cfg, src, dst, update, remove)
+	args := sshx.RSyncShare(cfg, src, dst, update, remove, s.Exclude)
 	cmd := exec.Command("rsync", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -140,6 +159,42 @@ func copyDir(cfg *config.VMConfig, s config.Share, toGuest, remove, update bool)
 		return exitcode.New(exitcode.Generic, "cannot copy the shared folder '%s': %v", s.ID, err)
 	}
 	return nil
+}
+
+// SizeOf measures a folder of the host, without the paths that the excludes
+// name. It reads the metadata only, never the content of a file.
+func SizeOf(dir string, excludes []string) (int64, error) {
+	skip := map[string]bool{}
+	for _, e := range excludes {
+		skip[filepath.Base(e)] = true
+	}
+	var total int64
+	err := filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
+		if err != nil || info == nil {
+			return nil
+		}
+		if info.IsDir() && p != dir && skip[info.Name()] {
+			return filepath.SkipDir
+		}
+		if !info.IsDir() && !skip[info.Name()] {
+			total += info.Size()
+		}
+		return nil
+	})
+	return total, err
+}
+
+// FreeInGuest reads the free space of the root of the guest in bytes.
+func FreeInGuest(cfg *config.VMConfig) (int64, error) {
+	out, err := sshx.Output(cfg, "df -k / | tail -1 | awk '{print $4}'")
+	if err != nil {
+		return 0, exitcode.New(exitcode.Generic, "cannot read the free space of the guest: %v", err)
+	}
+	var kb int64
+	if _, err := fmt.Sscan(strings.TrimSpace(out), &kb); err != nil {
+		return 0, exitcode.New(exitcode.Generic, "cannot read the free space of the guest: %v", err)
+	}
+	return kb * 1024, nil
 }
 
 func mkdirInGuest(cfg *config.VMConfig, guest string) error {

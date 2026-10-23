@@ -48,9 +48,10 @@ type VMConfig struct {
 }
 
 type Share struct {
-	ID    string `json:"id"`
-	Host  string `json:"host"`
-	Guest string `json:"guest"`
+	ID      string   `json:"id"`
+	Host    string   `json:"host"`
+	Guest   string   `json:"guest"`
+	Exclude []string `json:"exclude,omitempty"`
 }
 
 func Defaults(profile string) VMConfig {
