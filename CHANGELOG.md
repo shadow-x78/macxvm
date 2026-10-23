@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.0] - 2026-10-23
+
+### Added
+- feat: `macxvm share` keeps a folder of the host in step with a folder of the
+  guest, both ways, over the SSH of the machine. `share sync --watch` repeats
+  the sync, `share push` and `share pull` copy one way, and `--delete` makes a
+  deletion explicit
+
 ## [v0.3.1] - 2026-10-23
 
 ### Changed

@@ -23,7 +23,7 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 
 شغّل ضيوف macOS خفيفين مع Xcode على مضيف Linux.
 
-[![الإصدار](https://img.shields.io/badge/version-0.3.1-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.4.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -47,6 +47,7 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 - [المزايا](#المزايا)
 - [ملف الوسائط](#ملف-الوسائط)
 - [البدء السريع](#البدء-السريع)
+- [مشاركة مجلد](#sharing)
 - [صور من التشغيل](#screenshots)
 - [الملفات التعريفية](#الملفات-التعريفية)
 - [التخفيف](#التخفيف)
@@ -426,6 +427,36 @@ macxvm slim demo --restore
 التفاصيل في [docs/SLIM_AR.md](docs/SLIM_AR.md).
 
 <a id="building"></a>
+<a id="sharing"></a>
+## مشاركة مجلد
+
+يمكن إبقاء مجلد من المضيف متزامنًا مع مجلد في الضيف. تنسخ الأداة في الاتجاهين بـ `rsync` عبر SSH الخاص بالجهاز، فلا يعمل شيء جديد على المضيف ولا تحتاج خدمة في الضيف.
+
+<div dir="ltr" align="left">
+
+```bash
+macxvm share add demo --host ~/code/project
+macxvm share list demo
+macxvm share sync demo
+macxvm share sync demo --watch --interval 3
+```
+
+</div>
+
+| الأمر | ما يفعله |
+|-------|----------|
+| `share add NAME --host DIR [--guest DIR]` | يشارك مجلدًا من المضيف، وفي الضيف عند `~/Shared/<name>` افتراضيًا |
+| `share list NAME` | يعرض المجلدات المشاركة لجهاز |
+| `share sync NAME [--id ID]` | ينسخ في الاتجاهين ويُبقي أحدث ملف من الاثنين |
+| `share sync NAME --watch` | المثل، مرة بعد مرة، حتى تضغط Ctrl-C |
+| `share push NAME [--delete]` | ينسخ مجلد المضيف إلى الضيف |
+| `share pull NAME [--delete]` | ينسخ مجلد الضيف إلى المضيف |
+| `share remove NAME --id ID` | يوقف مشاركة مجلد ويُبقي الملفات |
+
+المزامنة في الاتجاهين تُبقي أحدث ملف من الاثنين ولا تحذف ملفًا أبدًا، لأن الملف الذي لا يملكه أحد الطرفين قد يكون ملفًا جديدًا أنشأه الطرف الآخر. ولا يُنسخ الحذف إلا عند تشغيل `push` أو `pull` مع `--delete`، فيكون اتجاه الحذف صريحًا.
+
+لا يحتاج `share add` أو `share list` إلى جهاز يعمل، و`share sync` يُشغّل الجهاز إن كان متوقفًا.
+
 ## بناء المشاريع
 
 <div dir="ltr" align="left">
@@ -465,6 +496,8 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 | `macxvm exec NAME -- CMD...` | تنفيذ أمر، مع تمرير رمز الخروج |
 | `macxvm cp SRC DST` | نسخ ملفات، ومسارات الضيف بصيغة `NAME:/path` |
 | `macxvm ssh-key [--install NAME]` | عرض مفتاح SSH أو تثبيته |
+| `macxvm share add NAME --host DIR [...]` | مشاركة مجلد بين المضيف والضيف |
+| `macxvm share sync NAME [--watch]` | إبقاء المجلد المشارك متزامنًا في الاتجاهين |
 | `macxvm clone SRC DST [--full]` | نسخ جهاز، بطبقة فوق أساس ختم افتراضيًا |
 | `macxvm delete NAME [--yes]` | حذف جهاز |
 | `macxvm slim NAME [--level 1\|2] [--measure] [--restore]` | تخفيف الضيف |

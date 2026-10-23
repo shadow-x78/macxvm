@@ -43,7 +43,14 @@ type VMConfig struct {
 	Ephemeral     bool      `json:"ephemeral,omitempty"`
 	BackingOf     string    `json:"backingOf,omitempty"`
 	MacOSVersion  string    `json:"macosVersion,omitempty"`
+	Shares        []Share   `json:"shares,omitempty"`
 	CreatedAt     time.Time `json:"createdAt"`
+}
+
+type Share struct {
+	ID    string `json:"id"`
+	Host  string `json:"host"`
+	Guest string `json:"guest"`
 }
 
 func Defaults(profile string) VMConfig {

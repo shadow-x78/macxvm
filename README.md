@@ -23,7 +23,7 @@ MacXVM is an independent open-source project, not affiliated with or endorsed by
 
 Run slim macOS guests with Xcode on a Linux host.
 
-[![Version](https://img.shields.io/badge/version-0.3.1-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -48,6 +48,7 @@ Run slim macOS guests with Xcode on a Linux host.
 - [The args file](#args-file)
 - [Quick start](#quick-start)
 - [Screenshots](#screenshots)
+- [Sharing a folder](#sharing)
 - [Profiles](#profiles)
 - [Slimming](#slimming)
 - [Building projects](#building)
@@ -361,6 +362,38 @@ Only the labels of that file are ever touched by level 2. A deny list in the cod
 
 The details are in [docs/SLIM.md](docs/SLIM.md).
 
+<a id="sharing"></a>
+## Sharing a Folder
+
+A folder of the host can be kept in step with a folder of the guest. The tool
+copies both ways with `rsync` over the SSH of the machine, so nothing new runs
+on the host and no service of the guest is needed.
+
+```bash
+macxvm share add demo --host ~/code/project
+macxvm share list demo
+macxvm share sync demo
+macxvm share sync demo --watch --interval 3
+```
+
+| Command | What it does |
+|---------|--------------|
+| `share add NAME --host DIR [--guest DIR]` | share a folder of the host, at `~/Shared/<name>` in the guest by default |
+| `share list NAME` | show the shared folders of a machine |
+| `share sync NAME [--id ID]` | copy both ways and keep the newer file of the two |
+| `share sync NAME --watch` | the same, again and again, until you press Ctrl-C |
+| `share push NAME [--delete]` | copy the host folder into the guest |
+| `share pull NAME [--delete]` | copy the guest folder onto the host |
+| `share remove NAME --id ID` | stop sharing a folder, and keep the files |
+
+The two-way sync keeps the newer file of the two and never deletes a file,
+because a file that one side does not have can be a new file of the other side.
+A deletion is copied only when `push` or `pull` is run with `--delete`, which
+makes the direction of the deletion explicit.
+
+The machine does not need to be running for `share add` or `share list`, and
+`share sync` starts the machine when it is stopped.
+
 <a id="building"></a>
 ## Building Projects
 
@@ -391,6 +424,8 @@ builds in a throwaway overlay that is removed afterwards. The full guide, includ
 | `macxvm exec NAME -- CMD...` | run a command, the exit code is passed through |
 | `macxvm cp SRC DST` | copy files, guest paths are `NAME:/path` |
 | `macxvm ssh-key [--install NAME]` | show or install the SSH key |
+| `macxvm share add NAME --host DIR [...]` | share a folder between the host and the guest |
+| `macxvm share sync NAME [--watch]` | keep the shared folder in step, both ways |
 | `macxvm clone SRC DST [--full]` | clone a machine, by default an overlay of a sealed base |
 | `macxvm delete NAME [--yes]` | delete a machine |
 | `macxvm slim NAME [--level 1\|2] [--measure] [--restore]` | trim the guest |
