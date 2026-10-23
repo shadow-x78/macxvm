@@ -9,14 +9,17 @@ import (
 )
 
 var markShape = []string{
-	"llllllllllllllll",
-	"V              R",
-	"V        lllll R",
-	"V        PPPPP R",
-	"V        uuuuu R",
-	"V              R",
-	"uuuuuuuuuuuuuuuu",
-	"   BBBBBBBBBB",
+	"llllllllllllllllllll",
+	"LLLLLLLLLLLLLLLLLLLL",
+	"LL  d             LL",
+	"LL          ppppp LL",
+	"LL          PPPPP LL",
+	"LL          qqqqq LL",
+	"LL                LL",
+	"LLLLLLLLLLLLLLLLLLLL",
+	"uuuuuuuuuuuuuuuuuuuu",
+	"       BBBBBB",
+	"    BBBBBBBBBBBB",
 }
 
 var (
@@ -38,12 +41,16 @@ func markLines(version string) []string {
 				line += colourText(screenDeep, "▀")
 			case 'l':
 				line += colourText(screenDeep, "▄")
+			case 'L':
+				line += colourText(screenDeep, "█")
 			case 'P':
 				line += colourText(guestLow, "█")
 			case 'p':
 				line += colourText(guestLow, "▀")
 			case 'q':
 				line += colourText(guestLow, "▄")
+			case 'd':
+				line += colourText(screenDeep, "•")
 			case 'V':
 				line += colourText(screenDeep, "▌")
 			case 'R':
@@ -55,7 +62,7 @@ func markLines(version string) []string {
 	side := map[int]string{
 		2: fmt.Sprintf("%s%sMacXVM%s %s%s%s", Bold, Text, Reset, Lavender, "v"+version, Reset),
 		4: fmt.Sprintf("%s%s%s", Subtext, "slim macOS guests with Xcode", Reset),
-		5: fmt.Sprintf("%s%s%s", Subtext, "on a Linux host under QEMU/KVM", Reset),
+		6: fmt.Sprintf("%s%s%s", Subtext, "on a Linux host under QEMU/KVM", Reset),
 	}
 	for row, text := range side {
 		if row < len(lines) {
