@@ -23,7 +23,7 @@ MacXVM is an independent open-source project, not affiliated with or endorsed by
 
 Run slim macOS guests with Xcode on a Linux host.
 
-[![Version](https://img.shields.io/badge/version-0.4.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.1-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -390,6 +390,19 @@ The two-way sync keeps the newer file of the two and never deletes a file,
 because a file that one side does not have can be a new file of the other side.
 A deletion is copied only when `push` or `pull` is run with `--delete`, which
 makes the direction of the deletion explicit.
+
+A share leaves out the caches, the build trees, the repositories of git and the
+images of a machine (`.cache`, `node_modules`, `.git`, `*.qcow2`, and more), and
+it always leaves out the state directory of MacXVM. A pattern of your own is
+added with `--exclude`, and it may be repeated:
+
+```bash
+macxvm share add demo --host ~/code/project --exclude target --exclude "*.log"
+```
+
+Before a copy, the tool measures the folder and the free space of the guest,
+and it refuses a copy that does not fit, because a copy that fills the disk of
+the guest leaves a machine that does not boot.
 
 The machine does not need to be running for `share add` or `share list`, and
 `share sync` starts the machine when it is stopped.

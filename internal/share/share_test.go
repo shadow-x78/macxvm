@@ -11,6 +11,53 @@ import (
 	"github.com/shadow-x78/macxvm/internal/config"
 )
 
+func TestAddCarriesTheExcludes(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "p"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cfg := &config.VMConfig{Name: "demo"}
+	entry, err := Add(cfg, filepath.Join(dir, "p"), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entry.Exclude) < len(DefaultExcludes) {
+		t.Fatalf("the excludes = %v", entry.Exclude)
+	}
+	found := false
+	for _, e := range entry.Exclude {
+		if e == ".git" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("the excludes do not hold .git")
+	}
+}
+
+func TestSizeOf(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "keep"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, "node_modules"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "keep", "a.txt"), make([]byte, 1000), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "node_modules", "big.js"), make([]byte, 5000), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	size, err := SizeOf(dir, DefaultExcludes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if size != 1000 {
+		t.Fatalf("SizeOf() = %d, want 1000", size)
+	}
+}
+
 func TestAdd(t *testing.T) {
 	dir := t.TempDir()
 	project := filepath.Join(dir, "myproject")

@@ -55,6 +55,8 @@ func shareAdd(args []string) error {
 	fs := newFlagSet("share add")
 	host := fs.String("host", "", "the folder of the host (required)")
 	guest := fs.String("guest", "", "the folder of the guest (default ~/Shared/<name>)")
+	excludes := &stringList{}
+	fs.Var(excludes, "exclude", "a pattern to leave out of the copy (repeatable)")
 	positional, flagArgs := SplitArgs(fs, args)
 	if err := parseFlags("share add", fs, flagArgs); err != nil {
 		return err
@@ -73,6 +75,14 @@ func shareAdd(args []string) error {
 	entry, err := share.Add(cfg, *host, *guest)
 	if err != nil {
 		return err
+	}
+	if len(*excludes) > 0 {
+		share.AddExcludes(&entry, *excludes)
+		for i := range cfg.Shares {
+			if cfg.Shares[i].ID == entry.ID {
+				cfg.Shares[i].Exclude = entry.Exclude
+			}
+		}
 	}
 	if err := store.Save(cfg); err != nil {
 		return err
@@ -126,7 +136,15 @@ func shareSync(args []string) error {
 	if err != nil {
 		return err
 	}
+	started, err := ensureRunning(cfg)
+	defer stopIfStarted(cfg, started)
+	if err != nil {
+		return err
+	}
 	if !*watch {
+		if err := preflight(cfg, entry); err != nil {
+			return err
+		}
 		if err := share.Sync(cfg, entry); err != nil {
 			return err
 		}
@@ -165,7 +183,15 @@ func shareCopy(args []string, toGuest bool) error {
 	if err != nil {
 		return err
 	}
+	started, err := ensureRunning(cfg)
+	defer stopIfStarted(cfg, started)
+	if err != nil {
+		return err
+	}
 	if toGuest {
+		if err := preflight(cfg, entry); err != nil {
+			return err
+		}
 		err = share.Push(cfg, entry, *remove)
 	} else {
 		err = share.Pull(cfg, entry, *remove)
@@ -205,6 +231,39 @@ func shareRemove(args []string) error {
 	fmt.Printf("The folder %s is no longer shared with '%s'; its files stay where they are\n",
 		entry.Host, name)
 	return nil
+}
+
+// preflight refuses a copy that cannot fit in the guest, because a copy that
+// fills the disk of the guest leaves a machine that does not boot.
+func preflight(cfg *config.VMConfig, s config.Share) error {
+	size, err := share.SizeOf(s.Host, s.Exclude)
+	if err != nil {
+		return exitcode.New(exitcode.Generic, "cannot measure '%s': %v", s.Host, err)
+	}
+	free, err := share.FreeInGuest(cfg)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("The folder is %s, and the guest has %s free\n",
+		humanSize(size), humanSize(free))
+	if size > free*9/10 {
+		return exitcode.New(exitcode.Generic,
+			"the folder is larger than the free space of the guest; leave a part of it out with --exclude")
+	}
+	return nil
+}
+
+func humanSize(n int64) string {
+	const unit = 1024
+	if n < unit {
+		return fmt.Sprintf("%d B", n)
+	}
+	div, exp := int64(unit), 0
+	for v := n / unit; v >= unit; v /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %ciB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
 func pickShare(cfg *config.VMConfig, id string) (config.Share, error) {

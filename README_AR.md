@@ -23,7 +23,7 @@ MacXVM مشروع مفتوح المصدر مستقل، غير تابع لشرك�
 
 شغّل ضيوف macOS خفيفين مع Xcode على مضيف Linux.
 
-[![الإصدار](https://img.shields.io/badge/version-0.4.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.4.1-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -454,6 +454,18 @@ macxvm share sync demo --watch --interval 3
 | `share remove NAME --id ID` | يوقف مشاركة مجلد ويُبقي الملفات |
 
 المزامنة في الاتجاهين تُبقي أحدث ملف من الاثنين ولا تحذف ملفًا أبدًا، لأن الملف الذي لا يملكه أحد الطرفين قد يكون ملفًا جديدًا أنشأه الطرف الآخر. ولا يُنسخ الحذف إلا عند تشغيل `push` أو `pull` مع `--delete`، فيكون اتجاه الحذف صريحًا.
+
+المشاركة تستثني المخابئ وشجرات البناء ومستودعات git وصور الأجهزة (`.cache` و`node_modules` و`.git` و`*.qcow2` وغيرها)، وتستثني دائمًا مجلد حالة MacXVM. ويُضاف نمط خاص بك بالخيار `--exclude`، ويمكن تكراره:
+
+<div dir="ltr" align="left">
+
+```bash
+macxvm share add demo --host ~/code/project --exclude target --exclude "*.log"
+```
+
+</div>
+
+وقبل النسخ تقيس الأداة حجم المجلد والمساحة الحرة في الضيف، وترفض نسخًا لا يتسع له، لأن نسخًا يملأ قرص الضيف يترك جهازًا لا يُقلع.
 
 لا يحتاج `share add` أو `share list` إلى جهاز يعمل، و`share sync` يُشغّل الجهاز إن كان متوقفًا.
 

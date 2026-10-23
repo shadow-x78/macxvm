@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.1] - 2026-10-23
+
+### Fixed
+- fix: a share leaves out the caches, the build trees, the repositories of git
+  and the images of a machine, and it always leaves out the state directory of
+  MacXVM, so that a copy of a home directory cannot copy the disk of the
+  machine into the guest
+- fix: `share sync` and `share push` start a machine that is stopped
+
+### Added
+- feat: a share measures the folder and the free space of the guest, and it
+  refuses a copy that does not fit, because a copy that fills the disk of the
+  guest leaves a machine that does not boot
+- feat: `share add --exclude PATTERN` adds a pattern to leave out
+
 ## [v0.4.0] - 2026-10-23
 
 ### Added
