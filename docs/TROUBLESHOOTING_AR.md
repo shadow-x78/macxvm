@@ -2,7 +2,7 @@
 
 # حل المشكلات - MacXVM
 
-[![الإصدار](https://img.shields.io/badge/version-0.3.1-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.4.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
