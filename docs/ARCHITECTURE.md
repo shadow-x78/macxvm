@@ -2,7 +2,7 @@
 
 # Architecture Specification - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.4.1-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.5.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -82,6 +82,9 @@ flowchart TD
 | `internal/project` | Detection of the project kind and the `macxvm.json` file |
 | `internal/doctor` | The host checks and the legal notice |
 | `internal/hostcheck` | Host facts (RAM, cores, disk, KVM) and the `Runner` seam for subprocesses |
+| `internal/share` | The shared folder of the host and the guest, over rsync and SSH |
+| `internal/image` | The boot assets of a macOS guest and the partition table of its disk |
+| `internal/ui` | The banner, the frames and the colours of the console |
 | `internal/cmds` | One file per command, the flag splitter, the usage text |
 | `resources` | The guest scripts and the launchd label list, embedded into the binary |
 

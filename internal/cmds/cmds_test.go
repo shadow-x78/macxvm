@@ -65,3 +65,28 @@ func TestSSHStepTimeout(t *testing.T) {
 		t.Fatalf("sshStepTimeout(-1) = %v, want 0", got)
 	}
 }
+
+func TestEveryCommandIsInAGroup(t *testing.T) {
+	listed := map[string]bool{}
+	for _, group := range Groups {
+		for _, name := range group.Commands {
+			if _, ok := registry[name]; !ok {
+				t.Errorf("the group %q names the unknown command %q", group.Title, name)
+			}
+			listed[name] = true
+		}
+	}
+	for _, c := range All() {
+		if !listed[c.Name] {
+			t.Errorf("the command %q is in no group of the help", c.Name)
+		}
+	}
+}
+
+func TestEveryCommandHasAGroupField(t *testing.T) {
+	for _, c := range All() {
+		if c.Group == "" {
+			t.Errorf("the command %q has no group", c.Name)
+		}
+	}
+}

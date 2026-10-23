@@ -18,7 +18,8 @@ import (
 
 func init() {
 	register(Command{
-		Name: "share",
+		Name:  "share",
+		Group: "Guests",
 		Usage: "macxvm share add NAME --host DIR [--guest DIR] | macxvm share list NAME | " +
 			"macxvm share sync NAME [--id ID] [--watch] | macxvm share push NAME [--id ID] | " +
 			"macxvm share pull NAME [--id ID] | macxvm share remove NAME --id ID",
@@ -30,6 +31,11 @@ func init() {
 func cmdShare(args []string) error {
 	if len(args) == 0 {
 		return exitcode.New(exitcode.Usage, "share needs a subcommand: add, list, sync, push, pull or remove")
+	}
+	if args[0] == "-h" || args[0] == "--help" {
+		c, _ := Lookup("share")
+		Help(os.Stdout, c)
+		return ErrHelp
 	}
 	action := args[0]
 	rest := args[1:]

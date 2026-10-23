@@ -22,6 +22,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "build",
+		Group:   "Projects",
 		Usage:   "macxvm build [--vm NAME] [--project DIR] [--scheme S] [--configuration Debug|Release] [--destination D] [--ephemeral --from BASE] [--keep] [--fetch REMOTE=LOCAL] [--jobs N] [-- EXTRA ARGS]",
 		Summary: "build a project in a guest",
 		Run:     cmdBuild,

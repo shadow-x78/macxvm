@@ -24,6 +24,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "start",
+		Group:   "Machines",
 		Usage:   "macxvm start NAME [--install] [--vnc] [--force]",
 		Summary: "start a virtual machine",
 		Run:     cmdStart,

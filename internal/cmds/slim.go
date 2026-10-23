@@ -15,6 +15,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "slim",
+		Group:   "Guests",
 		Usage:   "macxvm slim NAME [--level 1|2|3] [--measure] [--restore]",
 		Summary: "make a guest lighter and faster",
 		Run:     cmdSlim,

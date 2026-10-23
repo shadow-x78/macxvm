@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.5.0] - 2026-10-23
+
+### Added
+- feat: the help opens with the mark of the project and lists the commands in
+  the groups Machines, Boot assets, The guest, Projects and This host, with a
+  card frame and the colours of the terminal. The colours are turned off by
+  `NO_COLOR` and by a terminal that is not a TTY
+- feat: `macxvm doctor` and `macxvm list` use the same frame and the same badges
+
+### Changed
+- the tagline of the tool carries no em dash, and the sources carry none
+
 ## [v0.4.1] - 2026-10-23
 
 ### Fixed

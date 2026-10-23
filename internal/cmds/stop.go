@@ -21,6 +21,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "stop",
+		Group:   "Machines",
 		Usage:   "macxvm stop NAME [--force] [--timeout SECONDS]",
 		Summary: "stop a virtual machine",
 		Run:     cmdStop,

@@ -11,11 +11,13 @@ import (
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 func init() {
 	register(Command{
 		Name:    "list",
+		Group:   "Machines",
 		Usage:   "macxvm list [--json]",
 		Summary: "list the registered virtual machines",
 		Run:     cmdList,
@@ -48,11 +50,25 @@ func cmdList(args []string) error {
 		}
 		return nil
 	}
+	if len(vms) == 0 {
+		ui.Note(os.Stdout, "No virtual machine is registered yet.")
+		ui.Note(os.Stdout, "Run \"macxvm image prepare NAME\" to make one.")
+		return nil
+	}
 	w := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
-	fmt.Fprintln(w, "NAME\tPROFILE\tSTATE\tCPU\tRAM\tDISK\tSSH")
+	fmt.Fprintf(w, "%sNAME\tPROFILE\tSTATE\tCPU\tRAM\tDISK\tSSH%s\n", ui.Bold, ui.Reset)
 	for _, v := range vms {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%d\t%d\t127.0.0.1:%d\n",
-			v.Name, v.Profile, stateOf(v), v.CPUs, v.MemoryMiB, v.DiskGiB, v.SSHPort)
+		state := stateOf(v)
+		colour := ui.Green
+		switch state {
+		case "stopped":
+			colour = ui.Subtext
+		case "sealed":
+			colour = ui.Lavender
+		}
+		fmt.Fprintf(w, "%s%s%s\t%s\t%s%s%s\t%d\t%d\t%d\t127.0.0.1:%d\n",
+			ui.Bold, v.Name, ui.Reset, v.Profile, colour, state, ui.Reset,
+			v.CPUs, v.MemoryMiB, v.DiskGiB, v.SSHPort)
 	}
 	return w.Flush()
 }

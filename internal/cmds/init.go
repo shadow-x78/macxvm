@@ -16,6 +16,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "init",
+		Group:   "Projects",
 		Usage:   "macxvm init [--profile P] [--force]",
 		Summary: "write a macxvm.json file in the project directory",
 		Run:     cmdInit,

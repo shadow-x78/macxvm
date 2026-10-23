@@ -15,6 +15,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/paths"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/internal/ui"
 )
 
 type Status int
@@ -231,11 +232,32 @@ func vmCheck() Check {
 }
 
 func Print(w io.Writer, checks []Check) {
+	ui.Section(w, "This host")
+	width := 22
 	for _, c := range checks {
-		fmt.Fprintf(w, "%s %-22s %s\n", c.Status.Symbol(), c.Name, c.Detail)
+		if len(c.Name) > width {
+			width = len(c.Name)
+		}
 	}
-	fmt.Fprintln(w)
+	for _, c := range checks {
+		fmt.Fprintf(w, "%s│%s  %s  %s%-*s%s  %s%s%s\n",
+			ui.Sapphire, ui.Reset, badge(c.Status), ui.Bold, width, c.Name, ui.Reset,
+			ui.Text, c.Detail, ui.Reset)
+	}
+	ui.Close(w)
+	ui.Blank(w)
 	fmt.Fprintln(w, LegalNotice)
+}
+
+func badge(s Status) string {
+	switch s {
+	case Fail:
+		return ui.Fail()
+	case Warn:
+		return ui.Warn()
+	default:
+		return ui.Ok()
+	}
 }
 
 func Failed(checks []Check) bool {

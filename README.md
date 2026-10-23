@@ -23,7 +23,7 @@ MacXVM is an independent open-source project, not affiliated with or endorsed by
 
 Run slim macOS guests with Xcode on a Linux host.
 
-[![Version](https://img.shields.io/badge/version-0.4.1-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.5.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -425,35 +425,57 @@ builds in a throwaway overlay that is removed afterwards. The full guide, includ
 <a id="commands"></a>
 ## Command Reference
 
+### Machines
+
 | Command | Purpose |
 |---------|---------|
 | `macxvm create NAME --args-file FILE [...]` | register a virtual machine |
-| `macxvm image prepare NAME [--macos VERSION] [...]` | fetch the boot assets of a macOS guest and register the machine |
-| `macxvm image link [--macos VERSION]` | print the addresses of the boot assets, without downloading anything |
+| `macxvm list [--json]` / `macxvm status NAME [--json]` | show the machines |
 | `macxvm start NAME [--install] [--vnc] [--force]` | start QEMU |
 | `macxvm stop NAME [--force] [--timeout SECONDS]` | stop the guest, gracefully if possible |
-| `macxvm list [--json]` / `macxvm status NAME [--json]` | show the machines |
+| `macxvm delete NAME [--yes]` | delete a machine |
+| `macxvm clone SRC DST [--full]` | clone a machine, by default an overlay of a sealed base |
+| `macxvm compact NAME` | shrink the disk of a stopped machine |
+| `macxvm base seal NAME` / `unseal NAME` / `list` | manage base images |
+| `macxvm prune [--all]` | delete the leftovers of temporary machines |
+
+### Boot assets
+
+| Command | Purpose |
+|---------|---------|
+| `macxvm image link [--macos VERSION]` | print the addresses of the boot assets, without downloading anything |
+| `macxvm image prepare NAME [--macos VERSION] [...]` | fetch the boot assets of a macOS guest and register the machine |
+
+### The guest
+
+| Command | Purpose |
+|---------|---------|
 | `macxvm ssh NAME [-- ARGS...]` | interactive SSH session |
+| `macxvm ssh-key [--install NAME]` | show or install the SSH key |
 | `macxvm exec NAME -- CMD...` | run a command, the exit code is passed through |
 | `macxvm cp SRC DST` | copy files, guest paths are `NAME:/path` |
-| `macxvm ssh-key [--install NAME]` | show or install the SSH key |
 | `macxvm share add NAME --host DIR [...]` | share a folder between the host and the guest |
 | `macxvm share sync NAME [--watch]` | keep the shared folder in step, both ways |
-| `macxvm clone SRC DST [--full]` | clone a machine, by default an overlay of a sealed base |
-| `macxvm delete NAME [--yes]` | delete a machine |
-| `macxvm slim NAME [--level 1\|2] [--measure] [--restore]` | trim the guest |
+| `macxvm slim NAME [--level 1\|2\|3] [--measure] [--restore]` | trim the guest |
 | `macxvm tools install NAME clt\|brew` | install the Command Line Tools or Homebrew |
 | `macxvm tools brew NAME PKG...` | install Homebrew packages |
 | `macxvm tools list NAME` | show which tools are installed |
 | `macxvm xcode install NAME --xip PATH [--platform iOS]` | install Xcode |
 | `macxvm xcode clean NAME` | remove the caches of Xcode |
-| `macxvm base seal NAME` / `unseal NAME` / `list` | manage base images |
-| `macxvm run --from BASE [...] -- CMD...` | run a command in a temporary machine |
-| `macxvm prune [--all]` | delete the leftovers of temporary machines |
-| `macxvm build [...]` | build a project in a guest |
-| `macxvm compact NAME` | shrink the disk of a stopped machine |
+
+### Projects
+
+| Command | Purpose |
+|---------|---------|
 | `macxvm init [--profile P]` | write a `macxvm.json` |
 | `macxvm up` / `macxvm down [--delete]` | start and stop the machine of the project |
+| `macxvm build [...]` | build a project in a guest |
+| `macxvm run --from BASE [...] -- CMD...` | run a command in a temporary machine |
+
+### This host
+
+| Command | Purpose |
+|---------|---------|
 | `macxvm doctor` | check the host |
 | `macxvm version` | print the version |
 | `macxvm completion bash\|zsh` | print the shell completion script |
@@ -512,6 +534,9 @@ macxvm/
 │   ├── project/                   # project detection and macxvm.json
 │   ├── doctor/                    # the host checks
 │   ├── hostcheck/                 # host facts and the Runner seam
+│   ├── share/                     # the shared folder of the host and the guest
+│   ├── image/                     # the boot assets and the partition table
+│   ├── ui/                        # the banner, the frames and the colours
 │   └── cmds/                      # one file per command
 ├── resources/                     # the guest scripts and the label list
 ├── scripts/                       # installation, benchmark, style checks

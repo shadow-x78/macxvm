@@ -15,6 +15,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "ssh",
+		Group:   "Guests",
 		Usage:   "macxvm ssh NAME [-- ARGS...]",
 		Summary: "open an interactive SSH session in a guest",
 		Run:     cmdSSH,

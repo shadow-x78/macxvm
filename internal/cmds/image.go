@@ -18,6 +18,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "image",
+		Group:   "Images",
 		Usage:   "macxvm image prepare NAME [--macos VERSION] [--cpu MODEL] [--cpus N] [--ram SIZE] [--disk GiB] [--profile cli|xcode]",
 		Summary: "prepare the boot assets of a macOS guest",
 		Run:     cmdImage,

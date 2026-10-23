@@ -14,6 +14,7 @@ import (
 func init() {
 	register(Command{
 		Name:    "prune",
+		Group:   "Machines",
 		Usage:   "macxvm prune [--all]",
 		Summary: "delete the leftovers of temporary virtual machines",
 		Run:     cmdPrune,
