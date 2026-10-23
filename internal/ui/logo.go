@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	markCols = 22
-	markRows = 7
+	markCols = 16
+	markRows = 9
 )
 
 type pixel struct {
@@ -62,47 +62,46 @@ func markGrid() [][]pixel {
 	for y := range grid {
 		grid[y] = make([]pixel, w)
 	}
-	screenX0, screenY0 := 1.0, 0.5
-	screenX1, screenY1 := float64(w)-2, float64(h)-4.5
-	bezel := 1.6
+	sx0, sy0 := 0.5, 0.5
+	sx1, sy1 := float64(w)-0.5, float64(h)-5.0
+	bezel := 1.8
 
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			px, py := float64(x)+0.5, float64(y)+0.5
-			outer := inside(px, py, screenX0, screenY0, screenX1, screenY1, 3.4)
-			inner := inside(px, py, screenX0+bezel, screenY0+bezel, screenX1-bezel, screenY1-bezel, 2.2)
+			outer := inside(px, py, sx0, sy0, sx1, sy1, 1.0)
+			inner := inside(px, py, sx0+bezel, sy0+bezel, sx1-bezel, sy1-bezel, 0.8)
 			if outer && !inner {
-				t := (px - screenX0) / (screenX1 - screenX0)
+				t := (px - sx0) / (sx1 - sx0)
 				c := lerp(screenLight, screenDeep, t)
 				grid[y][x] = pixel{on: true, r: c[0], g: c[1], b: c[2]}
 			}
 		}
 	}
 
-	winX0 := screenX1 - bezel - 7.5
-	winY0 := screenY0 + bezel + 1.2
-	winX1 := screenX1 - bezel - 1.2
-	winY1 := screenY1 - bezel - 1.0
+	wx0, wy0 := 8.0, 4.0
+	wx1, wy1 := 13.0, 10.0
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			px, py := float64(x)+0.5, float64(y)+0.5
-			if !inside(px, py, winX0, winY0, winX1, winY1, 1.6) {
+			if px < wx0 || px > wx1 || py < wy0 || py > wy1 {
 				continue
 			}
-			t := (px - winX0) / (winX1 - winX0)
+			t := (px - wx0) / (wx1 - wx0)
 			c := lerp(guestTop, guestLow, t)
 			grid[y][x] = pixel{on: true, guest: true, r: c[0], g: c[1], b: c[2]}
 		}
 	}
 
-	standX0 := (screenX0+screenX1)/2 - 3.2
-	standY0 := screenY1 + 0.4
-	standX1 := standX0 + 6.4
-	standY1 := float64(h) - 0.6
+	cx := (sx0 + sx1) / 2
+	standX0 := cx - 2.6
+	standY0 := sy1 + 0.7
+	standX1 := cx + 2.6
+	standY1 := float64(h) - 0.4
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			px, py := float64(x)+0.5, float64(y)+0.5
-			if !inside(px, py, standX0, standY0, standX1, standY1, 1.0) {
+			if !inside(px, py, standX0, standY0, standX1, standY1, 0.6) {
 				continue
 			}
 			t := (px - standX0) / (standX1 - standX0)
