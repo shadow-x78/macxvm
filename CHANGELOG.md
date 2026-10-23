@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.5.1] - 2026-10-23
+
+### Fixed
+- fix: the mark of the help is the logo of the project, a ring in the blue of
+  macOS with a window of the guest on its lower right edge, and the colours of
+  the console come from the logo, not from another project
+- fix: every card of the console is 74 columns wide, with a border on both
+  sides, and a line that is too long is wrapped at the column of its value
+- fix: `macxvm start` on a machine that is already running says so and exits
+  with 0, instead of failing
+- fix: `macxvm share sync` and `share push` work on every shared folder when
+  no `--id` names one, and a folder that cannot be copied does not stop the
+  others
+
 ## [v0.5.0] - 2026-10-23
 
 ### Added

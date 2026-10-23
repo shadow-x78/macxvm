@@ -81,8 +81,12 @@ func ensureRunning(cfg *config.VMConfig) (bool, error) {
 	if runstate.IsRunning(cfg) {
 		return false, nil
 	}
-	if err := startVM(cfg, false, false, false); err != nil {
-		return false, err
+	started, err := startVM(cfg, false, false, false)
+	if err != nil {
+		return started, err
+	}
+	if !started {
+		return false, nil
 	}
 	if err := sshx.WaitForSSH(cfg, sshx.DefaultTimeout); err != nil {
 		return true, err

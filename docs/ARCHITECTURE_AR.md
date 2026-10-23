@@ -2,7 +2,7 @@
 
 # مواصفات البنية - MacXVM
 
-[![الإصدار](https://img.shields.io/badge/version-0.5.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.5.1-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -84,7 +84,7 @@ flowchart TD
 | `internal/hostcheck` | حقائق المضيف (الذاكرة، الأنوية، القرص، KVM) وواجهة `Runner` |
 | `internal/share` | المجلد المشترك بين المضيف والضيف عبر rsync وSSH |
 | `internal/image` | أصول إقلاع ضيف macOS وجدول تقسيم قرصه |
-| `internal/ui` | شعار الكونسول وإطاراته وألوانه |
+| `internal/ui` | علامة المشروع وبطاقات الكونسول وألوانه |
 | `internal/cmds` | ملف واحد لكل أمر، وفاصل الأعلام، ونص الاستخدام |
 | `resources` | سكربتات الضيف وقائمة تسميات launchd، مدمجة في الملف التنفيذي |
 

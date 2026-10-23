@@ -51,8 +51,12 @@ func cmdStart(args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := startVM(cfg, *install, *vnc, *force); err != nil {
+	started, err := startVM(cfg, *install, *vnc, *force)
+	if err != nil {
 		return err
+	}
+	if !started {
+		return nil
 	}
 	fmt.Printf("Started '%s' (ssh: 127.0.0.1:%d)\n", name, cfg.SSHPort)
 	if *vnc {
@@ -63,78 +67,82 @@ func cmdStart(args []string) error {
 
 var lastVNCDisplay int
 
-func startVM(cfg *config.VMConfig, install, vnc, force bool) error {
+// startVM starts the machine, and it reports whether it started it or found it
+// running already.
+func startVM(cfg *config.VMConfig, install, vnc, force bool) (bool, error) {
 	name := cfg.Name
 	lock, err := runstate.LockOp(cfg.File("op.lock"))
 	if err != nil {
-		return exitcode.New(exitcode.Generic, "another macxvm operation is running on '%s'", name)
+		return false, exitcode.New(exitcode.Generic, "another macxvm operation is running on '%s'", name)
 	}
 	defer lock.Close()
 
 	if runstate.IsRunning(cfg) {
-		return exitcode.New(exitcode.AlreadyRunning, "VM '%s' is already running", name)
+		fmt.Printf("'%s' is already running, ssh 127.0.0.1:%d\n", name, cfg.SSHPort)
+		return false, nil
 	}
 	if pid, ok := runstate.FindByMarker(runstate.ProcRoot(), cfg.ID); ok {
-		return exitcode.New(exitcode.AlreadyRunning,
-			"VM '%s' is already running (process %d)", name, pid)
+		fmt.Printf("'%s' is already running (process %d), ssh 127.0.0.1:%d\n",
+			name, pid, cfg.SSHPort)
+		return false, nil
 	}
 	if cfg.Sealed {
-		return exitcode.New(exitcode.Usage,
+		return false, exitcode.New(exitcode.Usage,
 			"'%s' is a sealed base image; clone it first (macxvm clone %s NEW)", name, name)
 	}
 	if err := hostcheck.Protect(cfg.MemoryMiB, cfg.CPUs, force); err != nil {
-		return err
+		return false, err
 	}
 	exists, readable, writable := hostcheck.KVMStatus()
 	if !exists || !readable || !writable {
-		return exitcode.New(exitcode.UnsupportedHost,
+		return false, exitcode.New(exitcode.UnsupportedHost,
 			"cannot use /dev/kvm (add your user to the 'kvm' group and log in again)")
 	}
 	if err := qemu.Preflight(cfg.QemuBinary); err != nil {
-		return err
+		return false, err
 	}
 	if cfg.Assets != "" {
 		st, err := os.Stat(cfg.Assets)
 		if err != nil || !st.IsDir() {
-			return exitcode.New(exitcode.Generic, "the assets directory %s is not available", cfg.Assets)
+			return false, exitcode.New(exitcode.Generic, "the assets directory %s is not available", cfg.Assets)
 		}
 	}
 	if !store.PortFree(cfg.SSHPort) {
 		port, err := store.FreePort()
 		if err != nil {
-			return exitcode.New(exitcode.Generic, "cannot find a free SSH port: %v", err)
+			return false, exitcode.New(exitcode.Generic, "cannot find a free SSH port: %v", err)
 		}
 		cfg.SSHPort = port
 		if err := store.Save(cfg); err != nil {
-			return exitcode.New(exitcode.Generic, "cannot save the configuration: %v", err)
+			return false, exitcode.New(exitcode.Generic, "cannot save the configuration: %v", err)
 		}
 	}
 	if err := paths.EnsureRun(); err != nil {
-		return exitcode.New(exitcode.Generic, "cannot create %s: %v", paths.Run(), err)
+		return false, exitcode.New(exitcode.Generic, "cannot create %s: %v", paths.Run(), err)
 	}
 	sock, err := qemu.QmpSocketPath(paths.Run(), cfg.ID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	os.Remove(sock)
 
 	text, err := os.ReadFile(cfg.File("args.txt"))
 	if err != nil {
-		return exitcode.New(exitcode.Generic, "cannot read the args file: %v", err)
+		return false, exitcode.New(exitcode.Generic, "cannot read the args file: %v", err)
 	}
 	ctx, err := argsfile.ContextFor(cfg)
 	if err != nil {
-		return err
+		return false, err
 	}
 	userArgs, err := argsfile.Build(string(text), ctx, install)
 	if err != nil {
-		return err
+		return false, err
 	}
 	display := 0
 	if vnc {
 		display, err = qemu.FreeVNCDisplay()
 		if err != nil {
-			return exitcode.New(exitcode.Generic, "%v", err)
+			return false, exitcode.New(exitcode.Generic, "%v", err)
 		}
 	}
 	lastVNCDisplay = display
@@ -143,7 +151,7 @@ func startVM(cfg *config.VMConfig, install, vnc, force bool) error {
 	logPath := cfg.File("console.log")
 	pid, err := qemu.Spawn(cfg, argv, logPath)
 	if err != nil {
-		return exitcode.New(exitcode.Generic, "cannot start QEMU: %v", err)
+		return false, exitcode.New(exitcode.Generic, "cannot start QEMU: %v", err)
 	}
 	if err := qemu.WaitReady(runstate.ProcRoot(), cfg, pid, sock, startTimeout); err != nil {
 		if errors.Is(err, qemu.ErrEarlyExit) {
@@ -151,12 +159,12 @@ func startVM(cfg *config.VMConfig, install, vnc, force bool) error {
 				fmt.Fprintln(os.Stderr, line)
 			}
 			cleanup(cfg, sock)
-			return exitcode.New(exitcode.Generic,
+			return false, exitcode.New(exitcode.Generic,
 				"QEMU exited before it was ready (see %s)", logPath)
 		}
 		qemu.Kill(pid)
 		cleanup(cfg, sock)
-		return exitcode.New(exitcode.Timeout,
+		return false, exitcode.New(exitcode.Timeout,
 			"'%s' did not become ready within %d s and was stopped (see %s)",
 			name, int(startTimeout.Seconds()), logPath)
 	}
@@ -164,8 +172,8 @@ func startVM(cfg *config.VMConfig, install, vnc, force bool) error {
 	if err != nil {
 		qemu.Kill(pid)
 		cleanup(cfg, sock)
-		return exitcode.New(exitcode.Generic, "cannot talk to QEMU over QMP: %v", err)
+		return false, exitcode.New(exitcode.Generic, "cannot talk to QEMU over QMP: %v", err)
 	}
 	client.Close()
-	return nil
+	return true, nil
 }

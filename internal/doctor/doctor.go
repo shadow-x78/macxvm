@@ -232,21 +232,71 @@ func vmCheck() Check {
 }
 
 func Print(w io.Writer, checks []Check) {
-	ui.Section(w, "This host")
-	width := 22
+	const badgeWidth = 7
+	width := 0
 	for _, c := range checks {
 		if len(c.Name) > width {
 			width = len(c.Name)
 		}
 	}
+	lines := make([]string, 0, len(checks)*2)
 	for _, c := range checks {
-		fmt.Fprintf(w, "%s│%s  %s  %s%-*s%s  %s%s%s\n",
-			ui.Sapphire, ui.Reset, badge(c.Status), ui.Bold, width, c.Name, ui.Reset,
-			ui.Text, c.Detail, ui.Reset)
+		room := ui.Content - badgeWidth - width - 2
+		chunks := wrap(c.Detail, room)
+		for i, chunk := range chunks {
+			if i == 0 {
+				lines = append(lines, fmt.Sprintf("%s%s%s%-*s%s  %s%s%s",
+					badge(c.Status), ui.Bold, ui.Lavender, width, c.Name, ui.Reset,
+					ui.Text, chunk, ui.Reset))
+				continue
+			}
+			lines = append(lines, fmt.Sprintf("%s%s%s", strings.Repeat(" ", badgeWidth+width+2),
+				ui.Text, chunk))
+		}
 	}
-	ui.Close(w)
+	ui.Card(w, "This host", lines)
 	ui.Blank(w)
 	fmt.Fprintln(w, LegalNotice)
+}
+
+// wrap cuts a text at spaces, so that it fits in room characters.
+func wrap(text string, room int) []string {
+	if room < 20 {
+		room = 20
+	}
+	if len(text) <= room {
+		return []string{text}
+	}
+	out := []string{}
+	line := ""
+	for _, word := range strings.Fields(text) {
+		for len(word) > room {
+			if line != "" {
+				out = append(out, line)
+				line = ""
+			}
+			cut := room
+			if i := strings.LastIndexAny(word[:room], "/-._"); i > room/3 {
+				cut = i + 1
+			}
+			out = append(out, word[:cut])
+			word = word[cut:]
+		}
+		if line == "" {
+			line = word
+			continue
+		}
+		if len(line)+1+len(word) <= room {
+			line += " " + word
+			continue
+		}
+		out = append(out, line)
+		line = word
+	}
+	if line != "" {
+		out = append(out, line)
+	}
+	return out
 }
 
 func badge(s Status) string {
