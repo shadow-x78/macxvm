@@ -77,6 +77,36 @@ func cmdlinePath(procRoot string, pid int) string {
 	return fmt.Sprintf("%s/%d/cmdline", procRoot, pid)
 }
 
+// VNC returns the display of the VNC server of a running machine, and whether
+// the machine has one. The address is always the loopback of the host.
+func VNC(cfg *config.VMConfig) (int, bool) {
+	pid, ok := Running(ProcRoot(), PidFile(cfg.Dir()), cfg.ID)
+	if !ok || pid <= 0 {
+		return 0, false
+	}
+	raw, err := os.ReadFile(cmdlinePath(ProcRoot(), pid))
+	if err != nil {
+		return 0, false
+	}
+	args := strings.Split(string(raw), "\x00")
+	for i, arg := range args {
+		if arg != "-vnc" || i+1 >= len(args) {
+			continue
+		}
+		value := args[i+1]
+		idx := strings.LastIndex(value, ":")
+		if idx < 0 {
+			return 0, false
+		}
+		display, err := strconv.Atoi(value[idx+1:])
+		if err != nil {
+			return 0, false
+		}
+		return display, true
+	}
+	return 0, false
+}
+
 func State(cfg *config.VMConfig) string {
 	if pid, ok := Running(ProcRoot(), PidFile(cfg.Dir()), cfg.ID); ok && pid > 0 {
 		return "running"
