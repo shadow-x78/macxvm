@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -23,7 +24,10 @@ const DefaultTimeout = 240 * time.Second
 
 const attemptTimeout = 15 * time.Second
 
-func Options(cfg *config.VMConfig) []string {
+// BaseOptions are the options every SSH command of a machine carries. The
+// control path turns the connection of a machine into a socket that later
+// commands can ride: one handshake for an operation instead of one per call.
+func BaseOptions(cfg *config.VMConfig) []string {
 	return []string{
 		"-i", paths.KeyPath(),
 		"-p", strconv.Itoa(cfg.SSHPort),
@@ -34,7 +38,65 @@ func Options(cfg *config.VMConfig) []string {
 		"-o", "IdentitiesOnly=yes",
 		"-o", "ServerAliveInterval=5",
 		"-o", "ServerAliveCountMax=2",
+		"-o", "ControlMaster=auto",
+		"-o", "ControlPath=" + ControlPath(cfg),
 	}
+}
+
+// Options returns the SSH options of a machine.
+func Options(cfg *config.VMConfig) []string {
+	return BaseOptions(cfg)
+}
+
+// ControlPath is the socket of the shared connection of a machine. It lives
+// in the short run directory, because the socket path of SSH may not be
+// longer than about a hundred characters.
+func ControlPath(cfg *config.VMConfig) string {
+	return filepath.Join(paths.Run(), "ssh-"+cfg.Name)
+}
+
+// A Session holds one connection to the guest for the duration of an
+// operation, so the many commands of slim, tools, xcode and build do not
+// each pay the SSH handshake again. End asks the master to leave as soon
+// as the operation returns, and the short ControlPersist bounds the life
+// of a master whose operation was interrupted.
+type Session struct {
+	cfg *config.VMConfig
+}
+
+// Begin opens the shared connection of a machine. Where the guest is not
+// reachable the master silently fails and every command falls back to its
+// own connection, which keeps the behaviour of the operation unchanged.
+func Begin(cfg *config.VMConfig) *Session {
+	s := &Session{cfg: cfg}
+	if err := paths.EnsureRun(); err != nil {
+		return s
+	}
+	opts := append(BaseOptions(cfg),
+		// auto reuses a master that another operation already opened for
+		// this machine instead of failing the control socket handshake.
+		"-o", "ControlMaster=auto",
+		// a short persist keeps the connection across the sequential
+		// commands of one operation and bounds the life of the master when
+		// an operation is interrupted: nothing lingers for minutes.
+		"-o", "ControlPersist=30",
+		"-o", "BatchMode=yes",
+	)
+	cmd := exec.Command("ssh", append(opts, "-f", "-n", "-N", Target(cfg))...)
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	_ = cmd.Run()
+	return s
+}
+
+// End closes the shared connection. A connection that is already gone is
+// not an error.
+func (s *Session) End() {
+	opts := append(BaseOptions(s.cfg), "-O", "exit")
+	cmd := exec.Command("ssh", append(opts, Target(s.cfg))...)
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	_ = cmd.Run()
 }
 
 func Target(cfg *config.VMConfig) string {

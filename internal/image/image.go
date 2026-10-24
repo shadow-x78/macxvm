@@ -99,7 +99,13 @@ func Prepare(opts Options) error {
 	if err := fetchOpenCore(opts); err != nil {
 		return err
 	}
-	return writeArgs(opts)
+	if err := writeArgs(opts); err != nil {
+		return err
+	}
+	fmt.Println("next: macxvm start <name> --install --vnc, then erase the disk of")
+	fmt.Println("the machine as APFS in the Disk Utility of the guest — the installer")
+	fmt.Println("shows no target disk before that")
+	return nil
 }
 
 func requireTools(r hostcheck.Runner) error {

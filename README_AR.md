@@ -23,7 +23,7 @@
 
 شغل ضيوف macOS خفيفين مع Xcode على مضيف Linux.
 
-[![الإصدار](https://img.shields.io/badge/version-0.5.3-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.6.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -110,7 +110,7 @@ macxvm build --project . --scheme App
 |----------|---------|
 | المضيف | Linux x86_64، محاكاة افتراضية عتادية، و`/dev/kvm` يستطيع مستخدمك استعماله |
 | QEMU | `qemu-system-x86_64` و`qemu-img`، بإصدار 6.0 أو أحدث |
-| أدوات المضيف | `ssh` و`scp` و`rsync` و`ssh-keygen` |
+| أدوات المضيف | `ssh` و`scp` و`rsync` و`ssh-keygen` و`python3` (للسكربت `scripts/screenshot.sh`) |
 | الضيف | macOS بمعمارية x86_64 ≤ 26، تثبته أنت، مع تفعيل Remote Login |
 | Go | 1.22 أو أحدث، لبناء MacXVM فقط |
 
@@ -287,31 +287,49 @@ macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile c
 <a id="screenshots"></a>
 ## صور من التشغيل
 
-الصور أدناه من تشغيل حقيقي للأداة على مضيف Linux، ب `macxvm image prepare` و`macxvm start --install --vnc` و`macxvm slim`. وهي شاشة الضيف كما هي. الضيف macOS 14.8.9 بأربعة معالجات وثمانية غيغابايت من الذاكرة، والقرص يحمل 9.6 غيغابايت بعد التثبيت. ويستعمل الضيف المظهر الداكن، وسطح المكتب وشاشة الدخول سوداوان، لأن الضيف بلا معالج رسومي يرسم خلفية Sonoma المتحركة سطحا أبيض.
+الصور أدناه من تشغيل حقيقي للأداة على مضيف Linux، ب `macxvm image prepare` و`macxvm start --install --vnc`. لتحديث أي صورة لاحقا، شغّل الجهاز ثم `scripts/screenshot.sh NAME assets/screenshots/FILE.png`، فيأخذ الملف صورة شاشة الضيف عبر QMP، ولا يحتاج السكربت سوى `python3`.
 
 <div dir="rtl" align="right">
 
-| محمل الإقلاع | بيئة الاستعادة |
-|---|---|
-| ![منتقي OpenCore](assets/screenshots/opencore-picker.png) | ![استعادة macOS](assets/screenshots/macos-recovery.png) |
+**منتقي إقلاع OpenCore — يعرض macOS Base System**
 
-| المثبت يرى قرص الجهاز | التثبيت جار |
-|---|---|
-| ![قرص الجهاز](assets/screenshots/installer-disk.png) | ![التثبيت](assets/screenshots/installer-progress.png) |
+![منتقي OpenCore](assets/screenshots/opencore-picker.png)
 
-| سطح مكتب الضيف | سفاري في الضيف |
-|---|---|
-| ![سطح المكتب](assets/screenshots/macos-desktop.png) | ![سفاري](assets/screenshots/macos-safari.png) |
+**بيئة الاستعادة — أدوات macOS**
 
-| طرفية داخل الضيف | Xcode في الضيف |
-|---|---|
-| ![الطرفية](assets/screenshots/macos-terminal.png) | ![Xcode](assets/screenshots/macos-xcode.png) |
+![استعادة macOS](assets/screenshots/macos-recovery.png)
 
-| شاشة الدخول، بالمظهر الداكن وبلا خلفية |
-|---|
-| ![شاشة الدخول](assets/screenshots/macos-login-dark.png) |
+**المثبّت يرى قرص الجهاز بعد تهيئته APFS (68.51 غيغابايت متاح)**
+
+![قرص الجهاز](assets/screenshots/installer-disk.png)
+
+**الطرفية في بيئة الاستعادة — `diskutil` يعرض قرص QEMU بحجم 68.7 غيغابايت على SATA**
+
+![الطرفية](assets/screenshots/macos-terminal.png)
+
+**التثبيت جار**
+
+![التثبيت](assets/screenshots/installer-progress.png)
+
+**سطح مكتب الضيف**
+
+![سطح المكتب](assets/screenshots/macos-desktop.png)
+
+**سفاري في الضيف**
+
+![سفاري](assets/screenshots/macos-safari.png)
+
+**Xcode في الضيف**
+
+![Xcode](assets/screenshots/macos-xcode.png)
+
+**شاشة الدخول، بالمظهر الداكن وبلا خلفية**
+
+![شاشة الدخول](assets/screenshots/macos-login-dark.png)
 
 </div>
+
+> ملاحظة: قرص الجهاز لا يظهر في قائمة المثبّت ولا في لوحة Startup Disk قبل تهيئته APFS من Disk Utility، وهذا سلوك macOS لا نقص في الأداة؛ لذلك يطبع `macxvm start --install` قائمة بخطوات التهيئة بعد كل إقلاع.
 
 <a id="first-boot-checklist"></a>
 ### قائمة إقلاع أول مرة

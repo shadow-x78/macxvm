@@ -6,6 +6,7 @@ package cmds
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -63,7 +64,33 @@ func cmdStart(args []string) error {
 	if *vnc {
 		fmt.Printf("VNC: 127.0.0.1:%d\n", 5900+lastVNCDisplay)
 	}
+	if *install {
+		InstallChecklist(os.Stdout, *vnc)
+	}
 	return nil
+}
+
+// InstallChecklist prints the steps of the installation inside the guest.
+// The empty disk of the machine carries no APFS volume yet, so the installer
+// and the Startup Disk panel show nothing to install onto until it is erased
+// as APFS from Disk Utility. Without this hint that behaviour reads as a
+// missing disk.
+func InstallChecklist(w io.Writer, vnc bool) {
+	rows := [][2]string{
+		{"1", "in the OpenCore picker, boot macOS Base System"},
+		{"2", "open Disk Utility, View, Show All Devices; select the QEMU hard disk and erase it as APFS — the installer shows no target disk before this"},
+		{"3", "then run Reinstall macOS and pick the erased volume"},
+	}
+	ui.Blank(w)
+	ui.Section(w, "installing macOS in the guest")
+	for _, row := range ui.Lines(rows) {
+		fmt.Fprintln(w, row)
+	}
+	if vnc {
+		ui.Note(w, "connect a VNC client to the display above to see the screen")
+	} else {
+		ui.Note(w, "start again with --vnc to see the screen of the guest")
+	}
 }
 
 var lastVNCDisplay int

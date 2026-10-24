@@ -52,34 +52,26 @@ func cmdList(args []string) error {
 		return nil
 	}
 	if len(vms) == 0 {
-		ui.Card(os.Stdout, "Machines", []string{
-			ui.LineRaw(ui.Dim + "no machine is registered yet" + ui.Reset),
-			ui.LineRaw(ui.Dim + "run: macxvm image prepare NAME" + ui.Reset),
-		})
+		ui.Section(os.Stdout, "Machines")
+		fmt.Printf("  %sno machine is registered yet%s\n", ui.Dim, ui.Reset)
+		fmt.Printf("  %srun: macxvm image prepare NAME%s\n", ui.Dim, ui.Reset)
 		return nil
 	}
-	widths := [7]int{5, 8, 8, 4, 6, 5, 15}
+	headers := []string{"NAME", "PROFILE", "STATE", "CPU", "MEMORY", "DISK", "SSH"}
+	rows := make([][]string, 0, len(vms))
 	for _, v := range vms {
 		values := columns(v)
-		for i, value := range values {
-			if len(value) > widths[i] {
-				widths[i] = len(value)
-			}
-		}
+		rows = append(rows, []string{
+			ui.Bold + values[0] + ui.Reset,
+			values[1],
+			stateColour(v) + values[2] + ui.Reset,
+			values[3],
+			values[4] + " MiB",
+			values[5] + " GiB",
+			values[6],
+		})
 	}
-	lines := make([]string, 0, len(vms))
-	for _, v := range vms {
-		values := columns(v)
-		row := ""
-		row += fmt.Sprintf("%s%s%-*s%s", ui.Bold, ui.Text, widths[0], values[0], ui.Reset)
-		row += fmt.Sprintf("  %s%-*s%s", ui.Subtext, widths[1], values[1], ui.Reset)
-		row += fmt.Sprintf("  %s%-*s%s", stateColour(v), widths[2], values[2], ui.Reset)
-		for i := 3; i < len(values); i++ {
-			row += fmt.Sprintf("  %s%-*s%s", ui.Subtext, widths[i], values[i], ui.Reset)
-		}
-		lines = append(lines, row)
-	}
-	ui.Card(os.Stdout, "Machines", lines)
+	ui.Table(os.Stdout, headers, rows)
 	return nil
 }
 

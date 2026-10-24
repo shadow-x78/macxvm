@@ -19,13 +19,15 @@ var Groups = []struct {
 }{
 	{"Machines", []string{"create", "list", "status", "start", "stop", "delete", "clone", "compact", "base", "prune"}},
 	{"Boot assets", []string{"image"}},
-	{"The guest", []string{"ssh", "ssh-key", "exec", "cp", "share", "slim", "tools", "xcode"}},
+	{"Guests", []string{"ssh", "ssh-key", "exec", "cp", "share", "slim", "tools", "xcode"}},
 	{"Projects", []string{"init", "up", "down", "build", "run"}},
-	{"This host", []string{"doctor", "version", "completion"}},
+	{"Host", []string{"doctor", "version", "completion"}},
 }
 
 func Usage(w io.Writer) {
 	ui.Banner(w, Version, tagline)
+	ui.Blank(w)
+	fmt.Fprintf(w, "%sUsage:%s macxvm <command> [flags]\n", ui.Bold, ui.Reset)
 
 	for _, group := range Groups {
 		width := 0
@@ -34,35 +36,46 @@ func Usage(w io.Writer) {
 				width = len(name)
 			}
 		}
-		lines := make([]string, 0, len(group.Commands))
+		ui.Blank(w)
+		ui.Section(w, group.Title)
 		for _, name := range group.Commands {
 			c, ok := registry[name]
 			if !ok {
 				continue
 			}
-			lines = append(lines, fmt.Sprintf("%s%s%-*s%s  %s%s%s",
-				ui.Bold, ui.Blue, width, name, ui.Reset, ui.Text, c.Summary, ui.Reset))
+			fmt.Fprintf(w, "  %s%s%-*s%s  %s%s%s\n",
+				ui.Bold, ui.Text, width, name, ui.Reset, ui.Subtext, c.Summary, ui.Reset)
 		}
-		ui.Card(w, group.Title, lines)
-		ui.Blank(w)
 	}
 
-	ui.Card(w, "Get started", ui.Lines([][2]string{
+	ui.Blank(w)
+	ui.Section(w, "Get started")
+	width := 0
+	started := [][2]string{
 		{"macxvm doctor", "check this host"},
 		{"macxvm image link", "see where the boot assets come from"},
 		{"macxvm image prepare", "fetch them and register a machine"},
 		{"macxvm start", "start the machine with a screen"},
-	}))
+	}
+	for _, row := range started {
+		if len(row[0]) > width {
+			width = len(row[0])
+		}
+	}
+	for _, row := range started {
+		fmt.Fprintf(w, "  %s%-*s%s  %s%s%s\n",
+			ui.Blue, width, row[0], ui.Reset, ui.Subtext, row[1], ui.Reset)
+	}
 	ui.Blank(w)
 	ui.Note(w, "Run \"macxvm <command> -h\" for the options of a command.")
 }
 
 func Help(w io.Writer, c Command) {
-	lines := []string{ui.LineRaw(c.Usage)}
+	fmt.Fprintf(w, "%sUsage:%s %s\n", ui.Bold, ui.Reset, c.Usage)
 	if c.Summary != "" {
-		lines = append(lines, ui.LineRaw(strings.TrimSpace(c.Summary)))
+		ui.Blank(w)
+		fmt.Fprintf(w, "  %s%s%s\n", ui.Subtext, strings.TrimSpace(c.Summary), ui.Reset)
 	}
-	ui.Card(w, c.Name, lines)
 }
 
 func Completions() []string {

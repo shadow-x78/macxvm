@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.6.0] - 2026-10-24
+
+### Added
+- `scripts/screenshot.sh NAME [OUT.png]`: takes the screen of a running guest
+  over the QMP socket of MacXVM, for fresh screenshots at every stage
+- `macxvm start --install` prints the steps of the installation after the
+  start, with the erase of the disk as APFS first, because the installer and
+  the Startup Disk panel show no target disk before that
+
+### Changed
+- the console design follows the reference CLIs: no frames, dim uppercase
+  section headers, aligned tables with a header row, one-line banner and
+  status symbols in their own colours; the help groups the commands under
+  headers and the `list` output is a real table
+- every long operation (`slim`, `tools`, `xcode`, `build`, `share`) holds one
+  SSH connection for its whole run, so the many remote steps of an operation
+  ride one handshake instead of paying one per command
+- the history carries one commit style: every subject reads
+  `macxvm | v<version> | <type>: <summary>`; the forty-nine older subjects
+  that wrote `0.2.2` without the `v`, or no version at all, were rewritten to
+  the same style and the tags follow them
+
+### Fixed
+- the partition of the prepared disk starts and ends on the 1 MiB boundary,
+  the layout the partitioning tools of the big systems write, and `sgdisk`
+  reports no problem on it
+
 ## [v0.5.3] - 2026-10-23
 
 ### Changed
