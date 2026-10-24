@@ -270,9 +270,13 @@ QEMU disk on SATA**
 
 ![The terminal of the guest](assets/screenshots/macos-terminal.png)
 
-The screenshots of the running guest (the installation progress, the desktop,
-Safari, Xcode and the login window) are taken at the end of a full
-installation; they will return here with the next refresh of this page.
+**The installation runs, about two and a half hours on this host**
+
+![The installation](assets/screenshots/installer-progress.png)
+
+The screenshots of the installed guest (the desktop, Safari, Xcode and the
+login window) are taken at the end of a full installation; they will return
+here with the next refresh of this page.
 
 > Note: the disk of the machine shows neither in the target list of the
 > installer nor in the Startup Disk panel until it is erased as APFS in Disk
