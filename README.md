@@ -252,7 +252,7 @@ of the guest as it is. To refresh any of them, start the machine and run
 `scripts/screenshot.sh NAME assets/screenshots/FILE.png`, which takes the
 screen of the guest over QMP; the script needs `python3` only.
 
-**The OpenCore boot picker, offering macOS Base System**
+**The boot devices of the machine as the firmware sees them**
 
 ![The picker of OpenCore](assets/screenshots/opencore-picker.png)
 
@@ -270,25 +270,9 @@ QEMU disk on SATA**
 
 ![The terminal of the guest](assets/screenshots/macos-terminal.png)
 
-**The installation runs**
-
-![The installation](assets/screenshots/installer-progress.png)
-
-**The desktop of the guest**
-
-![The desktop](assets/screenshots/macos-desktop.png)
-
-**Safari of the guest**
-
-![Safari](assets/screenshots/macos-safari.png)
-
-**Xcode in the guest**
-
-![Xcode](assets/screenshots/macos-xcode.png)
-
-**The login window, with the dark appearance and no wallpaper**
-
-![The login window](assets/screenshots/macos-login-dark.png)
+The screenshots of the running guest (the installation progress, the desktop,
+Safari, Xcode and the login window) are taken at the end of a full
+installation; they will return here with the next refresh of this page.
 
 > Note: the disk of the machine shows neither in the target list of the
 > installer nor in the Startup Disk panel until it is erased as APFS in Disk
