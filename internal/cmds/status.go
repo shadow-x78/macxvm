@@ -5,6 +5,7 @@ package cmds
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"strconv"
 
@@ -49,7 +50,6 @@ func cmdStatus(args []string) error {
 	}
 	rows := [][2]string{
 		{"profile", cfg.Profile},
-		{"state", stateOf(cfg)},
 		{"cpu", strconv.Itoa(cfg.CPUs)},
 		{"memory", strconv.Itoa(cfg.MemoryMiB) + " MiB"},
 		{"disk", strconv.Itoa(cfg.DiskGiB) + " GiB"},
@@ -58,6 +58,10 @@ func cmdStatus(args []string) error {
 	if display, ok := runstate.VNC(cfg); ok {
 		rows = append(rows, [2]string{"vnc", "127.0.0.1:" + strconv.Itoa(5900+display)})
 	}
-	ui.Card(os.Stdout, cfg.Name, ui.Lines(rows))
+	state := stateOf(cfg)
+	fmt.Printf("%s%s%s  %s%s%s\n", ui.Bold, cfg.Name, ui.Reset, stateColour(cfg), state, ui.Reset)
+	for _, line := range ui.Lines(rows) {
+		fmt.Println(line)
+	}
 	return nil
 }

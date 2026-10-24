@@ -2,7 +2,7 @@
 
 # Installation Guide - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.5.3-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -37,7 +37,7 @@
 |-------------|--------|
 | Host | Linux x86_64 with hardware virtualisation (Intel VT-x or AMD-V) |
 | KVM | `/dev/kvm` usable by your user, `qemu-system-x86_64` 6.0 or newer, `qemu-img` |
-| Host tools | `ssh`, `scp`, `rsync`, `ssh-keygen` |
+| Host tools | `ssh`, `scp`, `rsync`, `ssh-keygen`, `python3` (for `scripts/screenshot.sh`) |
 | Go | 1.22 or newer, only to build MacXVM |
 | Guest | x86_64 macOS ≤ 26, installed by you |
 

@@ -23,7 +23,7 @@ MacXVM is an independent open-source project, not affiliated with or endorsed by
 
 Run slim macOS guests with Xcode on a Linux host.
 
-[![Version](https://img.shields.io/badge/version-0.5.3-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.6.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -104,7 +104,7 @@ Read this before you install anything:
 |-------------|--------|
 | Host | Linux x86_64, hardware virtualisation, `/dev/kvm` usable by your user |
 | QEMU | `qemu-system-x86_64` and `qemu-img`, version 6.0 or newer |
-| Host tools | `ssh`, `scp`, `rsync`, `ssh-keygen` |
+| Host tools | `ssh`, `scp`, `rsync`, `ssh-keygen`, `python3` (for `scripts/screenshot.sh`) |
 | Guest | x86_64 macOS ≤ 26, installed by you, with Remote Login enabled |
 | Go | 1.22 or newer, only to build MacXVM |
 
@@ -247,32 +247,53 @@ The versions are `high-sierra`, `mojave`, `catalina`, `big-sur`, `monterey`, `ve
 ## Screenshots
 
 The images below were taken from a real run of the tool on a Linux host, with
-`macxvm image prepare`, `macxvm start --install --vnc` and `macxvm slim`. They
-are the screen of the guest as it is. The guest is macOS 14.8.9 with four
-processors and eight gigabytes of memory, and the disk holds 9.6 GB after the
-installation. The guest uses the dark appearance, and the desktop and the login
-window are black, because a guest without a GPU draws the video wallpaper of
-Sonoma as a white surface.
+`macxvm image prepare` and `macxvm start --install --vnc`. They are the screen
+of the guest as it is. To refresh any of them, start the machine and run
+`scripts/screenshot.sh NAME assets/screenshots/FILE.png`, which takes the
+screen of the guest over QMP; the script needs `python3` only.
 
-| The boot loader of the community | The environment of the recovery |
-|---|---|
-| ![The picker of OpenCore](assets/screenshots/opencore-picker.png) | ![The recovery of macOS](assets/screenshots/macos-recovery.png) |
+**The OpenCore boot picker, offering macOS Base System**
 
-| The installer sees the disk of the machine | The installation runs |
-|---|---|
-| ![The disk of the machine](assets/screenshots/installer-disk.png) | ![The installation](assets/screenshots/installer-progress.png) |
+![The picker of OpenCore](assets/screenshots/opencore-picker.png)
 
-| The desktop of the guest | Safari of the guest |
-|---|---|
-| ![The desktop](assets/screenshots/macos-desktop.png) | ![Safari](assets/screenshots/macos-safari.png) |
+**The recovery environment, the macOS utilities window**
 
-| A terminal inside the guest | Xcode in the guest |
-|---|---|
-| ![The terminal of the guest](assets/screenshots/macos-terminal.png) | ![Xcode](assets/screenshots/macos-xcode.png) |
+![The recovery of macOS](assets/screenshots/macos-recovery.png)
 
-| The login window, with the dark appearance and no wallpaper |
-|---|
-| ![The login window](assets/screenshots/macos-login-dark.png) |
+**The installer sees the disk of the machine once it holds an APFS volume
+(68.51 GB available)**
+
+![The disk of the machine](assets/screenshots/installer-disk.png)
+
+**A terminal of the recovery environment, `diskutil` reporting the 68.7 GB
+QEMU disk on SATA**
+
+![The terminal of the guest](assets/screenshots/macos-terminal.png)
+
+**The installation runs**
+
+![The installation](assets/screenshots/installer-progress.png)
+
+**The desktop of the guest**
+
+![The desktop](assets/screenshots/macos-desktop.png)
+
+**Safari of the guest**
+
+![Safari](assets/screenshots/macos-safari.png)
+
+**Xcode in the guest**
+
+![Xcode](assets/screenshots/macos-xcode.png)
+
+**The login window, with the dark appearance and no wallpaper**
+
+![The login window](assets/screenshots/macos-login-dark.png)
+
+> Note: the disk of the machine shows neither in the target list of the
+> installer nor in the Startup Disk panel until it is erased as APFS in Disk
+> Utility. That is how macOS behaves, not a defect of the tool, which is why
+> `macxvm start --install` prints the erase steps after every start.
 
 <a id="first-boot-checklist"></a>
 ### First boot checklist

@@ -14,6 +14,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/share"
+	"github.com/shadow-x78/macxvm/internal/sshx"
 	"github.com/shadow-x78/macxvm/internal/store"
 	"github.com/shadow-x78/macxvm/internal/ui"
 )
@@ -149,6 +150,8 @@ func shareSync(args []string) error {
 	if err != nil {
 		return err
 	}
+	session := sshx.Begin(cfg)
+	defer session.End()
 	if !*watch {
 		var failed []string
 		for _, entry := range entries {
@@ -211,6 +214,8 @@ func shareCopy(args []string, toGuest bool) error {
 	if err != nil {
 		return err
 	}
+	session := sshx.Begin(cfg)
+	defer session.End()
 	var failed []string
 	for _, entry := range entries {
 		if toGuest {

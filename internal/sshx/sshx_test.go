@@ -33,6 +33,8 @@ func TestOptions(t *testing.T) {
 		"-o", "IdentitiesOnly=yes",
 		"-o", "ServerAliveInterval=5",
 		"-o", "ServerAliveCountMax=2",
+		"-o", "ControlMaster=auto",
+		"-o", "ControlPath=" + ControlPath(cfg),
 	}
 	if got := Options(cfg); !reflect.DeepEqual(got, want) {
 		t.Fatalf("Options() = %v, want %v", got, want)
@@ -52,6 +54,8 @@ func TestSSHArgs(t *testing.T) {
 		"-o", "IdentitiesOnly=yes",
 		"-o", "ServerAliveInterval=5",
 		"-o", "ServerAliveCountMax=2",
+		"-o", "ControlMaster=auto",
+		"-o", "ControlPath=" + ControlPath(cfg),
 		"admin@127.0.0.1",
 		"true",
 	}
@@ -73,6 +77,8 @@ func TestSCPArgs(t *testing.T) {
 		"-o", "IdentitiesOnly=yes",
 		"-o", "ServerAliveInterval=5",
 		"-o", "ServerAliveCountMax=2",
+		"-o", "ControlMaster=auto",
+		"-o", "ControlPath=" + ControlPath(cfg),
 		"a.txt", "admin@127.0.0.1:/tmp/a.txt",
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -89,7 +95,8 @@ func TestRSyncArgs(t *testing.T) {
 		"--exclude", "DerivedData",
 		"-e", "ssh -i /tmp/macxvm-test/id_ed25519 -p 2222 -o StrictHostKeyChecking=no " +
 			"-o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=5 -o IdentitiesOnly=yes " +
-			"-o ServerAliveInterval=5 -o ServerAliveCountMax=2",
+			"-o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o ControlMaster=auto " +
+			"-o ControlPath=" + ControlPath(cfg),
 		"/project/", "admin@127.0.0.1:/work/",
 	}
 	if !reflect.DeepEqual(got, want) {

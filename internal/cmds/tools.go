@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
+	"github.com/shadow-x78/macxvm/internal/sshx"
 	"github.com/shadow-x78/macxvm/internal/store"
 	"github.com/shadow-x78/macxvm/internal/tools"
 	"github.com/shadow-x78/macxvm/internal/ui"
@@ -58,6 +59,8 @@ func toolsInstall(args []string) error {
 	if err != nil {
 		return err
 	}
+	session := sshx.Begin(cfg)
+	defer session.End()
 
 	switch what {
 	case "clt":
@@ -86,6 +89,8 @@ func toolsBrew(args []string) error {
 	if err != nil {
 		return err
 	}
+	session := sshx.Begin(cfg)
+	defer session.End()
 	if err := tools.BrewInstall(cfg, args[1:]); err != nil {
 		return err
 	}
@@ -106,6 +111,8 @@ func toolsList(args []string) error {
 	if err != nil {
 		return err
 	}
+	session := sshx.Begin(cfg)
+	defer session.End()
 	found := tools.List(cfg)
 	fmt.Printf("clt:   %s\n", yesNo(found.CLT))
 	fmt.Printf("brew:  %s\n", yesNo(found.Brew))

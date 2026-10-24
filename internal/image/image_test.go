@@ -214,7 +214,7 @@ func TestVerifySignature(t *testing.T) {
 func TestWriteGPT(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "disk.raw")
-	const sectors = 2048
+	const sectors = 6144
 	if err := os.WriteFile(path, make([]byte, sectors*sectorSize), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -250,8 +250,8 @@ func TestWriteGPT(t *testing.T) {
 	}
 	first := binary.LittleEndian.Uint64(entries[32:40])
 	last := binary.LittleEndian.Uint64(entries[40:48])
-	if first != 34 || last != sectors-34 {
-		t.Fatalf("the partition is %d..%d, want 34..%d", first, last, sectors-34)
+	if first != 2048 || last != (sectors-34)/2048*2048-1 {
+		t.Fatalf("the partition is %d..%d, want 2048..%d", first, last, (sectors-34)/2048*2048-1)
 	}
 	if string(raw[(sectors-1)*sectorSize:(sectors-1)*sectorSize+8]) != "EFI PART" {
 		t.Fatal("the backup header has no signature")

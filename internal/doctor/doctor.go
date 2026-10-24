@@ -231,29 +231,24 @@ func vmCheck() Check {
 }
 
 func Print(w io.Writer, checks []Check) {
-	const badgeWidth = 7
 	width := 0
 	for _, c := range checks {
 		if len(c.Name) > width {
 			width = len(c.Name)
 		}
 	}
-	lines := make([]string, 0, len(checks)*2)
+	ui.Section(w, "host")
 	for _, c := range checks {
-		room := ui.Content - badgeWidth - width - 2
+		room := 74 - 12 - width
 		chunks := wrap(c.Detail, room)
-		for i, chunk := range chunks {
-			if i == 0 {
-				lines = append(lines, fmt.Sprintf("%s%s%s%-*s%s  %s%s%s",
-					badge(c.Status), ui.Bold, ui.Lavender, width, c.Name, ui.Reset,
-					ui.Text, chunk, ui.Reset))
-				continue
-			}
-			lines = append(lines, fmt.Sprintf("%s%s%s", strings.Repeat(" ", badgeWidth+width+2),
-				ui.Text, chunk))
+		fmt.Fprintf(w, "  %s  %s%s%-*s%s  %s%s%s\n",
+			badgePadded(c.Status), ui.Bold, ui.Text, width, c.Name, ui.Reset,
+			ui.Subtext, chunks[0], ui.Reset)
+		for _, chunk := range chunks[1:] {
+			fmt.Fprintf(w, "  %s  %s%s\n", strings.Repeat(" ", 6+width+4),
+				ui.Subtext, chunk)
 		}
 	}
-	ui.Card(w, "This host", lines)
 	ui.Blank(w)
 	fmt.Fprintln(w, LegalNotice)
 }
@@ -306,6 +301,20 @@ func badge(s Status) string {
 	default:
 		return ui.Ok()
 	}
+}
+
+// badgePadded returns the badge padded to the width of the plain-text badges,
+// so the coloured symbols line up in the same column as [warn] and [fail].
+func badgePadded(s Status) string {
+	b := badge(s)
+	visible := 1
+	if !ui.Enabled() {
+		visible = 6 // the plain badges are six wide already
+	}
+	if pad := 6 - visible; pad > 0 {
+		return b + strings.Repeat(" ", pad)
+	}
+	return b
 }
 
 func Failed(checks []Check) bool {

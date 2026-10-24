@@ -17,7 +17,6 @@ var (
 	Bold     = ""
 	Dim      = ""
 	Blue     = ""
-	Sapphire = ""
 	Lavender = ""
 	Green    = ""
 	Yellow   = ""
@@ -35,12 +34,11 @@ func init() {
 	Bold = "\x1b[1m"
 	Dim = "\x1b[2m"
 	Blue = "\x1b[38;2;10;132;255m"
-	Sapphire = "\x1b[38;2;127;196;255m"
 	Lavender = "\x1b[38;2;142;140;230m"
-	Green = "\x1b[38;2;94;92;230m"
-	Yellow = "\x1b[38;2;0;122;255m"
-	Peach = "\x1b[38;2;94;92;230m"
-	Red = "\x1b[38;2;255;92;92m"
+	Green = "\x1b[38;2;50;215;75m"
+	Yellow = "\x1b[38;2;255;214;10m"
+	Peach = "\x1b[38;2;255;159;10m"
+	Red = "\x1b[38;2;255;69;58m"
 	Text = "\x1b[38;2;214;222;240m"
 	Subtext = "\x1b[38;2;138;147;175m"
 }
@@ -65,32 +63,19 @@ func enabled() bool {
 
 const Content = 66
 
-func Card(w io.Writer, title string, lines []string) {
-	titleWidth := visibleLen(title)
-	dashes := Content - 2 - titleWidth
-	if dashes < 3 {
-		dashes = 3
-	}
-	fmt.Fprintf(w, "%s╭── %s%s%s %s%s%s╮%s\n", Sapphire, Bold, Blue, title, Sapphire,
-		strings.Repeat("─", dashes), Sapphire, Reset)
-	for _, line := range lines {
-		for _, part := range wrapVisible(line, Content) {
-			pad := Content - visibleLen(part)
-			if pad < 0 {
-				pad = 0
-			}
-			fmt.Fprintf(w, "%s│%s %s%s %s│%s\n", Sapphire, Reset, part,
-				strings.Repeat(" ", pad), Sapphire, Reset)
-		}
-	}
-	fmt.Fprintf(w, "%s╰%s╯%s\n", Sapphire, strings.Repeat("─", Content+2), Reset)
+// Section prints a dim uppercase header, the way the reference CLIs label
+// a group of lines. Nothing frames the content: the text carries itself.
+func Section(w io.Writer, title string) {
+	fmt.Fprintf(w, "%s%s%s%s\n", Dim, Bold, strings.ToUpper(title), Reset)
 }
 
+// Line renders one aligned key-value row: the key bold, the value plain.
 func Line(key, value string) string {
-	return fmt.Sprintf("%s%s%-*s%s  %s%s%s", Bold, Lavender, keyWidth(key, value), key,
-		Reset, Text, value, Reset)
+	return fmt.Sprintf("%s%s%-*s%s  %s%s%s", Bold, Text, keyWidth(key, value), key,
+		Reset, Subtext, value, Reset)
 }
 
+// Lines renders aligned key-value rows and wraps the values that are long.
 func Lines(rows [][2]string) []string {
 	keyCol := 0
 	for _, row := range rows {
@@ -103,22 +88,63 @@ func Lines(rows [][2]string) []string {
 	}
 	out := make([]string, 0, len(rows))
 	for _, row := range rows {
-		key := fmt.Sprintf("%s%s%-*s%s", Bold, Lavender, keyCol, row[0], Reset)
+		key := fmt.Sprintf("%s%s%-*s%s", Bold, Text, keyCol, row[0], Reset)
 		room := Content - keyCol - 4
 		chunks := wrapText(row[1], room)
 		for i, chunk := range chunks {
 			if i == 0 {
-				out = append(out, fmt.Sprintf("%s  %s%s%s", key, Text, chunk, Reset))
+				out = append(out, fmt.Sprintf("  %s  %s%s%s", key, Subtext, chunk, Reset))
 				continue
 			}
-			out = append(out, fmt.Sprintf("%s  %s%s%s", strings.Repeat(" ", keyCol), Text, chunk, Reset))
+			out = append(out, fmt.Sprintf("  %s  %s%s%s", strings.Repeat(" ", keyCol), Subtext, chunk, Reset))
 		}
 	}
 	return out
 }
 
-func LineRaw(text string) string {
-	return Text + text + Reset
+// Table renders an aligned table: a dim header row and the rows under it.
+// cells may already carry colour; alignment uses the visible width only.
+func Table(w io.Writer, headers []string, rows [][]string) {
+	if len(headers) == 0 {
+		return
+	}
+	widths := make([]int, len(headers))
+	for i, h := range headers {
+		widths[i] = visibleLen(h)
+	}
+	for _, row := range rows {
+		for i, cell := range row {
+			if i >= len(widths) {
+				break
+			}
+			if n := visibleLen(cell); n > widths[i] {
+				widths[i] = n
+			}
+		}
+	}
+	head := ""
+	for i, h := range headers {
+		if i == len(headers)-1 {
+			head += fmt.Sprintf("%s%s%s", Dim, h, Reset)
+			break
+		}
+		head += fmt.Sprintf("%s%s%s%s", Dim, h, Reset, strings.Repeat(" ", widths[i]-visibleLen(h)+2))
+	}
+	fmt.Fprintf(w, "  %s\n", head)
+	for _, row := range rows {
+		line := ""
+		for i, cell := range row {
+			if i >= len(widths) {
+				break
+			}
+			if i == len(widths)-1 {
+				line += cell
+				break
+			}
+			line += cell + strings.Repeat(" ", widths[i]-visibleLen(cell)+2)
+		}
+		fmt.Fprintf(w, "  %s\n", line)
+	}
 }
 
 func wrapText(text string, width int) []string {
@@ -153,53 +179,6 @@ func wrapText(text string, width int) []string {
 	}
 	if line != "" {
 		out = append(out, line)
-	}
-	return out
-}
-
-func wrapVisible(line string, width int) []string {
-	if visibleLen(line) <= width {
-		return []string{line}
-	}
-	prefix, body := splitColour(line)
-	return wrapPlain(body, width, prefix)
-}
-
-func splitColour(line string) (string, string) {
-	i := 0
-	for i < len(line) {
-		if line[i] != 0x1b {
-			break
-		}
-		j := strings.IndexByte(line[i:], 'm')
-		if j < 0 {
-			break
-		}
-		i += j + 1
-	}
-	return line[:i], line[i:]
-}
-
-func wrapPlain(body string, width int, prefix string) []string {
-	out := []string{}
-	rest := body
-	for visibleLen(rest) > width {
-		cut := width
-		if cut > len(rest) {
-			cut = len(rest)
-		}
-		space := strings.LastIndexByte(rest[:cut], ' ')
-		if space < width/2 {
-			space = cut
-		}
-		out = append(out, prefix+strings.TrimRight(rest[:space], " "))
-		rest = strings.TrimLeft(rest[space:], " ")
-	}
-	if rest != "" {
-		out = append(out, prefix+rest)
-	}
-	if len(out) == 0 {
-		out = append(out, prefix)
 	}
 	return out
 }
@@ -249,23 +228,26 @@ func Blank(w io.Writer) {
 	fmt.Fprintln(w)
 }
 
+// Ok, Warn and Fail return the status badge of a line. The coloured badges are
+// one symbol; the plain ones spell the state and are all six columns wide, so
+// reports line up with and without colours.
 func Ok() string {
 	if Enabled() {
-		return Green + "✔" + Reset + "      "
+		return Green + "✔" + Reset
 	}
-	return "[ok]   "
+	return "[ok]  "
 }
 
 func Warn() string {
 	if Enabled() {
-		return Yellow + "!" + Reset + "      "
+		return Yellow + "!" + Reset
 	}
-	return "[warn] "
+	return "[warn]"
 }
 
 func Fail() string {
 	if Enabled() {
-		return Red + "✖" + Reset + "      "
+		return Red + "✖" + Reset
 	}
-	return "[fail] "
+	return "[fail]"
 }

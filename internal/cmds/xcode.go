@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
+	"github.com/shadow-x78/macxvm/internal/sshx"
 	"github.com/shadow-x78/macxvm/internal/store"
 	"github.com/shadow-x78/macxvm/internal/ui"
 	"github.com/shadow-x78/macxvm/internal/xcode"
@@ -59,6 +60,8 @@ func xcodeInstall(args []string) error {
 	if err != nil {
 		return err
 	}
+	session := sshx.Begin(cfg)
+	defer session.End()
 	if err := xcode.Install(cfg, *xip, *platform); err != nil {
 		return err
 	}
@@ -80,6 +83,8 @@ func xcodeClean(args []string) error {
 	if err != nil {
 		return err
 	}
+	session := sshx.Begin(cfg)
+	defer session.End()
 	if err := xcode.Clean(cfg); err != nil {
 		return err
 	}

@@ -68,8 +68,17 @@ func writeGPT(path string) error {
 		return err
 	}
 	copy(entries[16:32], partitionGUID[:])
-	binary.LittleEndian.PutUint64(entries[32:40], 34)
-	binary.LittleEndian.PutUint64(entries[40:48], sectors-34)
+	// The partition starts at the 1 MiB boundary and ends before one, the
+	// way the partitioning tools of the big systems lay a disk out. On a
+	// disk too small for that, the old layout of the first 34 sectors holds.
+	first := uint64(2048)
+	lastAligned := (sectors - 34) / 2048 * 2048
+	if lastAligned <= first {
+		first = 34
+		lastAligned = sectors - 34 + 1
+	}
+	binary.LittleEndian.PutUint64(entries[32:40], first)
+	binary.LittleEndian.PutUint64(entries[40:48], lastAligned-1)
 	writeUTF16(entries[56:128], "macOS")
 
 	entriesCRC := crc32.ChecksumIEEE(entries)

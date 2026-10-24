@@ -2,7 +2,7 @@
 
 # Decisions Log - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.5.3-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -111,3 +111,7 @@ The whole project was audited in October 2026. The findings, the evidence and th
 | A60 | The shared folder | `macxvm share` copies a folder both ways with `rsync` over the SSH of the machine. macOS has no driver for the filesystems that QEMU can share without a server (`virtiofs` and `9p`), and a share of SMB or NFS would need a service and root on the host. The copy needs neither, and it works on the machine that the tool already has |
 | A61 | The deletions of a shared folder | A two-way sync never deletes a file, because a file that one side does not have can be a new file of the other side, and `rsync --delete` in both directions would delete it before the other direction sees it. A deletion is copied only with `push --delete` or `pull --delete`, which names the direction |
 | A59 | The appearance of the guest | The guest of the example uses the dark appearance, and the background of the login window is the black colour of the system, so that a guest that cannot draw the video wallpaper of Sonoma does not show a white screen. The look is set in the guest, not in the tool, because the tool does not touch the system of a guest |
+| A62 | The SSH connection of an operation | The long operations (`slim`, `tools`, `xcode`, `build`, `share`) hold one SSH connection for their whole run through `sshx.Begin` and `sshx.End`, with `ControlMaster=auto` and a short `ControlPersist=30`, so the sequential commands of an operation ride one handshake. The control socket lives in the run directory of the tool, the master is closed when the operation returns, and a master that an interrupted operation leaves behind dies within thirty seconds. The tool still runs no daemon |
+| A63 | The layout of the prepared disk | The partition of a disk that `macxvm image prepare` writes starts at the 1 MiB boundary and ends before one, the layout that the partitioning tools of the big systems write, so that `sgdisk -v` reports no problem on it. A disk too small for the boundary keeps the first-34-sectors layout |
+| A64 | The steps of the installation in the output | `macxvm start --install` prints the erase of the disk as APFS before the reinstall, because the installer of macOS and the Startup Disk panel list no target disk before the disk holds an APFS volume. The screen of the guest says so and the tool repeats it, so that the first installation does not stop at an empty disk list |
+| A65 | The screenshot script | `scripts/screenshot.sh` takes the screen of a running guest over the QMP socket of the tool with `python3` only, so that the screenshots of the README can be refreshed at every stage of the installation. The fallbacks of the state and the run directory mirror `internal/paths` exactly |

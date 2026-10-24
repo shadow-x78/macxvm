@@ -2,7 +2,7 @@
 
 # دليل التثبيت - MacXVM
 
-[![الإصدار](https://img.shields.io/badge/version-0.5.3-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -37,7 +37,7 @@
 |----------|---------|
 | المضيف | Linux بمعمارية x86_64 مع المحاكاة الافتراضية العتادية (Intel VT-x أو AMD-V) |
 | KVM | `qemu-system-x86_64` بإصدار 6.0 أو أحدث و`qemu-img`، و`/dev/kvm` يستطيع مستخدمك استعماله |
-| أدوات المضيف | `ssh` و`scp` و`rsync` و`ssh-keygen` |
+| أدوات المضيف | `ssh` و`scp` و`rsync` و`ssh-keygen` و`python3` (للسكربت `scripts/screenshot.sh`) |
 | Go | 1.22 أو أحدث، لبناء MacXVM فقط |
 | الضيف | macOS بمعمارية x86_64 ≤ 26، تثبته أنت |
 

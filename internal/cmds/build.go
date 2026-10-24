@@ -113,6 +113,8 @@ func cmdBuild(args []string) error {
 	if err != nil {
 		return err
 	}
+	session := sshx.Begin(cfg)
+	defer session.End()
 
 	dir := workdir(absProject)
 	excludes := append([]string{}, defaultExcludes...)

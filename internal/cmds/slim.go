@@ -9,6 +9,7 @@ import (
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/slim"
+	"github.com/shadow-x78/macxvm/internal/sshx"
 	"github.com/shadow-x78/macxvm/internal/store"
 	"github.com/shadow-x78/macxvm/internal/ui"
 )
@@ -49,6 +50,8 @@ func cmdSlim(args []string) error {
 	if err != nil {
 		return err
 	}
+	session := sshx.Begin(cfg)
+	defer session.End()
 
 	if *restore {
 		if err := slim.Restore(cfg); err != nil {

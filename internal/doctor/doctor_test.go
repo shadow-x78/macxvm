@@ -48,7 +48,7 @@ func TestPrint(t *testing.T) {
 	if !strings.Contains(out, "/dev/kvm") || !strings.Contains(out, "not writable") {
 		t.Fatalf("the report misses the failed check:\n%s", out)
 	}
-	if !strings.Contains(out, "This host") {
+	if !strings.Contains(out, "HOST") {
 		t.Fatalf("the report has no frame:\n%s", out)
 	}
 	if !strings.Contains(out, "Legal notice") {
