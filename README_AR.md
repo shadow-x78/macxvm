@@ -291,7 +291,7 @@ macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile c
 
 <div dir="rtl" align="right">
 
-**منتقي إقلاع OpenCore — يعرض macOS Base System**
+**أجهزة إقلاع الجهاز كما يراها التمكين الثابت**
 
 ![منتقي OpenCore](assets/screenshots/opencore-picker.png)
 
@@ -307,25 +307,7 @@ macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile c
 
 ![الطرفية](assets/screenshots/macos-terminal.png)
 
-**التثبيت جار**
-
-![التثبيت](assets/screenshots/installer-progress.png)
-
-**سطح مكتب الضيف**
-
-![سطح المكتب](assets/screenshots/macos-desktop.png)
-
-**سفاري في الضيف**
-
-![سفاري](assets/screenshots/macos-safari.png)
-
-**Xcode في الضيف**
-
-![Xcode](assets/screenshots/macos-xcode.png)
-
-**شاشة الدخول، بالمظهر الداكن وبلا خلفية**
-
-![شاشة الدخول](assets/screenshots/macos-login-dark.png)
+صور الضيف أثناء التشغيل الفعلي (تقدم التثبيت، سطح المكتب، سفاري، Xcode وشاشة الدخول) تُلتقط في نهاية التثبيت الكامل؛ ستعود إلى هذه الصفحة في التحديث القادم.
 
 </div>
 
