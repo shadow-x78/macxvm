@@ -5,12 +5,14 @@ package config
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"sync/atomic"
 	"time"
 
 	"github.com/shadow-x78/macxvm/internal/names"
@@ -189,12 +191,20 @@ func WriteFileAtomic(path string, data []byte, perm os.FileMode) error {
 	return nil
 }
 
+var idFallbackSeq uint64
+
 func NewID() string {
 	b := make([]byte, 4)
 	if _, err := rand.Read(b); err != nil {
-		return "00000000"
+		return fallbackID()
 	}
 	return hex.EncodeToString(b)
+}
+
+func fallbackID() string {
+	seed := fmt.Sprintf("%d-%d-%d", time.Now().UnixNano(), os.Getpid(), atomic.AddUint64(&idFallbackSeq, 1))
+	sum := sha256.Sum256([]byte(seed))
+	return hex.EncodeToString(sum[:4])
 }
 
 func NewMAC() string {

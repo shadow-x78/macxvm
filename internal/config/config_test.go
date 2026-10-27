@@ -158,3 +158,17 @@ func TestWriteFileAtomic(t *testing.T) {
 		t.Fatal("the temporary file was left behind")
 	}
 }
+
+func TestFallbackIDIsUniqueAndValid(t *testing.T) {
+	first := fallbackID()
+	second := fallbackID()
+	if first == second {
+		t.Fatal("fallbackID returned a duplicate")
+	}
+	if !ValidID(first) || !ValidID(second) {
+		t.Fatalf("fallbackID returned invalid IDs: %q, %q", first, second)
+	}
+	if first == "00000000" {
+		t.Fatal("fallbackID returned the old collision sentinel")
+	}
+}
