@@ -199,3 +199,20 @@ func TestSeedMissingDetection(t *testing.T) {
 		t.Fatal("a successful erase was treated as a missing seed")
 	}
 }
+
+func TestFindPrefersMenuBarForSingleWord(t *testing.T) {
+	screen := Screen{
+		Width: 1920, Height: 1080,
+		Words: []Word{
+			{Text: "Utilities", X: 240, Y: 10, W: 60, H: 14},
+			{Text: "Utilities", X: 700, Y: 900, W: 60, H: 14},
+		},
+	}
+	rect, ok := screen.Find("Utilities")
+	if !ok {
+		t.Fatal("Utilities was not found")
+	}
+	if rect.Y != 10 {
+		t.Fatalf("Find() chose y=%d, want the menu bar at y=10", rect.Y)
+	}
+}
