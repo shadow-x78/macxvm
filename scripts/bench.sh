@@ -13,13 +13,18 @@ cleanup() {
   "$BIN" delete "$N" --yes >/dev/null 2>&1 || true
 }
 trap cleanup EXIT INT TERM
-seconds() {
+run_timed() {
+  local label=$1
+  shift
   local started=$SECONDS
-  "$@" >/dev/null
-  echo $((SECONDS - started))
+  if ! "$@" >/dev/null; then
+    echo "benchmark failed: $label" >&2
+    return 1
+  fi
+  printf '%s_seconds %s\n' "$label" "$((SECONDS - started))"
 }
-printf 'clone_seconds %s\n' "$(seconds "$BIN" clone "$BASE" "$N")"
-printf 'start_to_ssh_seconds %s\n' "$(seconds "$BIN" start "$N" --wait)"
+run_timed clone "$BIN" clone "$BASE" "$N"
+run_timed start_to_ssh "$BIN" start "$N" --wait
 "$BIN" stop "$N" >/dev/null
 "$BIN" delete "$N" --yes >/dev/null
-printf 'run_true_seconds %s\n' "$(seconds "$BIN" run --from "$BASE" -- true)"
+run_timed run_true "$BIN" run --from "$BASE" -- true
