@@ -59,8 +59,6 @@ func cmdFinish(args []string) error {
 		return err
 	}
 	if state.Stage != "ready" {
-		// Setup Assistant is finished manually; never boot installation media
-		// or repeat the installer stages. Resume directly at SSH.
 		state.Stage = "ssh"
 		if err := bootstrap.Save(cfg, state); err != nil {
 			return err

@@ -324,13 +324,11 @@ func badge(s Status) string {
 	}
 }
 
-// badgePadded returns the badge padded to the width of the plain-text badges,
-// so the coloured symbols line up in the same column as [warn] and [fail].
 func badgePadded(s Status) string {
 	b := badge(s)
 	visible := 1
 	if !ui.Enabled() {
-		visible = 6 // the plain badges are six wide already
+		visible = 6
 	}
 	if pad := 6 - visible; pad > 0 {
 		return b + strings.Repeat(" ", pad)

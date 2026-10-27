@@ -180,7 +180,6 @@ func (s *Session) DoubleClickPhrase(phrase string) error {
 	return nil
 }
 
-// ClickFraction clicks a point defined against a 1920x1080 reference screen.
 func (s *Session) ClickFraction(fx, fy float64) error {
 	screen, err := s.Capture()
 	if err != nil {

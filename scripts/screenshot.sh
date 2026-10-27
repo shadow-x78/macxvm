@@ -1,23 +1,12 @@
 #!/bin/sh
 # MacXVM - Guest Screenshot (MIT)
 # https://github.com/shadow-x78/macxvm
-#
-# Take a screenshot of the screen of a running guest, through the QMP socket
-# that MacXVM gave the machine. The picture is what the guest draws, saved as
-# a PNG next to the screenshots of the repository.
-#
-# Usage: scripts/screenshot.sh NAME [OUT.png]
-#   NAME     the name of a running machine (macxvm list)
-#   OUT.png  the file to write (default assets/screenshots/<NAME>.png)
 
 set -eu
 
 NAME="${1:?usage: scripts/screenshot.sh NAME [OUT.png]}"
 OUT="${2:-assets/screenshots/${NAME}.png}"
 
-# The fallbacks mirror internal/paths exactly: MACXVM_HOME, then
-# XDG_DATA_HOME/macxvm, then ~/.local/share/macxvm for the state; MACXVM_RUN,
-# then XDG_RUNTIME_DIR/macxvm, then /tmp/macxvm-<uid> for the run directory.
 HOME_DIR="${MACXVM_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/macxvm}"
 RUN_DIR="${MACXVM_RUN:-${XDG_RUNTIME_DIR:+$XDG_RUNTIME_DIR/macxvm}}"
 RUN_DIR="${RUN_DIR:-/tmp/macxvm-$(id -u)}"

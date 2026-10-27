@@ -143,8 +143,6 @@ func cmdBaseBootstrap(args []string) error {
 		if err := sshx.WaitForEndpoint(cfg, time.Duration(*timeout)*time.Minute); err != nil {
 			return err
 		}
-		// Only a reachable SSH endpoint proves that setup has progressed far
-		// enough to detach installation media on the next resume.
 		state.Stage = "ssh"
 		if err := bootstrap.Save(cfg, state); err != nil {
 			return err

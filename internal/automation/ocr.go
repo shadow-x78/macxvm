@@ -119,8 +119,6 @@ func (s Screen) Find(phrase string) (Rect, bool) {
 	var best Rect
 	found := false
 	consider := func(rect Rect) {
-		// Buttons sit below explanatory text. When the same label appears in
-		// body copy and as a control, the bottom-most match is the control.
 		if !found || rect.Y > best.Y || (rect.Y == best.Y && rect.X > best.X) {
 			best = rect
 			found = true

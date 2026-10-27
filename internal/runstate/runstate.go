@@ -90,8 +90,6 @@ func cmdlinePath(procRoot string, pid int) string {
 	return fmt.Sprintf("%s/%d/cmdline", procRoot, pid)
 }
 
-// VNC returns the display of the VNC server of a running machine, and whether
-// the machine has one. The address is always the loopback of the host.
 func VNC(cfg *config.VMConfig) (int, bool) {
 	pid, ok := PID(cfg)
 	if !ok || pid <= 0 {

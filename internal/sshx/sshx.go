@@ -28,9 +28,6 @@ const attemptTimeout = 15 * time.Second
 
 var isRunning = runstate.IsRunning
 
-// BaseOptions are the options every SSH command of a machine carries. The
-// control path turns the connection of a machine into a socket that later
-// commands can ride: one handshake for an operation instead of one per call.
 func BaseOptions(cfg *config.VMConfig) []string {
 	return []string{
 		"-i", paths.KeyPath(),
@@ -49,7 +46,6 @@ func BaseOptions(cfg *config.VMConfig) []string {
 	}
 }
 
-// Options returns the SSH options of a machine.
 func Options(cfg *config.VMConfig) []string {
 	return append(BaseOptions(cfg), "-o", "BatchMode=yes")
 }
@@ -62,25 +58,14 @@ func HostKeyAlias(cfg *config.VMConfig) string {
 	return "macxvm-" + cfg.ID
 }
 
-// ControlPath is the socket of the shared connection of a machine. It lives
-// in the short run directory, because the socket path of SSH may not be
-// longer than about a hundred characters.
 func ControlPath(cfg *config.VMConfig) string {
 	return filepath.Join(paths.Run(), "ssh-"+cfg.Name)
 }
 
-// A Session holds one connection to the guest for the duration of an
-// operation, so the many commands of slim, tools, xcode and build do not
-// each pay the SSH handshake again. End asks the master to leave as soon
-// as the operation returns, and the short ControlPersist bounds the life
-// of a master whose operation was interrupted.
 type Session struct {
 	cfg *config.VMConfig
 }
 
-// Begin opens the shared connection of a machine. Where the guest is not
-// reachable the master silently fails and every command falls back to its
-// own connection, which keeps the behaviour of the operation unchanged.
 func Begin(cfg *config.VMConfig) *Session {
 	s := &Session{cfg: cfg}
 	if err := EnsureHostKey(cfg, os.Stderr); err != nil {
@@ -90,12 +75,7 @@ func Begin(cfg *config.VMConfig) *Session {
 		return s
 	}
 	opts := append(BaseOptions(cfg),
-		// auto reuses a master that another operation already opened for
-		// this machine instead of failing the control socket handshake.
 		"-o", "ControlMaster=auto",
-		// a short persist keeps the connection across the sequential
-		// commands of one operation and bounds the life of the master when
-		// an operation is interrupted: nothing lingers for minutes.
 		"-o", "ControlPersist=30",
 		"-o", "BatchMode=yes",
 	)
@@ -108,8 +88,6 @@ func Begin(cfg *config.VMConfig) *Session {
 	return s
 }
 
-// End closes the shared connection. A connection that is already gone is
-// not an error.
 func (s *Session) End() {
 	opts := append(BaseOptions(s.cfg), "-O", "exit")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -168,8 +146,6 @@ func InteractiveSSHArgs(cfg *config.VMConfig, extra ...string) []string {
 	return append(args, extra...)
 }
 
-// EnsureHostKey performs local trust on first use. The fingerprint is shown
-// before the key is published; later connections use StrictHostKeyChecking=yes.
 func EnsureHostKey(cfg *config.VMConfig, output io.Writer) error {
 	path := KnownHostsPath(cfg)
 	alias := HostKeyAlias(cfg)

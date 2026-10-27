@@ -25,8 +25,6 @@ type qemuImageInfo struct {
 	VirtualSize int64  `json:"virtual-size"`
 }
 
-// Resize changes a stopped VM. The returned bool reports a qcow2 expansion;
-// growing a virtual block device does not claim to grow the guest APFS volume.
 func Resize(cfg *config.VMConfig, opts ResizeOptions, runner hostcheck.OutputRunner) (bool, error) {
 	if opts.CPUs < 0 || opts.MemoryMiB < 0 || opts.DiskGiB < 0 {
 		return false, exitcode.New(exitcode.Usage, "resize values must be positive; zero leaves a value unchanged")
