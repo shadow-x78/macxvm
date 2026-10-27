@@ -4,6 +4,7 @@
 package cmds
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -87,6 +88,18 @@ func TestEveryCommandHasAGroupField(t *testing.T) {
 	for _, c := range All() {
 		if c.Group == "" {
 			t.Errorf("the command %q has no group", c.Name)
+		}
+	}
+}
+
+func TestRequireNameRejectsThePlaceholder(t *testing.T) {
+	for _, placeholder := range []string{"NAME", "name", "Name"} {
+		_, err := requireName([]string{placeholder})
+		if err == nil {
+			t.Fatalf("requireName(%q) accepted the placeholder", placeholder)
+		}
+		if !strings.Contains(err.Error(), "macxvm list") {
+			t.Fatalf("requireName(%q) error does not point at macxvm list: %v", placeholder, err)
 		}
 	}
 }

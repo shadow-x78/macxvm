@@ -71,6 +71,10 @@ func requireName(positional []string) (string, error) {
 	if len(positional) > 1 {
 		return "", exitcode.New(exitcode.Usage, "too many arguments: %v", positional[1:])
 	}
+	if strings.EqualFold(positional[0], "name") {
+		return "", exitcode.New(exitcode.Usage,
+			"'NAME' is a placeholder; run 'macxvm list' and pass the real machine name")
+	}
 	if err := names.Validate(positional[0]); err != nil {
 		return "", err
 	}
