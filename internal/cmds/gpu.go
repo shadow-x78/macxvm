@@ -237,8 +237,8 @@ func parseGuestGPU(out string) (display, vendor, device, vram, resolution, kext 
 func cmdOptimize(args []string) error {
 	fs := newFlagSet("optimize")
 	check := fs.Bool("check", false, "only report whether the VM uses the Bochs display")
-	width := fs.Int("width", 1920, "display width in pixels")
-	height := fs.Int("height", 1080, "display height in pixels")
+	width := fs.Int("width", 1440, "display width in pixels")
+	height := fs.Int("height", 900, "display height in pixels")
 	positional, flagArgs := SplitArgs(fs, args)
 	if err := parseFlags("optimize", fs, flagArgs); err != nil {
 		return err
@@ -332,7 +332,7 @@ func rewriteDisplayArgs(input, mode string) string {
 			case "vmware":
 				out = append(out, "  -device vmware-svga \\")
 			case "bochs":
-				out = append(out, "  -vga none \\", "  -device bochs-display,vgamem=256M,xres=1920,yres=1080 \\")
+				out = append(out, "  -vga none \\", "  -device bochs-display,vgamem=256M,xres=1440,yres=900 \\")
 			}
 		}
 	}
@@ -340,7 +340,7 @@ func rewriteDisplayArgs(input, mode string) string {
 }
 
 func bochsArgs(input string) (string, bool) {
-	return bochsArgsAt(input, 1920, 1080)
+	return bochsArgsAt(input, 1440, 900)
 }
 
 func bochsArgsAt(input string, width, height int) (string, bool) {

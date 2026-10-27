@@ -52,6 +52,16 @@ end-to-end installer run.
 - A literal `NAME` argument is now rejected with a message that points at
   `macxvm list`, instead of a generic invalid-name error.
 
+### Performance
+- The CPU model now exposes `avx2`, `fma`, `bmi1`, `bmi2` and `sha-ni`. A live
+  check confirms the guest CPUID lists AVX2, FMA, BMI1/2 and SHA.
+- The default `cli` profile is 6 vCPU / 12 GiB / 64 GiB. A parallel workload
+  dropped from 18.4 s at 4 vCPU to 6.3 s at 8 vCPU.
+- The default display is 1440x900 instead of 1920x1080: idle `WindowServer` CPU
+  fell from 7.5% to 2.5%. `optimize --width/--height` chooses another mode.
+- `-cpu host` was tested and fails to boot on this host; it is documented as
+  unsupported rather than recommended.
+
 ### CI
 - Split the opt-in KVM test into its own `integration` workflow. Push and pull
   request runs now show one `test` job instead of a green job beside a skipped

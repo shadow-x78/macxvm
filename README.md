@@ -227,8 +227,8 @@ macxvm exec macos -- sh -c 'echo ready'
 
 ```bash
 macxvm gpu macos                                  # host GPU/IOMMU plus the real macOS kext
-macxvm optimize macos                             # stopped VM: -vga none + bochs-display 1920x1080
-macxvm optimize macos --width 1440 --height 900   # fewer pixels for a software renderer
+macxvm optimize macos                             # stopped VM: -vga none + bochs-display 1440x900
+macxvm optimize macos --width 1920 --height 1080  # sharper mode, more CPU per frame
 ```
 
 The full reverse engineering, the measured numbers and the passthrough limits
