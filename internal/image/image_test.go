@@ -317,3 +317,28 @@ func TestArgsTemplateIsValid(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestArgsTemplateMountsInstallMediaReadOnly(t *testing.T) {
+	cpu, err := LookupCPU("skylake")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, install, err := argsfile.Parse(argsTemplate(cpu))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(install) == 0 {
+		t.Fatal("the template has no installation media line")
+	}
+	found := false
+	for _, line := range install {
+		for _, tok := range line {
+			if strings.Contains(tok, "readonly=on") {
+				found = true
+			}
+		}
+	}
+	if !found {
+		t.Fatal("the installation media is writable; a guest could corrupt the shared image")
+	}
+}

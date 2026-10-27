@@ -155,6 +155,14 @@ func Validate(lines [][]string) error {
 			}
 		}
 	}
+	for _, toks := range lines {
+		for _, tok := range toks {
+			if strings.Contains(tok, "BaseSystem.img") && !strings.Contains(tok, "readonly=on") {
+				return exitcode.New(exitcode.BadArgsFile,
+					"the shared BaseSystem.img must be mounted with readonly=on, or a guest can corrupt it")
+			}
+		}
+	}
 	for _, name := range RequiredPlaceholders {
 		if !containsPlaceholder(lines, name) {
 			return exitcode.New(exitcode.BadArgsFile,
