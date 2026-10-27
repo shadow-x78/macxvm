@@ -117,39 +117,6 @@ func (q *Client) Screendump(path string) error {
 	return err
 }
 
-// SendKey presses a sequence of QEMU qcodes as one chord. It is used for
-// installer automation, so no external VNC keyboard helper is required.
-func (q *Client) SendKey(keys []string, holdMS int) error {
-	items := make([]map[string]string, 0, len(keys))
-	for _, key := range keys {
-		items = append(items, map[string]string{"type": "qcode", "data": key})
-	}
-	args := map[string]any{"keys": items}
-	if holdMS > 0 {
-		args["hold-time"] = holdMS
-	}
-	_, err := q.Execute("send-key", args)
-	return err
-}
-
-// ClickAbs sends an absolute pointer position and a left click to a tablet
-// device. Coordinates are scaled to the QEMU absolute axis range.
-func (q *Client) ClickAbs(x, y, width, height int) error {
-	if width <= 0 || height <= 0 {
-		return fmt.Errorf("invalid pointer dimensions %dx%d", width, height)
-	}
-	ax := x * 0x7fff / width
-	ay := y * 0x7fff / height
-	events := []map[string]any{
-		{"type": "abs", "data": map[string]any{"axis": "x", "value": ax}},
-		{"type": "abs", "data": map[string]any{"axis": "y", "value": ay}},
-		{"type": "btn", "data": map[string]any{"down": true, "button": "left"}},
-		{"type": "btn", "data": map[string]any{"down": false, "button": "left"}},
-	}
-	_, err := q.Execute("input-send-event", map[string]any{"events": events})
-	return err
-}
-
 func (q *Client) Powerdown() error {
 	return q.tolerant("system_powerdown")
 }

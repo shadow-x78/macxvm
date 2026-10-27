@@ -156,21 +156,6 @@ func fetchOpenCore(opts Options) ([]AssetRecord, error) {
 	return records, nil
 }
 
-func reuseLegacy(src, dst string) {
-	if exists(dst) || !exists(src) || filepath.Clean(src) == filepath.Clean(dst) {
-		return
-	}
-	partial := dst + ".partial"
-	os.Remove(partial)
-	if err := os.Link(src, partial); err == nil {
-		if err := os.Rename(partial, dst); err == nil {
-			return
-		}
-	}
-	os.Remove(partial)
-	_ = copyFileAtomic(src, dst)
-}
-
 func copyFileAtomic(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
@@ -204,10 +189,6 @@ func copyFileAtomic(src, dst string) error {
 	}
 	ok = true
 	return nil
-}
-
-func downloadFile(rawURL, dest string) error {
-	return downloadFileVerified(rawURL, dest, "")
 }
 
 func downloadFileVerified(rawURL, dest, expectedSHA256 string) error {

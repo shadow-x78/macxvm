@@ -164,26 +164,6 @@ func AssetVersion(dir, expected string) (string, error) {
 	return m.MacOS, nil
 }
 
-func CheckVersion(dir, expected string) error {
-	_, err := AssetVersion(dir, expected)
-	return err
-}
-
-func CachedVersion(dir string) string {
-	raw, err := os.ReadFile(filepath.Join(dir, manifestName))
-	if err != nil {
-		return ""
-	}
-	var m Manifest
-	if json.Unmarshal(raw, &m) != nil {
-		return ""
-	}
-	if _, ok := validManifest(dir, m.MacOS); !ok {
-		return ""
-	}
-	return m.MacOS
-}
-
 func checksumFile(path string) (string, error) {
 	record, err := fileRecord(path, "")
 	if err != nil {

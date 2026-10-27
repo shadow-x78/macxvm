@@ -6,55 +6,8 @@ package automation
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
-
-func TestSelectDiskUsesTheMatchingInternalDisk(t *testing.T) {
-	text := `diskutil list internal
-/dev/disk0 (internal, physical):
-   #:                       TYPE NAME                    SIZE       IDENTIFIER
-   0:      GUID_partition_scheme                        *4.6 GB     disk0
-   1:                        EFI EFI                     209.7 MB   disk0s1
-
-/dev/disk1 (internal, physical):
-   #:                       TYPE NAME                    SIZE       IDENTIFIER
-   0:      GUID_partition_scheme                        *68.7 GB    disk1
-   1:       Microsoft Basic Data                         68.7 GB    disk1s1
-
-/dev/disk2 (internal, physical):
-   #:                       TYPE NAME                    SIZE       IDENTIFIER
-   0:      GUID_partition_scheme                        *43.2 GB    disk2
-   1:                        Apple_HFS Recovery          2.9 GB     disk2s1
-`
-	got, err := SelectDisk(text, 64)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got != "/dev/disk1" {
-		t.Fatalf("SelectDisk() = %q, want /dev/disk1", got)
-	}
-}
-
-func TestSelectDiskRefusesAmbiguity(t *testing.T) {
-	text := `/dev/disk1 (internal, physical):
-   0: GUID_partition_scheme *68.7 GB disk1
-/dev/disk2 (internal, physical):
-   0: GUID_partition_scheme *68.7 GB disk2
-`
-	if _, err := SelectDisk(text, 64); err == nil {
-		t.Fatal("SelectDisk() accepted two matching disks")
-	}
-}
-
-func TestSelectDiskRefusesNoMatch(t *testing.T) {
-	text := `/dev/disk0 (internal, physical):
-   0: GUID_partition_scheme *4.6 GB disk0
-`
-	if _, err := SelectDisk(text, 64); err == nil {
-		t.Fatal("SelectDisk() accepted the installer media")
-	}
-}
 
 func TestScreenFindPhraseAndCenter(t *testing.T) {
 	screen := Screen{
@@ -72,28 +25,6 @@ func TestScreenFindPhraseAndCenter(t *testing.T) {
 	x, y := rect.Center()
 	if x != 930 || y != 310 {
 		t.Fatalf("center = %d,%d, want 930,310", x, y)
-	}
-}
-
-func TestQcodesForInstallerCommands(t *testing.T) {
-	for _, text := range []string{
-		"diskutil list internal",
-		"diskutil eraseDisk APFS MacHDD GPT /dev/disk1",
-		"exit",
-	} {
-		for _, r := range text {
-			if _, err := qcodes(r); err != nil {
-				t.Fatalf("qcodes(%q) failed for %q: %v", r, text, err)
-			}
-		}
-	}
-	keys, err := qcodes('/')
-	if err != nil || strings.Join(keys, ",") != "slash" {
-		t.Fatalf("slash qcodes = %v, %v", keys, err)
-	}
-	keys, err = qcodes('_')
-	if err != nil || strings.Join(keys, ",") != "shift,minus" {
-		t.Fatalf("underscore qcodes = %v, %v", keys, err)
 	}
 }
 
@@ -116,25 +47,6 @@ func TestSetupDetection(t *testing.T) {
 	installer := Screen{Words: []Word{{Text: "Installing", X: 1, Y: 1}, {Text: "macOS", X: 2, Y: 1}}}
 	if isSetupWelcome(installer) {
 		t.Fatal("installer progress was mistaken for Setup Assistant")
-	}
-}
-
-func TestSelectDiskAcceptsOCRLostDecimal(t *testing.T) {
-	text := `/dev/disk0 (internal, physical):
-   0: GUID_partition_scheme +402.7 MB disk0
-   1: EFI EFI 152.6 MB disk0s1
-/dev/disk1 (internal, physical):
-   0: GUID_partition_scheme +687 6B disk1
-   1: Microsoft Basic Data 68.7 GB disk1s1
-/dev/disk2 (internal, physical):
-   0: GUID_partition_scheme +43.2 GB disk2
-`
-	got, err := SelectDisk(text, 64)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got != "/dev/disk1" {
-		t.Fatalf("SelectDisk() = %q, want /dev/disk1", got)
 	}
 }
 

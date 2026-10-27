@@ -188,7 +188,6 @@ var (
 	reDevice = regexp.MustCompile(`Device ID:\s*(\S+)`)
 	reVRAM   = regexp.MustCompile(`VRAM \(Total\):\s*([^\n]+)`)
 	reRes    = regexp.MustCompile(`Resolution:\s*([^\n]+)`)
-	reKext   = regexp.MustCompile(`com\.apple\.(?:driver\.)?(Apple\w+)`)
 )
 
 func parseGuestGPU(out string) (display, vendor, device, vram, resolution, kext string) {
