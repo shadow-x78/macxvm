@@ -3,6 +3,7 @@
 # https://github.com/shadow-x78/macxvm
 # ─────────────────────────────────────────────
 
+# ── Global ──
 root = true
 
 [*]
@@ -13,14 +14,18 @@ indent_style = space
 indent_size = 4
 trim_trailing_whitespace = true
 
+# ── Go ──
 [*.go]
 indent_style = tab
 
+# ── YAML ──
 [*.{yml,yaml}]
 indent_size = 2
 
+# ── Makefile ──
 [Makefile]
 indent_style = tab
 
+# ── Markdown ──
 [*.md]
 trim_trailing_whitespace = false

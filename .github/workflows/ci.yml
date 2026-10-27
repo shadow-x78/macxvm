@@ -5,6 +5,7 @@
 
 name: ci
 
+# ── Triggers ──
 on:
   push:
   pull_request:
@@ -15,6 +16,7 @@ on:
         required: false
         type: string
 
+# ── Jobs ──
 jobs:
   test:
     runs-on: ubuntu-latest
