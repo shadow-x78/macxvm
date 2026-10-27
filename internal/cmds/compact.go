@@ -6,6 +6,7 @@ package cmds
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/hostcheck"
@@ -50,7 +51,12 @@ func cmdCompact(args []string) error {
 		return exitcode.New(exitcode.Generic, "another macxvm operation is running on '%s'", name)
 	}
 	defer lock.Close()
-	overlays, err := store.OverlaysOf(name)
+	current, err := store.LockedCurrent(cfg)
+	if err != nil {
+		return err
+	}
+	cfg = current
+	overlays, err := store.OverlaysOfStrict(name)
 	if err != nil {
 		return err
 	}
@@ -60,7 +66,16 @@ func cmdCompact(args []string) error {
 	}
 	disk := cfg.File("disk.qcow2")
 	before := fileSize(disk)
-	tmp := disk + ".tmp"
+	tmpFile, err := os.CreateTemp(filepath.Dir(disk), "disk-compact-*.qcow2")
+	if err != nil {
+		return exitcode.New(exitcode.Generic, "cannot create a temporary disk: %v", err)
+	}
+	tmp := tmpFile.Name()
+	if err := tmpFile.Close(); err != nil {
+		os.Remove(tmp)
+		return exitcode.New(exitcode.Generic, "cannot close the temporary disk: %v", err)
+	}
+	os.Remove(tmp)
 	runner := hostcheck.ExecRunner{}
 	if err := runner.Run("qemu-img", "convert", "-O", "qcow2", disk, tmp); err != nil {
 		os.Remove(tmp)
