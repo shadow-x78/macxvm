@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -146,24 +147,45 @@ func copyDir(cfg *config.VMConfig, s config.Share, toGuest, remove, update bool)
 }
 
 func SizeOf(dir string, excludes []string) (int64, error) {
-	skip := map[string]bool{}
+	patterns := make([]string, 0, len(excludes))
 	for _, e := range excludes {
-		skip[filepath.Base(e)] = true
+		e = filepath.ToSlash(strings.TrimSpace(e))
+		if e == "" || path.IsAbs(e) {
+			continue
+		}
+		patterns = append(patterns, e)
 	}
 	var total int64
 	err := filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
 		if err != nil || info == nil {
 			return nil
 		}
-		if info.IsDir() && p != dir && skip[info.Name()] {
+		rel, relErr := filepath.Rel(dir, p)
+		if relErr != nil {
+			return nil
+		}
+		rel = filepath.ToSlash(rel)
+		if info.IsDir() && p != dir && matchesExclude(patterns, rel, info.Name()) {
 			return filepath.SkipDir
 		}
-		if !info.IsDir() && !skip[info.Name()] {
+		if !info.IsDir() && !matchesExclude(patterns, rel, info.Name()) {
 			total += info.Size()
 		}
 		return nil
 	})
 	return total, err
+}
+
+func matchesExclude(patterns []string, rel, name string) bool {
+	for _, pattern := range patterns {
+		if ok, _ := path.Match(pattern, name); ok {
+			return true
+		}
+		if ok, _ := path.Match(pattern, rel); ok {
+			return true
+		}
+	}
+	return false
 }
 
 func FreeInGuest(cfg *config.VMConfig) (int64, error) {
