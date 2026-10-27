@@ -67,3 +67,39 @@ func TestLocalTOFUPublishesFingerprintAndReusesKey(t *testing.T) {
 		t.Fatalf("trusted key was scanned again: %q", calls)
 	}
 }
+
+func TestLocalTOFUPreservesOtherHostKeys(t *testing.T) {
+	cfg := testConfig(t)
+	if err := os.Remove(KnownHostsPath(cfg)); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(KnownHostsPath(cfg), []byte("other ssh-ed25519 OTHERKEY\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	original := isRunning
+	isRunning = func(*config.VMConfig) bool { return true }
+	defer func() { isRunning = original }()
+	bin := t.TempDir()
+	scan := "#!/bin/sh\nprintf '[127.0.0.1]:2222 ssh-ed25519 AAAATEST\\n'\n"
+	keygen := "#!/bin/sh\nprintf '256 SHA256:test-fingerprint no-comment (ED25519)\\n'\n"
+	for name, script := range map[string]string{"ssh-keyscan": scan, "ssh-keygen": keygen} {
+		if err := os.WriteFile(filepath.Join(bin, name), []byte(script), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Setenv("PATH", bin+":"+os.Getenv("PATH"))
+	if err := EnsureHostKey(cfg, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(KnownHostsPath(cfg))
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(raw)
+	if !strings.Contains(text, "other ssh-ed25519 OTHERKEY") {
+		t.Fatalf("an existing host key was dropped: %s", text)
+	}
+	if !strings.Contains(text, HostKeyAlias(cfg)+" ssh-ed25519 AAAATEST") {
+		t.Fatalf("the new host key was not added: %s", text)
+	}
+}
