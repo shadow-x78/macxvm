@@ -231,12 +231,15 @@ func (i *Installer) waitForSetup() error {
 				case screen.Has("Base System"):
 					_ = i.Session.ClickPhrase("Base System")
 				}
-			} else if screen.Has("Restart") && !screen.Has("Installing") {
-				_ = i.Session.ClickPhrase("Restart")
-			} else if screen.Has("Agree") && i.AcceptLicense {
-				_ = i.Session.ClickPhrase("Agree")
-			} else if screen.Has("Continue") && !screen.Has("Installing") {
-				_ = i.Session.ClickPhrase("Continue")
+			} else if isInstallerScreen(screen) {
+				switch {
+				case screen.Has("Restart"):
+					_ = i.Session.ClickPhrase("Restart")
+				case screen.Has("Agree") && i.AcceptLicense:
+					_ = i.Session.ClickPhrase("Agree")
+				case screen.Has("Continue"):
+					_ = i.Session.ClickPhrase("Continue")
+				}
 			}
 		}
 		if time.Now().After(deadline) {
@@ -249,8 +252,26 @@ func (i *Installer) waitForSetup() error {
 
 func isSetupWelcome(screen Screen) bool {
 	for _, phrase := range []string{
-		"Welcome", "Choose Your Country or Region", "Select Your Country or Region",
-		"Let's get started", "Set Up Your Mac", "Start Using Your Mac",
+		"Choose Your Country or Region",
+		"Select Your Country or Region",
+		"Set Up Your Mac",
+		"Start Using Your Mac",
+		"Welcome to Your New Mac",
+	} {
+		if screen.Has(phrase) {
+			return true
+		}
+	}
+	return false
+}
+
+func isInstallerScreen(screen Screen) bool {
+	for _, phrase := range []string{
+		"Reinstall macOS",
+		"Install macOS",
+		"macOS Utilities",
+		"macOS Installer",
+		"Select a Language",
 	} {
 		if screen.Has(phrase) {
 			return true

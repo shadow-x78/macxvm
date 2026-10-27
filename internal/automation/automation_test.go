@@ -137,3 +137,35 @@ func TestSelectDiskAcceptsOCRLostDecimal(t *testing.T) {
 		t.Fatalf("SelectDisk() = %q, want /dev/disk1", got)
 	}
 }
+
+func TestGenericWelcomeIsNotSetupAssistant(t *testing.T) {
+	screen := Screen{Words: []Word{{Text: "Welcome", X: 1, Y: 1}}}
+	if isSetupWelcome(screen) {
+		t.Fatal("a generic Welcome screen was mistaken for Setup Assistant")
+	}
+}
+
+func TestSetupPageWithContinueIsNotAnInstallerScreen(t *testing.T) {
+	screen := Screen{Words: []Word{
+		{Text: "Choose", X: 1, Y: 1}, {Text: "Your", X: 2, Y: 1},
+		{Text: "Country", X: 3, Y: 1}, {Text: "or", X: 4, Y: 1},
+		{Text: "Region", X: 5, Y: 1}, {Text: "Continue", X: 6, Y: 200},
+	}}
+	if !isSetupWelcome(screen) {
+		t.Fatal("the first Setup Assistant page was not detected")
+	}
+	if isInstallerScreen(screen) {
+		t.Fatal("a Setup Assistant page was treated as an installer screen")
+	}
+}
+
+func TestInstallerScreenRecognition(t *testing.T) {
+	for _, text := range []string{"Reinstall macOS", "macOS Utilities", "Select a Language"} {
+		if !isInstallerScreen(Screen{Words: []Word{{Text: text, X: 1, Y: 1}}}) {
+			t.Fatalf("%q was not recognized as an installer screen", text)
+		}
+	}
+	if isInstallerScreen(Screen{Words: []Word{{Text: "Installing", X: 1, Y: 1}, {Text: "macOS", X: 2, Y: 1}}}) {
+		t.Fatal("installation progress was treated as a clickable installer screen")
+	}
+}
