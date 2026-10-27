@@ -307,3 +307,15 @@ func TestFreePort(t *testing.T) {
 		t.Fatalf("PortFree(%d) = false right after FreePort()", p)
 	}
 }
+
+func TestLoadRejectsMismatchedConfigName(t *testing.T) {
+	home := setupHome(t)
+	cfg := makeVM(t, home, "demo", false)
+	cfg.Name = "other"
+	if err := config.Save(Dir("demo"), cfg); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Load("demo"); err == nil {
+		t.Fatal("Load() accepted a config that names another VM")
+	}
+}
