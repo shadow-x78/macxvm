@@ -2,7 +2,7 @@
 
 # حل المشكلات - MacXVM
 
-[![الإصدار](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.9.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -131,6 +131,10 @@ tail -n 40 ~/.local/share/macxvm/vms/X/console.log
 **`sudo-missing` أو فشل `sudo -n`**
 
 استأنف bootstrap؛ يتحقق من sudoers عبر `visudo` ويختبر `sudo -n`. لا تمرر كلمات المرور في arguments أو `config.json`.
+
+**لم يُفتح عارض VNC**
+
+`start --vnc` و`autoinstall` و`finish` يفتحان أول عارض متاح. إذا لم يكن هناك عارض مثبت فإنها تطبع عنوان loopback وتُبقي الجهاز يعمل. حدد `MACXVM_VNC_VIEWER` لبرنامج معين، أو `MACXVM_NO_OPEN=1` / `--no-open` لتعطيل الفتح التلقائي. واستخدم `macxvm open NAME` لاحقًا.
 
 **`start --wait` ينتهي بينما VNC يعمل**
 

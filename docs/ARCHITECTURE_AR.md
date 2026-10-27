@@ -2,7 +2,7 @@
 
 # مواصفات البنية - MacXVM
 
-[![الإصدار](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.9.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -110,7 +110,7 @@ create ──► start ──► (slim, tools, xcode) ──► stop ──► b
 - `autoinstall` يقود OpenCore ثم Recovery Terminal ثم مسح القرص المطابق ثم الترخيص (بعلم صريح) ثم القرص ثم Install، وينتظر أول صفحة Setup Assistant. يستخدم QMP screendump مع OCR وvncdo للإدخال.
 - `finish` يستأنف بعد الحساب وRemote Login اليدويين: المفتاح وsudoers وDark والطاقة وslim level 1 وعرض Bochs ومعاينة التطبيقات والحذف الاختياري والتحقق والختم الاختياري.
 - `base bootstrap` يحفظ مراحل غير سرية فقط: `assets` و`install` و`manual-setup` و`ssh` و`verify` و`ready`. خطوات ترخيص Apple والحساب تبقى يدوية في VNC.
-- `start` يشغل QEMU ويحجز VNC تحت قفل عام، ويتحقق من QMP ومن مستمع VNC، ويسجل `created` أو `qmp-ready` أو `booting` أو `ssh-ready` أو `stopping` أو `stopped` أو `failed`. و`start --wait` يثبت SSH بالمفتاح، و`open` لا ينتظر SSH.
+- `start` يشغل QEMU ويحجز VNC تحت قفل عام، ويتحقق من QMP ومن مستمع VNC، ويسجل `created` أو `qmp-ready` أو `booting` أو `ssh-ready` أو `stopping` أو `stopped` أو `failed`. و`start --wait` يثبت SSH بالمفتاح، و`start --vnc` و`autoinstall` و`finish` تفتح العارض تلقائيًا (`--no-open` يعطله)، و`open` لا ينتظر SSH.
 - `stop` يحاول SSH المحدود فقط عند وجود ثقة سابقة، ثم ACPI، ثم QMP quit، ثم إشارة بعد إعادة فحص marker QEMU الدقيق. لا يعلن نجاح الإيقاف وعملية مملوكة ما زالت حية.
 - `base seal` يتطلب جهازًا متوقفًا اجتاز bootstrap. الأساس المختوم لا يقلع، ولا تحذف أو تعدل طبقاته من تحته.
 - `clone` ينشئ طبقة بعد إعادة تحميل config الحالي تحت `op.lock`، وفحص القرص وNVRAM وقابلية توسيع args، ثم ينشر ذريًا.

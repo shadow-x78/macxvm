@@ -2,7 +2,7 @@
 
 # Architecture Specification - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.9.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -110,7 +110,7 @@ create ──► start ──► (slim, tools, xcode) ──► stop ──► b
 - `autoinstall` drives OpenCore, Recovery Terminal, exact-size disk erase, license (explicit flag), target disk and Install, then waits for the first Setup Assistant page. It uses QMP screendumps plus OCR and vncdo pointer/keyboard input.
 - `finish` resumes after the manual account/Remote Login steps: key, sudoers, Dark, power, slim level 1, Bochs display, app preview/removal, verification and optional seal.
 - `base bootstrap` persists only non-secret stages `assets`, `install`, `manual-setup`, `ssh`, `verify`, `ready`. Manual Apple/license/account work stays in VNC.
-- `start` spawns QEMU, reserves VNC under a global allocation lock, verifies QMP and the VNC listener, and records `created`, `qmp-ready`, `booting`, `ssh-ready`, `stopping`, `stopped` or `failed`. `start --wait` proves key-only SSH; `open` never waits for SSH.
+- `start` spawns QEMU, reserves VNC under a global allocation lock, verifies QMP and the VNC listener, and records `created`, `qmp-ready`, `booting`, `ssh-ready`, `stopping`, `stopped` or `failed`. `start --wait` proves key-only SSH; `start --vnc`, `autoinstall` and `finish` open the viewer automatically (`--no-open` disables it); `open` never waits for SSH.
 - `stop` tries bounded SSH only when trust already exists, then ACPI, QMP quit and finally a signal only after rechecking the exact QEMU marker. A live owned process is never reported as stopped.
 - `base seal` requires a stopped bootstrap-ready VM. A sealed base is never booted; overlays cannot be resized or deleted out from under their dependents.
 - `clone` creates an overlay of a sealed base after reloading the current config under `op.lock`, checking disk/NVRAM/args expansion and publishing atomically.
