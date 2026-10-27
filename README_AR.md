@@ -299,6 +299,8 @@ macxvm optimize macos     # لجهاز متوقف: -vga none + bochs-display 192
 
 ![تقدم التثبيت](assets/screenshots/vm-install-progress.png)
 
+![الأتمتة تتوقف عند أول صفحة Setup Assistant](assets/screenshots/vm-setup-assistant.png)
+
 ![شاشة الدخول مع Bochs وAppleBochVGAFB](assets/screenshots/vm-bochs-login.png)
 
 ![سطح المكتب الداكن](assets/screenshots/vm-desktop.png)
