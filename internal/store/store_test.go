@@ -350,3 +350,18 @@ func TestUpdatePreservesConcurrentFields(t *testing.T) {
 		t.Fatalf("Update lost a concurrent field: %+v", loaded)
 	}
 }
+
+func TestOverlaysOfStrictFailsOnUnreadableVM(t *testing.T) {
+	home := setupHome(t)
+	makeVM(t, home, "base", true)
+	broken := Dir("broken")
+	if err := os.MkdirAll(broken, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(broken, "config.json"), []byte("{"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := OverlaysOfStrict("base"); err == nil {
+		t.Fatal("OverlaysOfStrict ignored an unreadable VM")
+	}
+}
