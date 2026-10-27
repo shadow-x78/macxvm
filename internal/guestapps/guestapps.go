@@ -72,6 +72,12 @@ type Report struct {
 
 type CommandRunner func(command string) (string, error)
 
+func Policy() []App {
+	out := make([]App, len(allowlist))
+	copy(out, allowlist)
+	return out
+}
+
 func Names() []string {
 	out := make([]string, 0, len(allowlist))
 	for _, app := range allowlist {
