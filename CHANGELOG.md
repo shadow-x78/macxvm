@@ -26,6 +26,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Application set defaults are now `default`; `personal` remains accepted as a
   compatibility alias. `apps-default.txt` replaces the old policy file name.
 
+### Audit
+- Moved the default macOS machine template, CPU models and pinned asset URLs
+  from Go constants into reviewed data resources.
+- `list` and `base list` now warn about an unreadable VM instead of hiding it.
+- Removed unreferenced installer helpers, the level 3 shell stub, an unused
+  screenshot and six unused logo files.
+- Hardened installer disk selection against the real `diskutil` fields, Setup
+  detection, resume behavior, process ownership, share locking, glob excludes
+  and rsync quoting.
+
 ### Notes
 - `AppleVirtualGraphics.kext` matches only Bochs and Cirrus. There is no Metal
   or 3D acceleration, and NVIDIA RTX passthrough is unavailable on a host with

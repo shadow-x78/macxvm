@@ -15,6 +15,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/shadow-x78/macxvm/internal/argsfile"
 )
 
 func TestLookupCPU(t *testing.T) {
@@ -295,5 +297,23 @@ func TestWriteGPT(t *testing.T) {
 	}
 	if string(raw[(sectors-1)*sectorSize:(sectors-1)*sectorSize+8]) != "EFI PART" {
 		t.Fatal("the backup header has no signature")
+	}
+}
+
+func TestArgsTemplateIsValid(t *testing.T) {
+	cpu, err := LookupCPU("skylake")
+	if err != nil {
+		t.Fatal(err)
+	}
+	normal, install, err := argsfile.Parse(argsTemplate(cpu))
+	if err != nil {
+		t.Fatal(err)
+	}
+	all := append(append([][]string{}, normal...), install...)
+	if err := argsfile.Validate(all); err != nil {
+		t.Fatal(err)
+	}
+	if err := argsfile.CheckPlaceholders(all); err != nil {
+		t.Fatal(err)
 	}
 }
