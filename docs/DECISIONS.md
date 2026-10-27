@@ -2,7 +2,7 @@
 
 # Decisions Log - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.9.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -54,7 +54,7 @@ Every deviation from the specification and every ambiguity that had to be resolv
 | A16 | `--` handling | Go's `flag` package stops at the first positional, so `NAME -- cmd` leaves `--` in the remainder; every command strips exactly one leading `--` after the positional |
 | A17 | Flag ordering | The spec's usage puts `NAME` before the flags, so `cmds.SplitArgs` splits the leading positional out of the argument list before handing the rest to `flag`. Bool flags are detected through the `FlagSet`, so `--flag value NAME` works too |
 | A18 | `Makefile` `install` target | Adds `mkdir -p $(HOME)/.local/bin` before the install step; the spec's Makefile would fail when the directory does not exist |
-| A19 | Version | `Version = "0.8.0"` in `internal/cmds/cmds.go`; release builds pin the same value with ldflags |
+| A19 | Version | `Version = "0.9.0"` in `internal/cmds/cmds.go`; release builds pin the same value with ldflags |
 | A20 | `go.mod` | `go 1.22` language level; any toolchain from 1.22 upwards works. The build host uses Go 1.27.3 |
 | A21 | Release artefacts | `linux/amd64` only, built with `CGO_ENABLED=0`. No extra release workflow: spec section 17 allows a single CI job only |
 | A22 | Guest assets | The repository never ships, downloads or embeds Apple software, firmware, keys or boot loaders. The machine definition, bootloader, firmware and installer image come from the user |
@@ -133,4 +133,4 @@ The whole project was audited in October 2026. The findings, the evidence and th
 | A80 | Corrupt VM visibility | `store.Scan` returns readable VMs plus per-directory problems. `list` and `base list` print a warning to stderr and keep stdout valid, so a broken VM is visible without breaking JSON consumers. |
 | A81 | Unused assets | The unreferenced level 3 stub, disk-erased screenshot and six unreferenced logo files were deleted. The two README banners remain. |
 | A82 | CI action versions | `actions/checkout@v7` and `actions/setup-go@v7` resolve to v7.0.1 and v7.0.0; the major-version pins are valid. |
-| A75 | Release and integration | v0.8.0 uses matching ldflags. CI runs formatting, headers, shell syntax, vet, tests and build; KVM integration is manual opt-in via `MACXVM_INTEGRATION=1` and a named sealed base |
+| A75 | Release and integration | v0.9.0 uses matching ldflags, and v0.9.0 is the first tag after v0.6.0; it supersedes the unreleased v0.7.0/v0.8.0 milestones. CI runs formatting, headers, shell syntax, vet, tests and build; KVM integration is manual opt-in via `MACXVM_INTEGRATION=1` and a named sealed base |

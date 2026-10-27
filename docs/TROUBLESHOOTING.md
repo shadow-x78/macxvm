@@ -2,7 +2,7 @@
 
 # Troubleshooting - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.9.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -132,6 +132,10 @@ Enable **Remote Login** in System Settings, General, Sharing. `macxvm base boots
 **`sudo-missing` or a failed `sudo -n`**
 
 Resume bootstrap; it validates a per-user sudoers entry with `visudo` and tests `sudo -n`. Do not paste passwords into command arguments or `config.json`.
+
+**The VNC viewer did not open**
+
+`start --vnc`, `autoinstall` and `finish` open the first viewer they find. If none is installed, they print the loopback address and keep the VM running. Set `MACXVM_VNC_VIEWER` to a specific binary, or `MACXVM_NO_OPEN=1` / `--no-open` to disable auto-open. Use `macxvm open NAME` to open it later.
 
 **`start --wait` times out while VNC works**
 

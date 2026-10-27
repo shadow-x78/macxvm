@@ -23,7 +23,7 @@ MacXVM is an independent open-source project, not affiliated with or endorsed by
 
 Run slim macOS guests with Xcode on a Linux host.
 
-[![Version](https://img.shields.io/badge/version-0.8.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.9.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -479,7 +479,7 @@ Exit codes: `0` success, `1` error, `2` usage, `3` not found, `4` already runnin
 | Operation | Target | Measured on the reference host |
 |-----------|--------|--------------------------------|
 | `list`, `status` | < 100 ms | 3 ms |
-| Release binary | < 8 MB | 7.6 MB, static `linux/amd64` v0.8.0 |
+| Release binary | < 8 MB | 8,032,416 bytes, static `linux/amd64` v0.9.0 |
 | Overlay clone of a sealed base | < 1 s | < 1 s, a few hundred KiB on disk |
 | Idle cost on the host | none | no process of MacXVM stays alive |
 

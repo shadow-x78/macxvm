@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.8.0] - 2026-10-27
+## [v0.9.0] - 2026-10-27
+
+This release supersedes the unreleased v0.8.0 milestone and is the first tagged
+release after v0.6.0. It includes the full audit, cleanup and the verified
+end-to-end installer run.
 
 ### Added
 - `macxvm autoinstall NAME --yes [--accept-license]`: automates OpenCore,
@@ -17,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   verification and optional seal.
 - `macxvm gpu NAME [--json]` and `macxvm optimize NAME`: host IOMMU/GPU report
   plus the real macOS display kext, and a stopped-VM switch to Bochs VGA.
+- The VNC viewer opens automatically after `start --vnc`, `autoinstall` and
+  `finish`. `--no-open` or `MACXVM_NO_OPEN=1` keeps it manual; a missing viewer
+  only warns and prints the loopback address.
 
 ### Changed
 - The default `cli` profile is now 4 vCPUs / 8192 MiB / 64 GiB. There is one
@@ -42,6 +49,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hardened installer disk selection against the real `diskutil` fields, Setup
   detection, resume behavior, process ownership, share locking, glob excludes
   and rsync quoting.
+- A literal `NAME` argument is now rejected with a message that points at
+  `macxvm list`, instead of a generic invalid-name error.
+
+### Verified
+- A temporary VM was installed from scratch with `autoinstall --yes
+  --accept-license`: OpenCore, Recovery, Terminal, exact-size disk erase,
+  license, target disk, Install, then a stop at the first Setup Assistant page.
+  The guest was then deleted and the main VM restarted and re-verified.
 
 ### Notes
 - `AppleVirtualGraphics.kext` matches only Bochs and Cirrus. There is no Metal

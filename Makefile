@@ -4,7 +4,7 @@
 # ─────────────────────────────────────────────
 
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w -X github.com/shadow-x78/macxvm/internal/cmds.Version=0.8.0" -o bin/macxvm ./cmd/macxvm
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w -X github.com/shadow-x78/macxvm/internal/cmds.Version=0.9.0" -o bin/macxvm ./cmd/macxvm
 
 test:
 	go vet ./... && go test ./...
