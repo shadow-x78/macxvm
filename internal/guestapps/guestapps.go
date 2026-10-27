@@ -200,7 +200,6 @@ SYSTEM_ROOT=` + shellDoubleQuote(systemRoot) + `
 USER_ROOT=` + shellDoubleQuote(userRoot) + `
 DOCK_CHANGED=0
 MARKER="MACXVM_RESULT|"
-: "${CSRUTIL:=/usr/bin/csrutil}"
 : "${PLISTBUDDY:=/usr/libexec/PlistBuddy}"
 : "${LS:=/bin/ls}"
 : "${DU:=/usr/bin/du}"
@@ -235,7 +234,6 @@ if [ "$REMOVE" = 1 ] && ! "$SUDO" -n true >/dev/null 2>&1; then
   echo "sudo -n is required for selective removal; repair bootstrap sudo and rerun" >&2
   exit 70
 fi
-SIP_STATUS=$("$CSRUTIL" status 2>&1); SIP_EXIT=$?
 while IFS='|' read -r NAME BUNDLE DOCKONLY P1 P2; do
   [ -n "$NAME" ] || continue
   APP=""
@@ -269,12 +267,8 @@ while IFS='|' read -r NAME BUNDLE DOCKONLY P1 P2; do
   fi
   case "$APP" in
     "$SYSTEM_ROOT"/*)
-      if [ "$SIP_EXIT" -ne 0 ]; then result "$NAME" protected SIP-status-probe-failed "$SIZE" "$APP"; continue; fi
-      case "$SIP_STATUS" in
-        *enabled*) result "$NAME" protected SIP-system-location "$SIZE" "$APP"; continue;;
-        *disabled*) ;;
-        *) result "$NAME" protected unknown-SIP-status "$SIZE" "$APP"; continue;;
-      esac
+      result "$NAME" protected system-location "$SIZE" "$APP"
+      continue
       ;;
     "$USER_ROOT"/*) ;;
     *) result "$NAME" protected outside-allowed-roots "$SIZE" "$APP"; continue;;
