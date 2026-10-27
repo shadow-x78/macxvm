@@ -55,7 +55,10 @@ func cmdDown(args []string) error {
 	}
 	step, err := stopVM(cfg, false, 90)
 	if err != nil {
-		return err
+		if !*del || exitcode.Code(err) != exitcode.NotRunning {
+			return err
+		}
+		step = "already stopped"
 	}
 	fmt.Fprintf(os.Stderr, "stopped '%s' (%s)\n", cfg.Name, step)
 	if !*del {
