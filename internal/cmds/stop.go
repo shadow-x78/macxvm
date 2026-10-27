@@ -107,9 +107,7 @@ func stopVM(cfg *config.VMConfig, force bool, timeout int) (string, error) {
 				return "qmp quit", err
 			}
 		}
-		if runstate.Alive(runstate.ProcRoot(), pid, cfg.ID) {
-			_ = qemu.Kill(pid)
-		}
+		_ = qemu.KillOwned(cfg, pid)
 		if done, err := finish("killed", 5*time.Second); done {
 			return "killed", err
 		}
@@ -132,9 +130,7 @@ func stopVM(cfg *config.VMConfig, force bool, timeout int) (string, error) {
 			return "qmp quit", err
 		}
 	}
-	if runstate.Alive(runstate.ProcRoot(), pid, cfg.ID) {
-		_ = qemu.Kill(pid)
-	}
+	_ = qemu.KillOwned(cfg, pid)
 	if done, err := finish("killed", 5*time.Second); done {
 		return "killed", err
 	}
