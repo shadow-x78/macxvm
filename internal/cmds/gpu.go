@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -128,7 +129,7 @@ func inspectGPU(cfg *config.VMConfig) gpuReport {
 		report.Guest.DisplayMode = displayModeOf(string(raw))
 	}
 	if report.Guest.Running {
-		out, err := sshx.Output(cfg, `system_profiler SPDisplaysDataType 2>/dev/null; echo MACXVM_KEXT; kextstat 2>/dev/null | grep -Ei 'AppleBoch|AppleVirtual|VMware'; echo MACXVM_IOKIT; ioreg -l 2>/dev/null | grep -m1 AppleBochVGAFB`)
+		out, err := sshx.Output(cfg, `system_profiler SPDisplaysDataType 2>/dev/null; echo MACXVM_KEXT; kextstat 2>/dev/null | grep -Ei 'AppleBoch|AppleVirtual|VMware'; echo MACXVM_IOKIT; ioreg -rc AppleBochVGAFB 2>/dev/null | grep -E 'IOFBMemorySize|IOClass'`)
 		if err == nil {
 			report.Guest.Display, report.Guest.VendorID, report.Guest.DeviceID, report.Guest.VRAM, report.Guest.Resolution, report.Guest.Kext = parseGuestGPU(out)
 			if strings.Contains(report.Guest.Kext, "AppleBochVGAFB") {
@@ -197,6 +198,7 @@ var (
 	reDevice = regexp.MustCompile(`Device ID:\s*(\S+)`)
 	reVRAM   = regexp.MustCompile(`VRAM \(Total\):\s*([^\n]+)`)
 	reRes    = regexp.MustCompile(`Resolution:\s*([^\n]+)`)
+	reFBMem  = regexp.MustCompile(`"IOFBMemorySize" = (\d+)`)
 )
 
 func parseGuestGPU(out string) (display, vendor, device, vram, resolution, kext string) {
@@ -217,6 +219,19 @@ func parseGuestGPU(out string) (display, vendor, device, vram, resolution, kext 
 	}
 	if match := reRes.FindStringSubmatch(displayPart); len(match) > 1 {
 		resolution = strings.TrimSpace(match[1])
+	}
+	if match := reFBMem.FindStringSubmatch(out); len(match) > 1 {
+		if n, err := strconv.Atoi(match[1]); err == nil && n > 0 {
+			for _, mode := range [][2]int{{1440, 900}, {1920, 1080}, {1280, 800}, {1600, 1000}, {2560, 1440}, {3840, 2160}} {
+				if n == mode[0]*mode[1]*4 {
+					resolution = fmt.Sprintf("%dx%d", mode[0], mode[1])
+					break
+				}
+			}
+			if resolution == "" {
+				resolution = fmt.Sprintf("%d bytes framebuffer", n)
+			}
+		}
 	}
 	if vendor == "0x1234" {
 		display = "Bochs VGA"
