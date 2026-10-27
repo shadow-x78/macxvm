@@ -78,7 +78,7 @@ func cmdAutoInstall(args []string) error {
 			return exitcode.New(exitcode.UnsupportedHost, "%v", err)
 		}
 		defer session.Close()
-		installer := automation.Installer{Session: session, VM: cfg, Log: os.Stdout, Timeout: time.Duration(*timeout) * time.Minute}
+		installer := automation.Installer{Session: session, VM: cfg, AcceptLicense: *acceptLicense, Log: os.Stdout, Timeout: time.Duration(*timeout) * time.Minute}
 		if err := installer.Resume(); err != nil {
 			return exitcode.New(exitcode.Generic, "autoinstall stopped: %v", err)
 		}

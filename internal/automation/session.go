@@ -231,12 +231,30 @@ func (s *Session) FocusCenter() error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command(s.vncdo, "-s", fmt.Sprintf("127.0.0.1:%d", s.display), "-t", "20",
-		"move", strconv.Itoa(screen.Width/2), strconv.Itoa(screen.Height/2), "click", "1")
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("vncdo focus click failed: %v (%s)", err, strings.TrimSpace(string(out)))
+	for _, phrase := range []string{"bash-3.2#", "sh-3.2#", "root#"} {
+		if rect, ok := screen.Find(phrase); ok {
+			return s.click(rect.X+rect.W/2, rect.Y+rect.H/2)
+		}
 	}
+	return s.click(screen.Width/2, screen.Height/2)
+}
+
+func (s *Session) click(x, y int) error {
+	cmd := exec.Command(s.vncdo, "-s", fmt.Sprintf("127.0.0.1:%d", s.display), "-t", "20",
+		"move", strconv.Itoa(x), strconv.Itoa(y), "click", "1")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("vncdo click failed: %v (%s)", err, strings.TrimSpace(string(out)))
+	}
+	time.Sleep(300 * time.Millisecond)
 	return nil
+}
+
+func (s *Session) Typed(text string) bool {
+	screen, err := s.Capture()
+	if err != nil {
+		return false
+	}
+	return screen.Has(text)
 }
 
 func trim(value string, limit int) string {
