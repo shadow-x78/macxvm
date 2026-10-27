@@ -20,11 +20,11 @@ check_source() {
     local file="$1" head
     head="$(head -n 2 "$file")"
     if ! grep -q "^// MacXVM - " <<<"$head"; then
-        report "missing the credit banner: ${file#$ROOT/}"
+        report "missing the credit banner: ${file#"$ROOT"/}"
         return
     fi
     if ! grep -q "$GIT_URL" <<<"$head"; then
-        report "missing the project URL in the banner: ${file#$ROOT/}"
+        report "missing the project URL in the banner: ${file#"$ROOT"/}"
     fi
 }
 
@@ -32,11 +32,11 @@ check_config() {
     local file="$1" head
     head="$(head -n 4 "$file")"
     if ! grep -q "^# MacXVM - " <<<"$head"; then
-        report "missing the credit banner: ${file#$ROOT/}"
+        report "missing the credit banner: ${file#"$ROOT"/}"
         return
     fi
     if ! grep -q "$GIT_URL" <<<"$head"; then
-        report "missing the project URL in the banner: ${file#$ROOT/}"
+        report "missing the project URL in the banner: ${file#"$ROOT"/}"
     fi
 }
 
@@ -44,11 +44,11 @@ check_shell() {
     local file="$1" head
     head="$(head -n 4 "$file")"
     if ! grep -q "^# MacXVM - " <<<"$head"; then
-        report "missing the credit banner: ${file#$ROOT/}"
+        report "missing the credit banner: ${file#"$ROOT"/}"
         return
     fi
     if ! grep -q "$GIT_URL" <<<"$head"; then
-        report "missing the project URL in the banner: ${file#$ROOT/}"
+        report "missing the project URL in the banner: ${file#"$ROOT"/}"
     fi
 }
 
