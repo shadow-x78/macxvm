@@ -1,0 +1,30 @@
+# ─────────────────────────────────────────────
+# MacXVM - Opt-in KVM Integration Workflow
+# https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+
+name: integration
+
+# ── Triggers ──
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Sealed base for the KVM integration test
+        required: true
+        type: string
+
+# ── Jobs ──
+jobs:
+  kvm:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.mod
+      - name: Build
+        run: make build
+      - name: Opt-in KVM integration
+        run: MACXVM_INTEGRATION=1 MACXVM_BIN=./bin/macxvm ./scripts/integration.sh "${{ inputs.base }}"

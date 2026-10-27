@@ -52,6 +52,11 @@ end-to-end installer run.
 - A literal `NAME` argument is now rejected with a message that points at
   `macxvm list`, instead of a generic invalid-name error.
 
+### CI
+- Split the opt-in KVM test into its own `integration` workflow. Push and pull
+  request runs now show one `test` job instead of a green job beside a skipped
+  one, which looked like a cancelled build.
+
 ### Verified
 - A temporary VM was installed from scratch with `autoinstall --yes
   --accept-license`: OpenCore, Recovery, Terminal, exact-size disk erase,
