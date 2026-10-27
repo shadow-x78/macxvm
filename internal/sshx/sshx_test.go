@@ -86,12 +86,41 @@ func TestRSyncArgs(t *testing.T) {
 	cfg := testConfig(t)
 	want := []string{
 		"-a", "--delete", "--exclude", ".git", "--exclude", "DerivedData",
-		"-e", "ssh " + strings.Join(expectedOptions(cfg), " "),
+		"-e", "ssh " + quotedOptions(expectedOptions(cfg)),
 		"/project/", "admin@127.0.0.1:/work/",
 	}
 	got := RSyncArgs(cfg, "/project/", "admin@127.0.0.1:/work/", []string{".git", "DerivedData"})
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("RSyncArgs() = %v, want %v", got, want)
+	}
+}
+
+func quotedOptions(options []string) string {
+	quoted := make([]string, 0, len(options))
+	for _, option := range options {
+		quoted = append(quoted, ShellQuote(option))
+	}
+	return strings.Join(quoted, " ")
+}
+
+func TestRSyncTransportQuotesPaths(t *testing.T) {
+	home := filepath.Join(t.TempDir(), "home with space")
+	t.Setenv("MACXVM_HOME", home)
+	t.Setenv("MACXVM_RUN", filepath.Join(home, "run"))
+	cfg := config.Defaults(config.ProfileCLI)
+	cfg.Name = "demo"
+	cfg.ID = "abcd1234"
+	cfg.SSHUser = "admin"
+	cfg.SSHPort = 2222
+	args := RSyncArgs(&cfg, "/src", "dst", nil)
+	if len(args) < 4 || args[2] != "-e" {
+		t.Fatalf("RSyncArgs() = %v", args)
+	}
+	if !strings.Contains(args[3], ShellQuote(paths.KeyPath())) {
+		t.Fatalf("rsync transport does not quote the key path: %s", args[3])
+	}
+	if strings.Contains(args[3], " "+paths.KeyPath()+" ") {
+		t.Fatalf("rsync transport left the key path unquoted: %s", args[3])
 	}
 }
 

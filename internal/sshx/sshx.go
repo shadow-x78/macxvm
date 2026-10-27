@@ -286,8 +286,8 @@ func RSyncShare(cfg *config.VMConfig, src, dst string, update, remove bool, excl
 func transport(cfg *config.VMConfig, src, dst string) []string {
 	opts := Options(cfg)
 	sshCommand := "ssh"
-	for i := 0; i < len(opts); i++ {
-		sshCommand += " " + opts[i]
+	for _, opt := range opts {
+		sshCommand += " " + ShellQuote(opt)
 	}
 	return []string{"-e", sshCommand, src, dst}
 }
