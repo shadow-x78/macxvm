@@ -26,4 +26,6 @@ echo "installed: $PREFIX/macxvm"
 echo
 echo "next steps:"
 echo "  1. macxvm doctor"
-echo "  2. macxvm create demo --args-file ./args.txt --assets ./assets"
+echo "  2. macxvm image prepare macos --profile cli"
+echo "  3. macxvm autoinstall macos --yes --accept-license"
+echo "  4. macxvm finish macos --password-stdin --apps"
