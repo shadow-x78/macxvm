@@ -41,6 +41,7 @@ func cmdStart(args []string) error {
 	fs := newFlagSet("start")
 	install := fs.Bool("install", false, "include the installation lines of the args file")
 	vnc := fs.Bool("vnc", false, "add a VNC display on the loopback interface")
+	noOpen := fs.Bool("no-open", false, "do not open the VNC viewer automatically")
 	wait := fs.Bool("wait", false, "wait until key-only SSH is ready")
 	force := fs.Bool("force", false, "ignore the host protection limits")
 
@@ -85,7 +86,11 @@ func cmdStart(args []string) error {
 		ui.Say(os.Stdout, "ok", fmt.Sprintf("'%s' is SSH-ready at 127.0.0.1:%d", name, cfg.SSHPort))
 	}
 	if *vnc {
-		fmt.Printf("VNC: 127.0.0.1:%d\n", 5900+lastVNCDisplay)
+		if *noOpen {
+			fmt.Printf("VNC: 127.0.0.1:%d\n", 5900+lastVNCDisplay)
+		} else {
+			openViewerBestEffort(cfg, lastVNCDisplay, *noOpen)
+		}
 	}
 	if *install {
 		InstallChecklist(os.Stdout, *vnc)

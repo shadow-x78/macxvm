@@ -31,3 +31,22 @@ func TestOpenWithoutViewerDoesNotStartTheVM(t *testing.T) {
 		t.Fatal("open started QEMU even though no viewer was available")
 	}
 }
+
+func TestAutoOpenHonoursTheEnvironment(t *testing.T) {
+	t.Setenv("MACXVM_NO_OPEN", "1")
+	if autoOpenEnabled() {
+		t.Fatal("MACXVM_NO_OPEN=1 did not disable auto-open")
+	}
+	t.Setenv("MACXVM_NO_OPEN", "true")
+	if autoOpenEnabled() {
+		t.Fatal("MACXVM_NO_OPEN=true did not disable auto-open")
+	}
+	t.Setenv("MACXVM_NO_OPEN", "")
+	if !autoOpenEnabled() {
+		t.Fatal("auto-open is disabled by default")
+	}
+	t.Setenv("MACXVM_NO_OPEN", "0")
+	if !autoOpenEnabled() {
+		t.Fatal("MACXVM_NO_OPEN=0 disabled auto-open")
+	}
+}

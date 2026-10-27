@@ -33,6 +33,7 @@ func cmdAutoInstall(args []string) error {
 	yes := fs.Bool("yes", false, "authorize erasing the matched internal disk of this fresh VM")
 	acceptLicense := fs.Bool("accept-license", false, "click the Apple license Agree button; use only after reviewing it")
 	timeout := fs.Int("timeout", 240, "minutes to wait for Setup Assistant")
+	noOpen := fs.Bool("no-open", false, "do not open the VNC viewer automatically")
 	positional, flagArgs := SplitArgs(fs, args)
 	if err := parseFlags("autoinstall", fs, flagArgs); err != nil {
 		return err
@@ -82,6 +83,9 @@ func cmdAutoInstall(args []string) error {
 		if err := installer.Resume(); err != nil {
 			return exitcode.New(exitcode.Generic, "autoinstall stopped: %v", err)
 		}
+		if display, ok := runstate.VNC(cfg); ok {
+			openViewerBestEffort(cfg, display, *noOpen)
+		}
 		return recordSetupReady(cfg)
 	}
 	if runstate.IsRunning(cfg) {
@@ -109,6 +113,9 @@ func cmdAutoInstall(args []string) error {
 		}
 		if _, err := startVM(cfg, true, true, false); err != nil {
 			return err
+		}
+		if display, ok := runstate.VNC(cfg); ok {
+			openViewerBestEffort(cfg, display, *noOpen)
 		}
 	}
 	session, err := automation.Open(cfg)

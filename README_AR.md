@@ -455,7 +455,7 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 | `macxvm create NAME --args-file FILE [...]` | تسجيل جهاز افتراضي ذريًا |
 | `macxvm create NAME --base BASE` | استنساخ أساس مختوم مع NVRAM مستقل |
 | `macxvm list [--json]` / `macxvm status NAME [--json]` | عرض الموارد والنوع والحالة وVNC |
-| `macxvm start NAME [--install] [--vnc] [--wait] [--force]` | تشغيل QEMU؛ و`--wait` يتحقق من SSH بالمفتاح |
+| `macxvm start NAME [--install] [--vnc] [--no-open] [--wait] [--force]` | تشغيل QEMU؛ و`--vnc` يفتح العارض تلقائيًا إلا مع `--no-open` |
 | `macxvm open NAME [--restart]` | فتح VNC المحلي دون انتظار SSH |
 | `macxvm resize NAME [--cpus N] [--ram SIZE] [--disk GiB]` | تعديل جهاز متوقف؛ القرص يتوسع فقط |
 | `macxvm stop NAME [--force] [--timeout SECONDS]` | إيقاف عبر SSH ثم ACPI ثم QMP ثم kill مملوك |

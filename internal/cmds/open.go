@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
@@ -110,6 +111,33 @@ func cmdOpen(args []string) error {
 	address := fmt.Sprintf("127.0.0.1:%d", 5900+display)
 	fmt.Printf("VNC: %s (no SSH wait required)\n", address)
 	return openVNC(viewer, cfg, display)
+}
+
+func autoOpenEnabled() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("MACXVM_NO_OPEN"))) {
+	case "1", "true", "yes", "on":
+		return false
+	}
+	return true
+}
+
+func openViewerBestEffort(cfg *config.VMConfig, display int, disabled bool) {
+	if display <= 0 || disabled || !autoOpenEnabled() {
+		return
+	}
+	address := fmt.Sprintf("127.0.0.1:%d", 5900+display)
+	viewer, err := findVNCViewer()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "macxvm: warning: %v\n", err)
+		fmt.Printf("VNC: %s\n", address)
+		return
+	}
+	if err := viewer.Open(address); err != nil {
+		fmt.Fprintf(os.Stderr, "macxvm: warning: %v\n", err)
+		fmt.Printf("VNC: %s\n", address)
+		return
+	}
+	fmt.Printf("VNC: %s (viewer opened)\n", address)
 }
 
 func openVNC(viewer vncViewer, cfg *config.VMConfig, display int) error {

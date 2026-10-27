@@ -72,7 +72,7 @@ The tool is a single static binary of about 7.6 MB with no daemon. QEMU itself i
 macxvm image prepare macos --profile cli
 macxvm autoinstall macos --yes --accept-license
 macxvm finish macos --password-stdin --apps
-macxvm start macos --wait
+macxvm start macos --vnc --wait
 macxvm exec macos -- sh -c 'echo ready'
 ```
 
@@ -215,7 +215,7 @@ macxvm finish macos --password-stdin --apps
 # 4. This is the single default VM. Optional: use it as a base later.
 #    macxvm stop macos && macxvm base seal macos
 #    macxvm create dev --base macos
-macxvm start macos --wait
+macxvm start macos --vnc --wait
 macxvm exec macos -- sh -c 'echo ready'
 ```
 
@@ -414,7 +414,7 @@ builds in a throwaway overlay that is removed afterwards. The full guide, includ
 | `macxvm create NAME --args-file FILE [...]` | register a virtual machine atomically |
 | `macxvm create NAME --base BASE` | clone a sealed base with independent NVRAM |
 | `macxvm list [--json]` / `macxvm status NAME [--json]` | show resources, kind, state and VNC |
-| `macxvm start NAME [--install] [--vnc] [--wait] [--force]` | start QEMU; `--wait` proves key-only SSH |
+| `macxvm start NAME [--install] [--vnc] [--no-open] [--wait] [--force]` | start QEMU; `--vnc` opens the viewer automatically unless `--no-open` |
 | `macxvm open NAME [--restart]` | open loopback VNC without waiting for SSH |
 | `macxvm autoinstall NAME --yes [--accept-license]` | automate Recovery through the first Setup Assistant page |
 | `macxvm finish NAME [--password-stdin] [--apps] [--seal]` | post-Setup SSH/sudo/Dark/slim/Bochs/apps automation |
