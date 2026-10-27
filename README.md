@@ -257,7 +257,6 @@ NAME assets/screenshots/FILE.png` after checking the VM state.
 
 **Guest overview**
 
-![Guest overview](assets/screenshots/vm-overview.jpg)
 
 **macOS Recovery boot of the default VM**
 
@@ -273,11 +272,10 @@ NAME assets/screenshots/FILE.png` after checking the VM state.
 
 **Bochs display with AppleBochVGAFB loaded (login window)**
 
-![Bochs login](assets/screenshots/vm-bochs-login.png)
+![Bochs login](assets/screenshots/vm-bochs-login.jpg)
 
 **Dark desktop and Remote Login**
 
-![Dark desktop](assets/screenshots/vm-desktop.png)
 ![Dark mode](assets/screenshots/vm-dark-mode.png)
 ![Remote Login](assets/screenshots/vm-remote-login.png)
 

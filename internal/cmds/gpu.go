@@ -36,6 +36,8 @@ type guestGPU struct {
 	Resolution   string `json:"resolution,omitempty"`
 	Kext         string `json:"kext,omitempty"`
 	Acceleration string `json:"acceleration"`
+	DisplayMode  string `json:"displayMode,omitempty"`
+	CPUs         int    `json:"cpus,omitempty"`
 }
 
 type gpuReport struct {
@@ -104,6 +106,9 @@ func cmdGPU(args []string) error {
 		fmt.Printf("  resolution: %s\n", report.Guest.Resolution)
 		fmt.Printf("  kext: %s\n", report.Guest.Kext)
 		fmt.Printf("  acceleration: %s\n", report.Guest.Acceleration)
+		if report.Guest.CPUs > 0 {
+			fmt.Printf("  vCPUs: %d\n", report.Guest.CPUs)
+		}
 	}
 	fmt.Printf("\n%s\n", report.Recommendation)
 	return nil
@@ -118,6 +123,10 @@ func inspectGPU(cfg *config.VMConfig) gpuReport {
 		report.Host.NvidiaLoaded = true
 	}
 	report.Guest = guestGPU{Running: runstate.IsRunning(cfg), Acceleration: "software (no GPU passthrough)"}
+	if raw, err := os.ReadFile(cfg.File("args.txt")); err == nil {
+		report.Guest.CPUs = cfg.CPUs
+		report.Guest.DisplayMode = displayModeOf(string(raw))
+	}
 	if report.Guest.Running {
 		out, err := sshx.Output(cfg, `system_profiler SPDisplaysDataType 2>/dev/null; echo MACXVM_KEXT; kextstat 2>/dev/null | grep -Ei 'AppleBoch|AppleVirtual|VMware'; echo MACXVM_IOKIT; ioreg -l 2>/dev/null | grep -m1 AppleBochVGAFB`)
 		if err == nil {
