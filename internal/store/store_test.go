@@ -365,3 +365,25 @@ func TestOverlaysOfStrictFailsOnUnreadableVM(t *testing.T) {
 		t.Fatal("OverlaysOfStrict ignored an unreadable VM")
 	}
 }
+
+func TestScanReportsUnreadableVM(t *testing.T) {
+	home := setupHome(t)
+	makeVM(t, home, "good", false)
+	broken := Dir("broken")
+	if err := os.MkdirAll(broken, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(broken, "config.json"), []byte("{"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	vms, problems, err := Scan()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(vms) != 1 || vms[0].Name != "good" {
+		t.Fatalf("Scan() vms = %+v", vms)
+	}
+	if len(problems) != 1 || problems[0].Name != "broken" {
+		t.Fatalf("Scan() problems = %+v", problems)
+	}
+}

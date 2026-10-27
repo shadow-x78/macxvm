@@ -128,9 +128,12 @@ func baseList(args []string) error {
 	if len(positional) > 0 {
 		return exitcode.New(exitcode.Usage, "base list takes no arguments")
 	}
-	vms, err := store.List()
+	vms, problems, err := store.Scan()
 	if err != nil {
 		return exitcode.New(exitcode.Generic, "cannot read the virtual machines: %v", err)
+	}
+	for _, problem := range problems {
+		fmt.Fprintf(os.Stderr, "macxvm: warning: VM '%s' is unreadable: %s\n", problem.Name, problem.Reason)
 	}
 	w := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
 	fmt.Fprintln(w, "NAME\tPROFILE\tSTATE\tCPU\tRAM\tDISK\tSSH")

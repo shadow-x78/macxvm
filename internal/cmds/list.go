@@ -35,9 +35,12 @@ func cmdList(args []string) error {
 	if err := parseFlags("list", fs, flagArgs); err != nil {
 		return err
 	}
-	vms, err := store.List()
+	vms, problems, err := store.Scan()
 	if err != nil {
 		return exitcode.New(exitcode.Generic, "cannot read the virtual machines: %v", err)
+	}
+	for _, problem := range problems {
+		fmt.Fprintf(os.Stderr, "macxvm: warning: VM '%s' is unreadable: %s\n", problem.Name, problem.Reason)
 	}
 	if *asJSON {
 		out := make([]vmJSON, 0, len(vms))
