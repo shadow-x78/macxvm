@@ -24,6 +24,7 @@ type Installer struct {
 	AcceptLicense bool
 	Log           io.Writer
 	Timeout       time.Duration
+	AfterErase    func() error
 }
 
 func (i *Installer) Run() error {
@@ -57,6 +58,11 @@ func (i *Installer) Run() error {
 	}
 	if err := i.eraseMatchedDisk(); err != nil {
 		return err
+	}
+	if i.AfterErase != nil {
+		if err := i.AfterErase(); err != nil {
+			return err
+		}
 	}
 	if err := i.Session.QuitTerminal(); err != nil {
 		return err
@@ -356,8 +362,8 @@ func (i *Installer) logf(format string, args ...any) {
 	fmt.Fprintf(i.Log, "macxvm autoinstall: "+format+"\n", args...)
 }
 
-// WaitForSetupOnly resumes after an installation that is already running.
-func (i *Installer) WaitForSetupOnly() error {
+// Resume continues after the disk was erased. It never erases again.
+func (i *Installer) Resume() error {
 	if i.Session == nil || i.VM == nil {
 		return errors.New("installer automation is not configured")
 	}
@@ -367,5 +373,58 @@ func (i *Installer) WaitForSetupOnly() error {
 	if i.Log == nil {
 		i.Log = io.Discard
 	}
-	return i.waitForSetup()
+	deadline := time.Now().Add(30 * time.Minute)
+	for {
+		screen, err := i.Session.Capture()
+		if err == nil {
+			if isSetupWelcome(screen) {
+				return nil
+			}
+			if installationInProgress(screen) {
+				return i.waitForSetup()
+			}
+			if recoveryVisible(screen) {
+				if terminalVisible(screen) {
+					if err := i.Session.QuitTerminal(); err != nil {
+						return err
+					}
+				}
+				if err := i.startInstaller(); err != nil {
+					return err
+				}
+				return i.waitForSetup()
+			}
+			if screen.Has("OpenCore Boot Menu") {
+				switch {
+				case screen.Has("macOS Installer"):
+					_ = i.Session.ClickPhrase("macOS Installer")
+				case screen.Has("macos"):
+					_ = i.Session.ClickPhrase("macos")
+				case screen.Has("Base System"):
+					_ = i.Session.ClickPhrase("Base System")
+				}
+			}
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("could not resume the installation; last screen: %s", trim(i.Session.last.Text, 500))
+		}
+		time.Sleep(3 * time.Second)
+	}
+}
+
+func recoveryVisible(screen Screen) bool {
+	return screen.Has("Reinstall macOS") || screen.Has("macOS Utilities")
+}
+
+func terminalVisible(screen Screen) bool {
+	return screen.Has("bash-3.2#") || screen.Has("sh-3.2#") || screen.Has("root#") || screen.Has("Terminal")
+}
+
+func installationInProgress(screen Screen) bool {
+	for _, phrase := range []string{"Installing macOS", "Preparing", "remaining", "Time Remaining"} {
+		if screen.Has(phrase) {
+			return true
+		}
+	}
+	return false
 }

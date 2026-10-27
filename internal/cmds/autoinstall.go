@@ -63,7 +63,7 @@ func cmdAutoInstall(args []string) error {
 	if err != nil {
 		return err
 	}
-	resumeWait := state.Stage == "manual-setup"
+	resumeWait := state.Stage == "installing" || state.Stage == "manual-setup"
 	if state.Stage != "assets" && state.Stage != "install" && !resumeWait {
 		return exitcode.New(exitcode.Usage,
 			"'%s' is already past the fresh-install stage (%s); refusing to erase it", name, state.Stage)
@@ -79,7 +79,7 @@ func cmdAutoInstall(args []string) error {
 		}
 		defer session.Close()
 		installer := automation.Installer{Session: session, VM: cfg, Log: os.Stdout, Timeout: time.Duration(*timeout) * time.Minute}
-		if err := installer.WaitForSetupOnly(); err != nil {
+		if err := installer.Resume(); err != nil {
 			return exitcode.New(exitcode.Generic, "autoinstall stopped: %v", err)
 		}
 		display, _ := runstate.VNC(cfg)
@@ -113,6 +113,11 @@ func cmdAutoInstall(args []string) error {
 	installer := automation.Installer{
 		Session: session, VM: cfg, AcceptLicense: *acceptLicense,
 		Log: os.Stdout, Timeout: time.Duration(*timeout) * time.Minute,
+		AfterErase: func() error {
+			return bootstrap.Save(cfg, bootstrap.State{
+				Stage: "installing", MacOS: cfg.MacOSVersion, DiskGiB: cfg.DiskGiB,
+			})
+		},
 	}
 	if err := installer.Run(); err != nil {
 		return exitcode.New(exitcode.Generic, "autoinstall stopped: %v", err)
