@@ -36,6 +36,7 @@ func cmdFinish(args []string) error {
 	keep := &stringList{}
 	fs.Var(keep, "keep", "application to preserve; repeat or use a comma-separated list")
 	seal := fs.Bool("seal", false, "seal the base after verification")
+	noOpen := fs.Bool("no-open", false, "do not open the VNC viewer automatically")
 	positional, flagArgs := SplitArgs(fs, args)
 	if err := parseFlags("finish", fs, flagArgs); err != nil {
 		return err
@@ -92,6 +93,9 @@ func cmdFinish(args []string) error {
 	}
 	if _, err := startVM(cfg, false, true, false); err != nil {
 		return err
+	}
+	if display, ok := runstate.VNC(cfg); ok {
+		openViewerBestEffort(cfg, display, *noOpen)
 	}
 	if err := waitForSSHReady(cfg, sshx.DefaultTimeout); err != nil {
 		return err

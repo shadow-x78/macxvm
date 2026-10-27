@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `list` and `base list` now warn about an unreadable VM instead of hiding it.
 - Removed unreferenced installer helpers, the level 3 shell stub, an unused
   screenshot and six unused logo files.
+- `start --vnc`, `autoinstall` and `finish` open the VNC viewer automatically.
+  Use `--no-open` or `MACXVM_NO_OPEN=1` to keep it manual; a missing viewer only
+  warns and prints the loopback address.
 - The shared `BaseSystem.img` is mounted `readonly=on` and validated; a guest
   could otherwise corrupt the verified installer for every VM.
 - `autoinstall` records `manual-setup` and a visible readiness state on resume,
