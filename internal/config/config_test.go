@@ -13,7 +13,7 @@ import (
 
 func TestDefaults(t *testing.T) {
 	cli := Defaults(ProfileCLI)
-	if cli.CPUs != 4 || cli.MemoryMiB != 8192 || cli.DiskGiB != 64 {
+	if cli.CPUs != 6 || cli.MemoryMiB != 12288 || cli.DiskGiB != 64 {
 		t.Fatalf("cli defaults = %d/%d/%d", cli.CPUs, cli.MemoryMiB, cli.DiskGiB)
 	}
 	xcode := Defaults(ProfileXcode)

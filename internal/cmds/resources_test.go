@@ -15,7 +15,7 @@ func TestResolveResourcesUsesProfileDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 	defaults := config.Defaults(config.ProfileCLI)
-	if cli.CPUs != 4 || cli.MemoryMiB != 8192 || cli.DiskGiB != 64 ||
+	if cli.CPUs != 6 || cli.MemoryMiB != 12288 || cli.DiskGiB != 64 ||
 		cli.CPUs != defaults.CPUs || cli.MemoryMiB != defaults.MemoryMiB || cli.DiskGiB != defaults.DiskGiB {
 		t.Fatalf("cli resources = %+v, defaults = %+v", cli, defaults)
 	}

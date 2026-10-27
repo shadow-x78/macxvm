@@ -293,7 +293,6 @@ macxvm optimize macos     # لجهاز متوقف: -vga none + bochs-display 192
 
 <div dir="rtl" align="right">
 
-![نظرة عامة على الضيف](assets/screenshots/vm-overview.jpg)
 
 ![إقلاع استعادة macOS للجهاز الشخصي](assets/screenshots/vm-recovery.png)
 
@@ -301,9 +300,8 @@ macxvm optimize macos     # لجهاز متوقف: -vga none + bochs-display 192
 
 ![الأتمتة تتوقف عند أول صفحة Setup Assistant](assets/screenshots/vm-setup-assistant.png)
 
-![شاشة الدخول مع Bochs وAppleBochVGAFB](assets/screenshots/vm-bochs-login.png)
+![شاشة الدخول مع Bochs وAppleBochVGAFB](assets/screenshots/vm-bochs-login.jpg)
 
-![سطح المكتب الداكن](assets/screenshots/vm-desktop.png)
 
 ![الوضع الداكن](assets/screenshots/vm-dark-mode.png)
 

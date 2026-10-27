@@ -89,7 +89,7 @@ func Defaults(profile string) VMConfig {
 		QemuBinary:    DefaultQemuBinary,
 	}
 	if profile == ProfileCLI {
-		c.CPUs, c.MemoryMiB, c.DiskGiB = 4, 8192, 64
+		c.CPUs, c.MemoryMiB, c.DiskGiB = 6, 12288, 64
 		return c
 	}
 	c.CPUs, c.MemoryMiB, c.DiskGiB = 4, 8192, 100
