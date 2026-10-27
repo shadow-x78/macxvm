@@ -184,6 +184,7 @@ func TestDryRunDoesNotRemoveAndKeepsMailData(t *testing.T) {
 	g := newFakeGuest(t)
 	maps := g.addApp(t, true, "Maps.app", "com.apple.Maps")
 	mail := g.addApp(t, true, "Mail.app", "com.apple.mail")
+	tv := g.addApp(t, false, "TV.app", "com.apple.TV")
 	dock, entries := g.dockEntries(t, "com.apple.Maps", "com.apple.mail")
 	cfg := testConfig(t)
 	report, err := Run(cfg, Options{DryRun: true}, func(string) (string, error) {
@@ -196,13 +197,16 @@ func TestDryRunDoesNotRemoveAndKeepsMailData(t *testing.T) {
 		t.Fatalf("operation = %q", report.Operation)
 	}
 	results := byName(report.Results)
-	if results["Maps"].Status != "would-remove" || results["Maps"].KiB != 1024 {
+	if results["Maps"].Status != "protected" || results["Maps"].Reason != "system-location" {
 		t.Fatalf("Maps = %+v", results["Maps"])
+	}
+	if results["TV"].Status != "would-remove" || results["TV"].KiB != 1024 {
+		t.Fatalf("TV = %+v", results["TV"])
 	}
 	if results["Mail"].Status != "kept" || results["Mail"].Reason != "dock-entry-would-be-reviewed" {
 		t.Fatalf("Mail = %+v", results["Mail"])
 	}
-	for _, path := range []string{maps, mail, dock, entries} {
+	for _, path := range []string{maps, mail, tv, dock, entries} {
 		if _, err := os.Stat(path); err != nil {
 			t.Fatalf("dry-run changed %s: %v", path, err)
 		}
@@ -237,30 +241,26 @@ func TestDryRunWinsOverRemove(t *testing.T) {
 	}
 }
 
-func TestSIPProtectionFailsClosed(t *testing.T) {
-	for _, test := range []struct {
-		output string
-		exit   int
-		reason string
-	}{
-		{"System Integrity Protection status: enabled.\n", 0, "SIP-system-location"},
-		{"", 1, "SIP-status-probe-failed"},
-		{"unknown\n", 0, "unknown-SIP-status"},
+func TestSystemApplicationsAreAlwaysProtected(t *testing.T) {
+	for _, output := range []string{
+		"System Integrity Protection status: enabled.\n",
+		"System Integrity Protection status: disabled.\n",
+		"",
+		"unknown\n",
 	} {
 		g := newFakeGuest(t)
-		g.csrutil = test.output
-		g.csrExit = test.exit
+		g.csrutil = output
 		g.addApp(t, true, "Maps.app", "com.apple.Maps")
 		cfg := testConfig(t)
-		report, err := Run(cfg, Options{DryRun: true}, func(string) (string, error) {
-			return g.run(t, buildScriptWithRoots(false, nil, g.system, g.user)), nil
+		report, err := Run(cfg, Options{Remove: true}, func(string) (string, error) {
+			return g.run(t, buildScriptWithRoots(true, nil, g.system, g.user)), nil
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
 		result := byName(report.Results)["Maps"]
-		if result.Status != "protected" || result.Reason != test.reason {
-			t.Fatalf("%+v: result=%+v", test, result)
+		if result.Status != "protected" || result.Reason != "system-location" {
+			t.Fatalf("SIP %q: result=%+v", output, result)
 		}
 	}
 }
@@ -288,11 +288,11 @@ func TestRemovalDeletesOnlyVerifiedAllowlistedApps(t *testing.T) {
 		t.Fatal(err)
 	}
 	results := byName(report.Results)
-	if results["Maps"].Status != "removed" {
+	if results["Maps"].Status != "protected" || results["Maps"].Reason != "system-location" {
 		t.Fatalf("Maps = %+v", results["Maps"])
 	}
-	if _, err := os.Stat(maps); !os.IsNotExist(err) {
-		t.Fatal("verified allowlisted app was not removed")
+	if _, err := os.Stat(maps); err != nil {
+		t.Fatal("a system application was removed")
 	}
 	if results["Mail"].Status != "kept" || results["Mail"].Reason != "dock-entry-removed-accounts-and-data-preserved" {
 		t.Fatalf("Mail = %+v", results["Mail"])
@@ -316,8 +316,8 @@ func TestRemovalDeletesOnlyVerifiedAllowlistedApps(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(raw), "com.apple.Maps") || strings.Contains(string(raw), "com.apple.mail") {
-		t.Fatalf("Dock entries were not removed: %q", raw)
+	if !strings.Contains(string(raw), "com.apple.Maps") || strings.Contains(string(raw), "com.apple.mail") {
+		t.Fatalf("Dock entries are wrong: %q", raw)
 	}
 }
 
