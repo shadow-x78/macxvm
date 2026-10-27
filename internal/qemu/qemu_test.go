@@ -5,9 +5,11 @@ package qemu
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/hostcheck"
@@ -89,5 +91,42 @@ func TestPreflight(t *testing.T) {
 	}
 	if err := Preflight("definitely-not-a-real-binary"); err == nil {
 		t.Fatal("Preflight() = nil error, want an error")
+	}
+}
+
+func TestKillOwnedIgnoresForeignProcess(t *testing.T) {
+	cfg := testConfig(t)
+	cmd := exec.Command("sleep", "30")
+	cmd.Args = []string{"sleep", "30"}
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = cmd.Process.Kill()
+		_, _ = cmd.Process.Wait()
+	}()
+	time.Sleep(20 * time.Millisecond)
+	if err := KillOwned(cfg, cmd.Process.Pid); err != nil {
+		t.Fatal(err)
+	}
+	if runstate.ProcessGone(runstate.ProcRoot(), cmd.Process.Pid) {
+		t.Fatal("KillOwned killed a process without the MacXVM marker")
+	}
+}
+
+func TestKillOwnedSignalsOwnedProcess(t *testing.T) {
+	cfg := testConfig(t)
+	cmd := exec.Command("sleep", "30")
+	cmd.Args[0] = "guest=macxvm-" + cfg.ID + ",process=macxvm-" + cfg.ID
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(20 * time.Millisecond)
+	if err := KillOwned(cfg, cmd.Process.Pid); err != nil {
+		t.Fatal(err)
+	}
+	_, _ = cmd.Process.Wait()
+	if !runstate.ProcessGone(runstate.ProcRoot(), cmd.Process.Pid) {
+		t.Fatal("KillOwned did not signal the owned process")
 	}
 }
