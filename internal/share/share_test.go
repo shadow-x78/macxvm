@@ -146,3 +146,28 @@ func TestFingerprint(t *testing.T) {
 		t.Fatal("the fingerprint did not change after a new file")
 	}
 }
+
+func TestSizeOfMatchesGlobExcludes(t *testing.T) {
+	dir := t.TempDir()
+	write := func(rel string, size int) {
+		full := filepath.Join(dir, rel)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, make([]byte, size), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("keep.txt", 100)
+	write("skip.qcow2", 200)
+	write("nested/also.qcow2", 300)
+	write("node_modules/dep.js", 400)
+	write("build-cache/x", 500)
+	got, err := SizeOf(dir, []string{"*.qcow2", "node_modules", "build-*"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != 100 {
+		t.Fatalf("SizeOf() = %d, want 100", got)
+	}
+}
