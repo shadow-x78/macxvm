@@ -77,23 +77,24 @@ func shareAdd(args []string) error {
 	if *host == "" {
 		return exitcode.New(exitcode.Usage, "--host is required")
 	}
-	cfg, err := store.Load(name)
-	if err != nil {
-		return err
-	}
-	entry, err := share.Add(cfg, *host, *guest)
-	if err != nil {
-		return err
-	}
-	if len(*excludes) > 0 {
-		share.AddExcludes(&entry, *excludes)
-		for i := range cfg.Shares {
-			if cfg.Shares[i].ID == entry.ID {
-				cfg.Shares[i].Exclude = entry.Exclude
+	var entry config.Share
+	_, err = store.Update(name, func(current *config.VMConfig) error {
+		added, err := share.Add(current, *host, *guest)
+		if err != nil {
+			return err
+		}
+		if len(*excludes) > 0 {
+			share.AddExcludes(&added, *excludes)
+			for i := range current.Shares {
+				if current.Shares[i].ID == added.ID {
+					current.Shares[i].Exclude = added.Exclude
+				}
 			}
 		}
-	}
-	if err := store.Save(cfg); err != nil {
+		entry = added
+		return nil
+	})
+	if err != nil {
 		return err
 	}
 	ui.Say(os.Stdout, "ok", fmt.Sprintf("shared %s with '%s' at %s", entry.Host, name, entry.Guest))
@@ -254,15 +255,16 @@ func shareRemove(args []string) error {
 	if *id == "" {
 		return exitcode.New(exitcode.Usage, "--id is required")
 	}
-	cfg, err := store.Load(name)
+	var entry config.Share
+	_, err = store.Update(name, func(current *config.VMConfig) error {
+		removed, err := share.Remove(current, *id)
+		if err != nil {
+			return err
+		}
+		entry = removed
+		return nil
+	})
 	if err != nil {
-		return err
-	}
-	entry, err := share.Remove(cfg, *id)
-	if err != nil {
-		return err
-	}
-	if err := store.Save(cfg); err != nil {
 		return err
 	}
 	fmt.Printf("The folder %s is no longer shared with '%s'; its files stay where they are\n",

@@ -319,3 +319,34 @@ func TestLoadRejectsMismatchedConfigName(t *testing.T) {
 		t.Fatal("Load() accepted a config that names another VM")
 	}
 }
+
+func TestUpdatePreservesConcurrentFields(t *testing.T) {
+	home := setupHome(t)
+	makeVM(t, home, "demo", false)
+	stale, err := Load("demo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Update("demo", func(current *config.VMConfig) error {
+		current.Readiness = "ssh-ready"
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Update("demo", func(current *config.VMConfig) error {
+		current.Shares = append(current.Shares, config.Share{ID: "work", Host: "/tmp", Guest: "/Users/admin/work"})
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if stale.Readiness == "ssh-ready" {
+		t.Fatal("the stale snapshot was mutated by Update")
+	}
+	loaded, err := Load("demo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.Readiness != "ssh-ready" || len(loaded.Shares) != 1 {
+		t.Fatalf("Update lost a concurrent field: %+v", loaded)
+	}
+}
