@@ -91,6 +91,14 @@ func cmdAutoInstall(args []string) error {
 			return exitcode.New(exitcode.Usage,
 				"'%s' is running headless; stop it and rerun autoinstall so VNC is available", name)
 		}
+		raw, err := os.ReadFile(cfg.File("args.txt"))
+		if err != nil {
+			return exitcode.New(exitcode.BadArgsFile, "cannot read args.txt: %v", err)
+		}
+		if mode := displayModeOf(string(raw)); mode != "vmware" {
+			return exitcode.New(exitcode.Usage,
+				"'%s' is running with the %s display; stop it and rerun autoinstall so Recovery input is reliable", name, mode)
+		}
 	} else {
 		if err := setDisplayMode(cfg, "vmware"); err != nil {
 			return err
