@@ -291,6 +291,17 @@ func setDisplayMode(cfg *config.VMConfig, mode string) error {
 	return nil
 }
 
+func displayModeOf(input string) string {
+	switch {
+	case strings.Contains(input, "bochs-display") && strings.Contains(input, "-vga none"):
+		return "bochs"
+	case strings.Contains(input, "vmware-svga"):
+		return "vmware"
+	default:
+		return "other"
+	}
+}
+
 func rewriteDisplayArgs(input, mode string) string {
 	lines := strings.Split(input, "\n")
 	var out []string

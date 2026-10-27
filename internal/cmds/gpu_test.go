@@ -33,3 +33,15 @@ func TestBochsArgsIdempotent(t *testing.T) {
 		t.Fatal("bochsArgs changed the input")
 	}
 }
+
+func TestDisplayModeOf(t *testing.T) {
+	if got := displayModeOf("  -vga none \\\n  -device bochs-display,vgamem=256M \\\n"); got != "bochs" {
+		t.Fatalf("displayModeOf(bochs) = %q", got)
+	}
+	if got := displayModeOf("  -device vmware-svga \\\n"); got != "vmware" {
+		t.Fatalf("displayModeOf(vmware) = %q", got)
+	}
+	if got := displayModeOf("  -device VGA \\\n"); got != "other" {
+		t.Fatalf("displayModeOf(other) = %q", got)
+	}
+}
