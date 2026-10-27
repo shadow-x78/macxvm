@@ -127,8 +127,23 @@ func (i *Installer) openTerminal() error {
 
 func (i *Installer) eraseMatchedDisk() error {
 	i.logf("selecting and erasing only the internal disk matching %d GiB", i.VM.DiskGiB)
-	if err := i.Session.Type("sh " + SeedScript); err != nil {
+	command := "sh " + SeedScript
+	if err := i.Session.FocusCenter(); err != nil {
 		return err
+	}
+	if err := i.Session.Type(command); err != nil {
+		return err
+	}
+	if !i.Session.Typed("setup.sh") {
+		if err := i.Session.FocusCenter(); err != nil {
+			return err
+		}
+		if err := i.Session.Type(command); err != nil {
+			return err
+		}
+		if !i.Session.Typed("setup.sh") {
+			return fmt.Errorf("the seed command did not reach the Terminal prompt")
+		}
 	}
 	if err := i.Session.Enter(); err != nil {
 		return err
@@ -166,44 +181,61 @@ func (i *Installer) startInstaller() error {
 	if err := i.Session.ClickFraction(0.5, 0.658); err != nil {
 		return err
 	}
-	if _, _, err := i.Session.WaitFor([]string{"must agree to the terms", "Agree"}, 2*time.Minute); err != nil {
-		return fmt.Errorf("the Apple license screen did not appear: %w", err)
+	return i.advanceInstaller(5 * time.Minute)
+}
+
+func (i *Installer) advanceInstaller(timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for {
+		done, err := i.installerStep()
+		if err != nil {
+			return err
+		}
+		if done {
+			i.logf("installation started; the guest will reboot several times")
+			return nil
+		}
+		if time.Now().After(deadline) {
+			screen, _ := i.Session.Capture()
+			return fmt.Errorf("the installer did not start; last screen: %s", trim(screen.Text, 500))
+		}
+		time.Sleep(3 * time.Second)
 	}
-	if !i.AcceptLicense {
-		screen, _ := i.Session.Capture()
-		return fmt.Errorf("%w; review the license in VNC and rerun with --accept-license only if you agree. Screen: %s", ErrLicense, trim(screen.Text, 500))
+}
+
+func (i *Installer) installerStep() (bool, error) {
+	screen, err := i.Session.Capture()
+	if err != nil {
+		return false, err
 	}
-	i.logf("accepting the license because --accept-license was given")
-	if err := i.Session.ClickFraction(0.523, 0.660); err != nil {
-		return err
+	if installationInProgress(screen) {
+		return true, nil
 	}
-	if _, _, err := i.Session.WaitFor([]string{"I have read and agree"}, 60*time.Second); err != nil {
-		return fmt.Errorf("the license confirmation dialog did not appear: %w", err)
+	switch {
+	case screen.Has("have read and agree") || (screen.Has("Disagree") && screen.Has("Agree")):
+		if !i.AcceptLicense {
+			return false, fmt.Errorf("%w; review the license in VNC and rerun with --accept-license only if you agree", ErrLicense)
+		}
+		i.logf("accepting the license confirmation")
+		return false, i.Session.ClickFraction(0.531, 0.482)
+	case screen.Has("will be installed on the disk"):
+		i.logf("confirming the installation summary")
+		return false, i.Session.ClickFraction(0.523, 0.660)
+	case screen.Has("Select the disk") || (screen.Has("MacHDD") && screen.Has("Continue")):
+		i.logf("selecting the target disk")
+		if err := i.Session.ClickFraction(0.409, 0.570); err != nil {
+			return false, err
+		}
+		time.Sleep(2 * time.Second)
+		return false, i.Session.ClickFraction(0.523, 0.660)
+	case screen.Has("must agree to the terms") || screen.Has("Agree"):
+		if !i.AcceptLicense {
+			return false, fmt.Errorf("%w; review the license in VNC and rerun with --accept-license only if you agree", ErrLicense)
+		}
+		i.logf("accepting the Apple license because --accept-license was given")
+		return false, i.Session.ClickFraction(0.523, 0.660)
 	}
-	if err := i.Session.ClickFraction(0.531, 0.482); err != nil {
-		return err
-	}
-	if _, _, err := i.Session.WaitFor([]string{"Select the disk", "MacHDD"}, 2*time.Minute); err != nil {
-		return fmt.Errorf("the target disk screen did not appear: %w", err)
-	}
-	if err := i.Session.ClickFraction(0.409, 0.570); err != nil {
-		return err
-	}
-	time.Sleep(2 * time.Second)
-	if err := i.Session.ClickFraction(0.523, 0.660); err != nil {
-		return err
-	}
-	if _, _, err := i.Session.WaitFor([]string{"will be installed on the disk", "MacHDD"}, 90*time.Second); err != nil {
-		return fmt.Errorf("the install summary did not appear: %w", err)
-	}
-	if err := i.Session.ClickFraction(0.523, 0.660); err != nil {
-		return err
-	}
-	if _, _, err := i.Session.WaitFor([]string{"remaining", "Installing", "Preparing"}, 3*time.Minute); err != nil {
-		return fmt.Errorf("the installation did not start: %w", err)
-	}
-	i.logf("installation started; the guest will reboot several times")
-	return nil
+	return false, nil
 }
 
 func (i *Installer) waitForSetup() error {
@@ -295,6 +327,12 @@ func (i *Installer) Resume() error {
 				return nil
 			}
 			if installationInProgress(screen) {
+				return i.waitForSetup()
+			}
+			if isInstallerScreen(screen) && !recoveryVisible(screen) {
+				if err := i.advanceInstaller(10 * time.Minute); err != nil {
+					return err
+				}
 				return i.waitForSetup()
 			}
 			if recoveryVisible(screen) {
