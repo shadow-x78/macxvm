@@ -3,7 +3,7 @@
 # https://github.com/shadow-x78/macxvm
 # ─────────────────────────────────────────────
 
-# user-session agents
+# ── User Session Agents ──
 gui com.apple.photoanalysisd
 gui com.apple.mediaanalysisd
 gui com.apple.suggestd
@@ -14,5 +14,6 @@ gui com.apple.Siri.agent
 gui com.apple.siriknowledged
 gui com.apple.helpd
 gui com.apple.tipsd
-# system daemons
+
+# ── System Daemons ──
 system com.apple.analyticsd

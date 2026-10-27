@@ -3,8 +3,10 @@
 # https://github.com/shadow-x78/macxvm
 # ─────────────────────────────────────────────
 
+# ── Build Output ──
 bin/
 /macxvm
 
+# ── Local Files ──
 *.tmp
 .DS_Store

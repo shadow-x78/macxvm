@@ -1,7 +1,12 @@
+# ─────────────────────────────────────────────
 # MacXVM - Default Application Policy (MIT)
 # https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+
 # Names, bundle identifiers and paths are enforced by internal/guestapps.
 # This file documents policy; it is not an arbitrary deletion list.
+
+# ── Removed Applications ──
 remove Maps com.apple.Maps
 remove Photos com.apple.Photos
 remove Music com.apple.Music
@@ -13,9 +18,13 @@ remove Home com.apple.Home
 remove Stocks com.apple.Stocks
 remove Voice Memos com.apple.VoiceMemos
 remove Chess com.apple.Chess
-# Dock removal only; applications, accounts, data and background services remain.
+
+# ── Dock Only ──
+# Applications, accounts, data and background services remain.
 dock-only Mail com.apple.mail
 dock-only Messages com.apple.MobileSMS
 dock-only FaceTime com.apple.FaceTime
-# Always preserved: Finder, Safari, System Settings, App Store, Terminal,
-# Utilities, Dock, Xcode, boot/network/SSH components and all user data.
+
+# ── Always Preserved ──
+# Finder, Safari, System Settings, App Store, Terminal, Utilities, Dock,
+# Xcode, boot/network/SSH components and all user data.
