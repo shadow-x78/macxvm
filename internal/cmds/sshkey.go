@@ -61,7 +61,10 @@ if [ -s "$KEY" ] && ! grep -qxFf "$KEY" ~/.ssh/authorized_keys; then
 fi
 rm -f "$KEY"
 `
-	argsList := sshx.SSHArgs(cfg, sshx.RemoteCommand(command))
+	if err := sshx.EnsureHostKey(cfg, os.Stderr); err != nil {
+		return err
+	}
+	argsList := sshx.InteractiveSSHArgs(cfg, sshx.RemoteCommand(command))
 	argsList = append([]string{"-o", "PubkeyAuthentication=no"}, argsList...)
 	cmd := exec.Command("ssh", argsList...)
 	cmd.Stdin = strings.NewReader(public + "\n")

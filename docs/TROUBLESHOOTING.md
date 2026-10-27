@@ -2,7 +2,7 @@
 
 # Troubleshooting - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -125,9 +125,21 @@ The last lines of the console log are printed above the message. They usually na
 <a id="guest"></a>
 ## The Guest
 
-**`could not reach 'X' over SSH after 240 s (is Remote Login enabled? see README: First boot checklist)`**
+**`SSH port-unavailable`, `boot-timeout` or `authentication`**
 
-In the guest, open System Settings, General, Sharing and switch on **Remote Login**. The user of the machine must have a password, and the passwordless sudo of the [first boot checklist](../README.md#first-boot-checklist) lets MacXVM run the commands that need root.
+Enable **Remote Login** in System Settings, General, Sharing. `macxvm base bootstrap X --vnc` resumes the manual setup, installs the key with a password only through stdin, and verifies key-only SSH. A host-key mismatch is never silently overwritten: check the VM identity, then remove only that VM's `known_hosts` if the key change is expected.
+
+**`sudo-missing` or a failed `sudo -n`**
+
+Resume bootstrap; it validates a per-user sudoers entry with `visudo` and tests `sudo -n`. Do not paste passwords into command arguments or `config.json`.
+
+**`start --wait` times out while VNC works**
+
+QMP and SSH are different readiness states. Use `macxvm open X` to inspect the guest; `open` does not wait for SSH. If a running VM is headless, use `open X --restart` deliberately.
+
+**`resize` refuses a disk**
+
+The VM must be stopped, qcow2 integrity must pass, and a base with overlays cannot be resized. Only growth is supported; shrinking requires a new smaller base and selective file migration. Growing the qcow2 device does not automatically resize APFS.
 
 **`Command Line Tools are not installed in 'X' (run: macxvm tools install X clt)`**
 
@@ -143,11 +155,13 @@ The machine of the profile `cli` has no Xcode. Create a machine of the profile `
 
 **The guest does not answer after the slimming.**
 
-Restore it and reboot the guest:
+Restore services and update policy, then reboot the guest:
 
 ```bash
 macxvm slim X --restore
 ```
+
+Applications are not restored by this command. For application rollback, delete the affected overlay and create a fresh one from the sealed base. Preview removal first with `macxvm apps remove X --set default --dry-run`.
 
 **The guest is slow after the installation of Xcode.**
 

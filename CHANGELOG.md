@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.8.0] - 2026-10-27
+
+### Added
+- `macxvm autoinstall NAME --yes [--accept-license]`: automates OpenCore,
+  Recovery Terminal, exact-size disk selection and erase, license (explicit
+  flag only), target disk and Install, then stops at the first Setup Assistant
+  page before any user account.
+- `macxvm finish NAME [--password-stdin] [--apps] [--seal]`: post-Setup key,
+  sudoers, Dark, power, slim level 1, Bochs display, app preview/removal,
+  verification and optional seal.
+- `macxvm gpu NAME [--json]` and `macxvm optimize NAME`: host IOMMU/GPU report
+  plus the real macOS display kext, and a stopped-VM switch to Bochs VGA.
+
+### Changed
+- The default `cli` profile is now 4 vCPUs / 8192 MiB / 64 GiB. There is one
+  default VM; the `xcode` profile remains an explicit option.
+- New VMs use `-vga none` plus `bochs-display,vgamem=256M,xres=1920,yres=1080`,
+  so macOS loads `AppleBochVGAFB` instead of “No Kext Loaded”.
+- Application set defaults are now `default`; `personal` remains accepted as a
+  compatibility alias. `apps-default.txt` replaces the old policy file name.
+
+### Notes
+- `AppleVirtualGraphics.kext` matches only Bochs and Cirrus. There is no Metal
+  or 3D acceleration, and NVIDIA RTX passthrough is unavailable on a host with
+  no IOMMU groups and no macOS driver for the card.
+- `autoinstall` temporarily uses `vmware-svga` because Recovery accepts reliable
+  absolute pointer input with it; `finish` switches to Bochs afterwards.
+
+## [v0.7.0] - 2026-10-26
+
+### Added
+- CLI profile defaults at the time: 2 vCPUs, 4096 MiB RAM and a 64 GiB logical
+  qcow2 disk. `create NAME --base BASE` clones a sealed default base without
+  reinstalling; `resize` grows stopped disks and changes stopped VM resources.
+- `base bootstrap` with resumable, non-secret stages, local VNC, TOFU SSH trust,
+  key-only SSH and validated sudo bootstrap.
+- `open`, `start --wait`, readiness states, independent per-VM NVRAM and
+  per-version asset manifests with pinned boot references and SHA-256 checks.
+- Selective `apps` removal with the default allowlist, dry-run, confirmation,
+  `--keep`, SIP/symlink/bundle protection and recoverable-space manifests.
+- `scripts/integration.sh` for explicitly opted-in KVM guest testing and a
+  benchmark that reports `start_to_ssh_seconds` and cleans up on failure.
+
+### Changed
+- `image prepare` uses the same resource defaults as `create`; disks are built
+  in staging, converted once to qcow2 and checked before atomic publication.
+- `--replace` replaces stopped VMs; `--force` only overrides experimental
+  resource limits. Base/overlay deletion and resize protection is enforced.
+- SSH uses a per-VM `known_hosts` with a stable VM identity alias and strict
+  verification after local TOFU; bootstrap never stores passwords.
+- Level 3 is now the selective application engine, not a bulk deletion script.
+  Restore covers services and update policy only, never removed applications.
+
+### Fixed
+- Interrupted downloads and failed conversions no longer publish final assets.
+- Process ownership is checked before stop/kill and after operation locks.
+- Missing pid files no longer hide a running VM, and readiness is not inferred
+  from a QMP socket alone.
+
 ## [v0.6.0] - 2026-10-24
 
 ### Added

@@ -86,7 +86,7 @@ func TestRunReturnsChecks(t *testing.T) {
 	}
 }
 
-func TestKVMAccelCheckWarnsWhenKVMIsNotTheDefault(t *testing.T) {
+func TestKVMAccelCheckAcceptsExplicitKVMAcceleration(t *testing.T) {
 	oldProbe, oldBinary := kvmProbe, kvmBinary
 	kvmProbe = func(string) (bool, bool) { return true, false }
 	kvmBinary = func(string) bool { return true }
@@ -95,11 +95,11 @@ func TestKVMAccelCheckWarnsWhenKVMIsNotTheDefault(t *testing.T) {
 	}()
 
 	check := kvmAccelCheck()
-	if check.Status != Warn {
-		t.Fatalf("kvmAccelCheck() = %v, want a warning", check.Status)
+	if check.Status != OK {
+		t.Fatalf("kvmAccelCheck() = %v, want OK", check.Status)
 	}
 	if !strings.Contains(check.Detail, "-accel kvm") {
-		t.Fatalf("kvmAccelCheck() = %q, want a hint about the accelerator", check.Detail)
+		t.Fatalf("kvmAccelCheck() = %q, want the explicit accelerator detail", check.Detail)
 	}
 }
 

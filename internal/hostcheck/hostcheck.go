@@ -21,6 +21,11 @@ type Runner interface {
 	Run(name string, args ...string) error
 }
 
+type OutputRunner interface {
+	Runner
+	Output(name string, args ...string) (string, error)
+}
+
 type ExecRunner struct{}
 
 func (ExecRunner) Run(name string, args ...string) error {
@@ -29,6 +34,11 @@ func (ExecRunner) Run(name string, args ...string) error {
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	return cmd.Run()
+}
+
+func (ExecRunner) Output(name string, args ...string) (string, error) {
+	out, err := exec.Command(name, args...).Output()
+	return string(out), err
 }
 
 func IsLinuxX86_64() bool {

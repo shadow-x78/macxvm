@@ -45,8 +45,8 @@ func cmdStop(args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := ensureSSHKey(); err != nil {
-		return err
+	if *timeout < 0 {
+		return exitcode.New(exitcode.Usage, "timeout cannot be negative")
 	}
 	step, err := stopVM(cfg, *force, *timeout)
 	if err != nil {
@@ -63,53 +63,82 @@ func stopVM(cfg *config.VMConfig, force bool, timeout int) (string, error) {
 		return "", exitcode.New(exitcode.Generic, "another macxvm operation is running on '%s'", name)
 	}
 	defer lock.Close()
+	current, err := store.LockedCurrent(cfg)
+	if err != nil {
+		return "", err
+	}
+	*cfg = *current
 
 	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
-
-	pid, running := runstate.Running(runstate.ProcRoot(), runstate.PidFile(cfg.Dir()), cfg.ID)
+	pid, running := runstate.PID(cfg)
 	if !running {
-		found, ok := runstate.FindByMarker(runstate.ProcRoot(), cfg.ID)
-		if !ok {
-			return "", exitcode.New(exitcode.NotRunning, "VM '%s' is not running", name)
-		}
-		pid = found
+		return "", exitcode.New(exitcode.NotRunning, "VM '%s' is not running", name)
 	}
-	sock := paths.Run() + "/" + cfg.ID + ".sock"
+	sock, err := qemu.QmpSocketPath(paths.Run(), cfg.ID)
+	if err != nil {
+		return "", err
+	}
+	cfg.Readiness = "stopping"
+	if err := store.Save(cfg); err != nil {
+		return "", err
+	}
+	finish := func(step string, wait time.Duration) (bool, error) {
+		if !waitExit(cfg, pid, wait) {
+			return false, nil
+		}
+		cleanup(cfg, sock)
+		cfg.Readiness = "stopped"
+		cfg.VNCDisplay = 0
+		if err := store.Save(cfg); err != nil {
+			return true, err
+		}
+		return true, nil
+	}
+	failRunning := func() (string, error) {
+		cfg.Readiness = "failed"
+		_ = store.Save(cfg)
+		return "", exitcode.New(exitcode.Generic,
+			"QEMU process %d owned by '%s' did not exit; refusing to report a successful stop", pid, name)
+	}
 
 	if force {
-		step := "qmp quit"
-		if !qmpCommand(sock, "quit") {
-			qemu.Kill(pid)
-			waitExit(pid, 3*time.Second)
-			step = "killed"
+		if qmpCommand(sock, "quit") {
+			if done, err := finish("qmp quit", 5*time.Second); done {
+				return "qmp quit", err
+			}
 		}
-		waitExit(pid, 5*time.Second)
-		cleanup(cfg, sock)
-		return step, nil
+		if runstate.Alive(runstate.ProcRoot(), pid, cfg.ID) {
+			_ = qemu.Kill(pid)
+		}
+		if done, err := finish("killed", 5*time.Second); done {
+			return "killed", err
+		}
+		return failRunning()
 	}
 
-	sshx.RunBounded(cfg, "sudo shutdown -h now", sshStepTimeout(timeout))
-	if waitExitUntil(pid, deadline) {
-		cleanup(cfg, sock)
-		return "ssh shutdown", nil
-	}
-
-	if qmpCommand(sock, "system_powerdown") {
-		if waitExit(pid, 20*time.Second) {
-			cleanup(cfg, sock)
-			return "acpi power button", nil
+	sshErr := sshx.RunBounded(cfg, "sudo shutdown -h now", sshStepTimeout(timeout))
+	if sshErr == nil && waitExitUntil(cfg, pid, deadline) {
+		if done, err := finish("ssh shutdown", 0); done {
+			return "ssh shutdown", err
 		}
 	}
-	if qmpCommand(sock, "quit") {
-		if waitExit(pid, 5*time.Second) {
-			cleanup(cfg, sock)
-			return "qmp quit", nil
+	if runstate.Alive(runstate.ProcRoot(), pid, cfg.ID) && qmpCommand(sock, "system_powerdown") {
+		if done, err := finish("acpi power button", 20*time.Second); done {
+			return "acpi power button", err
 		}
 	}
-	qemu.Kill(pid)
-	waitExit(pid, 5*time.Second)
-	cleanup(cfg, sock)
-	return "killed", nil
+	if runstate.Alive(runstate.ProcRoot(), pid, cfg.ID) && qmpCommand(sock, "quit") {
+		if done, err := finish("qmp quit", 5*time.Second); done {
+			return "qmp quit", err
+		}
+	}
+	if runstate.Alive(runstate.ProcRoot(), pid, cfg.ID) {
+		_ = qemu.Kill(pid)
+	}
+	if done, err := finish("killed", 5*time.Second); done {
+		return "killed", err
+	}
+	return failRunning()
 }
 
 func qmpCommand(sock, command string) bool {
@@ -127,23 +156,24 @@ func qmpCommand(sock, command string) bool {
 	return false
 }
 
-func waitExit(pid int, timeout time.Duration) bool {
-	return waitExitUntil(pid, time.Now().Add(timeout))
+func waitExit(cfg *config.VMConfig, pid int, timeout time.Duration) bool {
+	return waitExitUntil(cfg, pid, time.Now().Add(timeout))
 }
 
-func waitExitUntil(pid int, deadline time.Time) bool {
+func waitExitUntil(cfg *config.VMConfig, pid int, deadline time.Time) bool {
 	for {
-		if runstate.ProcessGone(runstate.ProcRoot(), pid) {
+		if runstate.ProcessGone(runstate.ProcRoot(), pid) ||
+			!runstate.Alive(runstate.ProcRoot(), pid, cfg.ID) {
 			return true
 		}
 		if time.Now().After(deadline) {
 			return false
 		}
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
-const maxSSHShutdownTimeout = 20 * time.Second
+const maxSSHShutdownTimeout = 5 * time.Second
 
 func sshStepTimeout(timeout int) time.Duration {
 	limit := time.Duration(timeout) * time.Second

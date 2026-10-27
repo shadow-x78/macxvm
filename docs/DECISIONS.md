@@ -2,7 +2,7 @@
 
 # Decisions Log - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -54,7 +54,7 @@ Every deviation from the specification and every ambiguity that had to be resolv
 | A16 | `--` handling | Go's `flag` package stops at the first positional, so `NAME -- cmd` leaves `--` in the remainder; every command strips exactly one leading `--` after the positional |
 | A17 | Flag ordering | The spec's usage puts `NAME` before the flags, so `cmds.SplitArgs` splits the leading positional out of the argument list before handing the rest to `flag`. Bool flags are detected through the `FlagSet`, so `--flag value NAME` works too |
 | A18 | `Makefile` `install` target | Adds `mkdir -p $(HOME)/.local/bin` before the install step; the spec's Makefile would fail when the directory does not exist |
-| A19 | Version | `const Version = "0.1.0"` in `internal/cmds/cmds.go`; `macxvm version` prints `macxvm 0.1.0` |
+| A19 | Version | `Version = "0.8.0"` in `internal/cmds/cmds.go`; release builds pin the same value with ldflags |
 | A20 | `go.mod` | `go 1.22` language level; any toolchain from 1.22 upwards works. The build host uses Go 1.27.3 |
 | A21 | Release artefacts | `linux/amd64` only, built with `CGO_ENABLED=0`. No extra release workflow: spec section 17 allows a single CI job only |
 | A22 | Guest assets | The repository never ships, downloads or embeds Apple software, firmware, keys or boot loaders. The machine definition, bootloader, firmware and installer image come from the user |
@@ -63,10 +63,10 @@ Every deviation from the specification and every ambiguity that had to be resolv
 | A25 | Detecting that QEMU exited early | The command line of a process is briefly empty while it starts, so the decision is based on `/proc/<pid>/stat` (`runstate.ProcessGone`): a missing or zombie process means the machine is gone. The command line is only used to recognise the process of the machine, which makes the check immune to a reused PID |
 | A26 | `store.SelectPrunable` | It takes the running check as an argument, so the selection of the temporary machines can be tested without a running QEMU |
 | A27 | The exit code of a remote command | `macxvm exec` and `macxvm run` pass the exit code of the remote command through. The error carries no message, so nothing is printed in that case |
-| A28 | Waiting for the guest | `sshx.WaitForSSH` waits 240 seconds by default, as the specification says, and every command that needs the guest uses it |
+| A28 | Waiting for the guest | `sshx.WaitForSSH` waits up to 240 seconds for key-only SSH; `open` intentionally never waits, and bootstrap uses a longer configurable manual-install wait |
 | A29 | Size of the code | The implementation has about 5,200 lines of Go without the tests, above the 4,500 lines of the target. The 25 commands of the specification each need their own file, and the legal notice, the doctor and the argument helpers take their share. The code stays small in behaviour: one binary, no daemon, no background process |
 | A30 | The `run` command | A temporary machine is removed when the command ends, when it fails and when the command is interrupted with SIGINT or SIGTERM |
-| A31 | The SSH options | The options of the specification are used, plus `ServerAliveInterval=5` and `ServerAliveCountMax=2`. Without them a guest that stops answering keeps the SSH client waiting forever, and the graceful step of `stop` would never end |
+| A31 | The SSH options | Each VM has a `known_hosts` with `HostKeyAlias=macxvm-<id>`, local TOFU while its marked QEMU is running, then strict verification and `BatchMode=yes`; `GlobalKnownHostsFile=/dev/null` only isolates the host's global file, not the per-VM trust |
 | A32 | The paths of a fetch | The remote and the local path of a fetch must be relative and must stay inside the project. The `fetch` list of `macxvm.json` belongs to the repository, so it may not write anywhere on the host |
 | A33 | The creation of a virtual machine | The new machine is built in a staging directory and replaces the old one only when it is complete. A failure never destroys what is already there |
 | A34 | The run directory | The directory that holds the QMP socket must be a real directory of the current user that no other user may write to. The QMP socket is not authenticated |
@@ -115,3 +115,16 @@ The whole project was audited in October 2026. The findings, the evidence and th
 | A63 | The layout of the prepared disk | The partition of a disk that `macxvm image prepare` writes starts at the 1 MiB boundary and ends before one, the layout that the partitioning tools of the big systems write, so that `sgdisk -v` reports no problem on it. A disk too small for the boundary keeps the first-34-sectors layout |
 | A64 | The steps of the installation in the output | `macxvm start --install` prints the erase of the disk as APFS before the reinstall, because the installer of macOS and the Startup Disk panel list no target disk before the disk holds an APFS volume. The screen of the guest says so and the tool repeats it, so that the first installation does not stop at an empty disk list |
 | A65 | The screenshot script | `scripts/screenshot.sh` takes the screen of a running guest over the QMP socket of the tool with `python3` only, so that the screenshots of the README can be refreshed at every stage of the installation. The fallbacks of the state and the run directory mirror `internal/paths` exactly |
+| A66 | Default resources | `cli` defaults are 4 vCPUs / 8192 MiB / 64 GiB logical qcow2; `xcode` remains an explicit 4 / 8192 / 100 alternative. These are logical resources, not APFS free-space or GUI-performance promises |
+| A67 | Create and replace | `image prepare` and `create` share resource resolution and host/KVM checks. `--replace` is the destructive replacement opt-in; `--force` is only for experimental resources |
+| A68 | Asset authenticity | Boot references are pinned and SHA-256 checked. Apple recovery uses RSA-signed chunklists; digest-only method 2 is rejected. Legacy unversioned Apple files are not assigned to a new macOS version |
+| A69 | Atomic disks and clones | GPT is written to a sparse staging raw disk, converted once to qcow2, checked and atomically published. Clone validates disk/NVRAM/args expansion and never leaves a partial destination |
+| A70 | Bootstrap trust | Passwords are accepted only through hidden input or stdin and sent through stdin to SSH/sshpass; no secret is persisted. Sudoers is validated with `visudo` and `sudo -n`, not installed with an unverified echo |
+| A71 | Readiness and process safety | QMP and SSH readiness are distinct. Every operation reloads config after `op.lock`; exact QEMU markers are rechecked before signals and stale snapshots are rejected |
+| A72 | VNC | VNC is loopback-only and allocated under a global lock. `open` uses the real listener and does not wait for SSH; a running headless VM needs explicit `--restart` |
+| A73 | Selective applications | Level 3 and `apps` use one fixed default allowlist, dry-run, confirmation, keep rules, bundle/SIP/symlink/file-flag checks and manifests. Mail, Messages and FaceTime are dock-only; no bulk deletion of caches/logs/user data is allowed |
+| A74 | Rollback | Restore means services and update policy only. Removed applications are rolled back by deleting a clone and creating another from the sealed base |
+| A76 | Fully automated install | `autoinstall` uses QMP screendumps + tesseract OCR, a fixed read-only seed ISO for exact-size disk selection, and vncdo pointer input. It stops at the first Setup Assistant page; the Apple license needs `--accept-license`, and no password is typed. |
+| A77 | Post-Setup automation | `finish` performs key/sudo/Dark/slim/Bochs/apps/verify/seal after the user creates the account and enables Remote Login. It never claims to restore removed applications. |
+| A78 | Display reverse engineering | `AppleVirtualGraphics.kext` matches Bochs (`0x1234:0x1111`) and Cirrus only. The default is `-vga none` + `bochs-display` so macOS loads `AppleBochVGAFB`; Metal/3D and RTX passthrough are out of scope. |
+| A75 | Release and integration | v0.8.0 uses matching ldflags. CI runs formatting, headers, shell syntax, vet, tests and build; KVM integration is manual opt-in via `MACXVM_INTEGRATION=1` and a named sealed base |

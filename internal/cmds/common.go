@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/shadow-x78/macxvm/internal/config"
@@ -15,29 +16,47 @@ import (
 	"github.com/shadow-x78/macxvm/internal/names"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/sshx"
+	"github.com/shadow-x78/macxvm/internal/store"
 )
 
+type vmResourcesJSON struct {
+	CPUs    int `json:"cpus"`
+	RAMMiB  int `json:"ramMiB"`
+	DiskGiB int `json:"diskGiB"`
+}
+
 type vmJSON struct {
-	Name    string `json:"name"`
-	Profile string `json:"profile"`
-	State   string `json:"state"`
-	CPUs    int    `json:"cpus"`
-	RAMMiB  int    `json:"ramMiB"`
-	DiskGiB int    `json:"diskGiB"`
-	SSHPort int    `json:"sshPort"`
-	MacOS   string `json:"macos"`
+	Name     string          `json:"name"`
+	Profile  string          `json:"profile"`
+	State    string          `json:"state"`
+	Kind     string          `json:"kind"`
+	Base     string          `json:"base,omitempty"`
+	CPUs     int             `json:"cpus"`
+	RAMMiB   int             `json:"ramMiB"`
+	DiskGiB  int             `json:"diskGiB"`
+	Defaults vmResourcesJSON `json:"defaults"`
+	SSHPort  int             `json:"sshPort"`
+	VNC      string          `json:"vnc,omitempty"`
+	MacOS    string          `json:"macos"`
 }
 
 func toJSON(cfg *config.VMConfig) vmJSON {
+	defaults := config.Defaults(cfg.Profile)
+	kind := "standalone"
+	if cfg.Sealed {
+		kind = "base"
+	} else if cfg.BackingOf != "" {
+		kind = "overlay"
+	}
+	vnc := ""
+	if display, ok := runstate.VNC(cfg); ok {
+		vnc = "127.0.0.1:" + strconv.Itoa(5900+display)
+	}
 	return vmJSON{
-		Name:    cfg.Name,
-		Profile: cfg.Profile,
-		State:   runstate.State(cfg),
-		CPUs:    cfg.CPUs,
-		RAMMiB:  cfg.MemoryMiB,
-		DiskGiB: cfg.DiskGiB,
-		SSHPort: cfg.SSHPort,
-		MacOS:   cfg.MacOSVersion,
+		Name: cfg.Name, Profile: cfg.Profile, State: runstate.State(cfg), Kind: kind, Base: cfg.BackingOf,
+		CPUs: cfg.CPUs, RAMMiB: cfg.MemoryMiB, DiskGiB: cfg.DiskGiB,
+		Defaults: vmResourcesJSON{CPUs: defaults.CPUs, RAMMiB: defaults.MemoryMiB, DiskGiB: defaults.DiskGiB},
+		SSHPort:  cfg.SSHPort, VNC: vnc, MacOS: cfg.MacOSVersion,
 	}
 }
 
@@ -79,18 +98,36 @@ func ensureRunning(cfg *config.VMConfig) (bool, error) {
 		return false, err
 	}
 	if runstate.IsRunning(cfg) {
+		if err := sshx.WaitForSSH(cfg, sshx.DefaultTimeout); err != nil {
+			return false, err
+		}
+		if cfg.Readiness != "ssh-ready" {
+			updated, err := store.Update(cfg.Name, func(current *config.VMConfig) error {
+				current.Readiness = "ssh-ready"
+				return nil
+			})
+			if err != nil {
+				return false, err
+			}
+			*cfg = *updated
+		}
 		return false, nil
 	}
 	started, err := startVM(cfg, false, false, false)
 	if err != nil {
 		return started, err
 	}
-	if !started {
-		return false, nil
-	}
 	if err := sshx.WaitForSSH(cfg, sshx.DefaultTimeout); err != nil {
 		return true, err
 	}
+	updated, err := store.Update(cfg.Name, func(current *config.VMConfig) error {
+		current.Readiness = "ssh-ready"
+		return nil
+	})
+	if err != nil {
+		return true, err
+	}
+	*cfg = *updated
 	return true, nil
 }
 

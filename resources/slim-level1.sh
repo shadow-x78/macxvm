@@ -3,6 +3,7 @@
 # MacXVM - Guest Slimming Level 1 (MIT)
 # https://github.com/shadow-x78/macxvm
 # ─────────────────────────────────────────────
+defaults write NSGlobalDomain AppleInterfaceStyle -string Dark || true
 sudo mdutil -a -i off || true
 sudo tmutil disable || true
 sudo pmset -a displaysleep 0 sleep 0 disksleep 0 || true

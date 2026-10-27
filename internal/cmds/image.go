@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/shadow-x78/macxvm/internal/bootstrap"
+	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/hostcheck"
 	"github.com/shadow-x78/macxvm/internal/image"
@@ -19,7 +21,7 @@ func init() {
 	register(Command{
 		Name:    "image",
 		Group:   "Images",
-		Usage:   "macxvm image prepare NAME [--macos VERSION] [--cpu MODEL] [--cpus N] [--ram SIZE] [--disk GiB] [--profile cli|xcode]",
+		Usage:   "macxvm image prepare NAME [--macos VERSION] [--cpu MODEL] [--cpus N] [--ram SIZE] [--disk GiB] [--profile cli|xcode] [--replace] [--force]",
 		Summary: "prepare the boot assets of a macOS guest",
 		Run:     cmdImage,
 	})
@@ -29,13 +31,14 @@ func cmdImage(args []string) error {
 	fs := newFlagSet("image")
 	macos := fs.String("macos", "sonoma",
 		"the version of macOS: high-sierra, mojave, catalina, big-sur, monterey, ventura, sonoma, sequoia or tahoe")
-	cpu := fs.String("cpu", "skylake", "the processor of the guest: skylake (safe) or host (the fastest)")
-	cpus := fs.Int("cpus", 4, "the number of CPUs of the machine")
-	ram := fs.String("ram", "8G", "the memory of the machine")
-	disk := fs.Int("disk", 64, "the size of the disk of the machine in GiB")
+	cpu := fs.String("cpu", "skylake", "the processor of the guest: skylake (tested) or host (requires explicit testing)")
+	cpus := fs.Int("cpus", 0, "the number of CPUs of the machine (profile default)")
+	ram := fs.String("ram", "", "the memory of the machine (profile default)")
+	disk := fs.Int("disk", 0, "the size of the disk of the machine in GiB (profile default)")
 	profile := fs.String("profile", "cli", "the profile of the machine: cli or xcode")
 	assets := fs.String("assets", "", "the directory of the boot assets")
-	force := fs.Bool("force", false, "replace a machine of the same name")
+	replace := fs.Bool("replace", false, "replace an existing stopped virtual machine")
+	force := fs.Bool("force", false, "override resource limits only")
 
 	positional, flagArgs := SplitArgs(fs, args)
 	if err := parseFlags("image", fs, flagArgs); err != nil {
@@ -51,21 +54,40 @@ func cmdImage(args []string) error {
 	if err != nil {
 		return err
 	}
-	if store.Exists(name) && !*force {
-		return exitcode.New(exitcode.Generic,
-			"VM '%s' already exists (use --force to replace it)", name)
-	}
-
-	dir := *assets
-	if dir == "" {
-		dir = filepath.Join(paths.Home(), "assets")
-	}
-	abs, err := filepath.Abs(dir)
+	cfg, err := resolveResources(*profile, *cpus, *ram, *disk, flagWasSet(fs, "cpus"), flagWasSet(fs, "disk"), *force)
 	if err != nil {
-		return exitcode.New(exitcode.Usage, "invalid assets directory '%s'", dir)
+		return err
+	}
+	if err := hostcheck.Protect(cfg.MemoryMiB, cfg.CPUs, *force); err != nil {
+		return err
+	}
+	if err := checkCreateHost(config.DefaultQemuBinary); err != nil {
+		return err
+	}
+	if err := checkCreateTarget(name, *replace); err != nil {
+		return err
 	}
 
-	fmt.Printf("Preparing the boot assets of '%s' in %s\n", name, abs)
+	root := *assets
+	if root == "" {
+		root = filepath.Join(paths.Home(), "assets")
+	}
+	abs, err := filepath.Abs(root)
+	if err != nil {
+		return exitcode.New(exitcode.Usage, "invalid assets directory '%s'", root)
+	}
+	assetDir, err := image.AssetDir(abs, *macos)
+	if err != nil {
+		return err
+	}
+	if _, err := image.LookupCPU(*cpu); err != nil {
+		return err
+	}
+	if _, err := store.FreePort(); err != nil {
+		return exitcode.New(exitcode.Generic, "no loopback SSH port is available before asset preparation: %v", err)
+	}
+
+	fmt.Printf("Preparing the boot assets of '%s' in %s\n", name, assetDir)
 	opts := image.Options{
 		Dir:    abs,
 		OS:     *macos,
@@ -76,26 +98,32 @@ func cmdImage(args []string) error {
 		return err
 	}
 
-	err = cmdCreate([]string{
+	createArgs := []string{
 		name,
-		"--args-file", filepath.Join(abs, image.ArgsName),
-		"--assets", abs,
-		"--cpus", strconv.Itoa(*cpus),
-		"--ram", *ram,
-		"--disk", strconv.Itoa(*disk),
-		"--profile", *profile,
-		"--force",
-	})
+		"--args-file", filepath.Join(assetDir, image.ArgsName),
+		"--assets", assetDir,
+		"--nvram-template", filepath.Join(assetDir, image.VarsName),
+		"--cpus", strconv.Itoa(cfg.CPUs),
+		"--ram", strconv.Itoa(cfg.MemoryMiB),
+		"--disk", strconv.Itoa(cfg.DiskGiB),
+		"--profile", cfg.Profile,
+		"--macos-version", *macos,
+	}
+	if *replace {
+		createArgs = append(createArgs, "--replace")
+	}
+	if *force {
+		createArgs = append(createArgs, "--force")
+	}
+	if err := cmdCreate(createArgs); err != nil {
+		return err
+	}
+	created, err := store.Load(name)
 	if err != nil {
 		return err
 	}
-	cfg, err := store.Load(name)
-	if err != nil {
-		return err
-	}
-	fmt.Println("Writing the partition table of the disk")
-	if err := image.PrepareDisk(cfg.File("disk.qcow2"), hostcheck.ExecRunner{}); err != nil {
-		return err
+	if err := bootstrap.Save(created, bootstrap.State{Stage: "assets"}); err != nil {
+		return exitcode.New(exitcode.Generic, "cannot record the fresh-install state: %v", err)
 	}
 	fmt.Println("The disk of the machine is ready for the installer of Apple")
 	return nil

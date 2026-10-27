@@ -8,6 +8,12 @@ name: ci
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Sealed base for the optional KVM integration test
+        required: false
+        type: string
 
 jobs:
   test:
@@ -22,6 +28,8 @@ jobs:
         run: test -z "$(gofmt -l .)"
       - name: Check the file headers
         run: ./scripts/check-headers.sh
+      - name: Check shell syntax
+        run: bash -n scripts/bench.sh scripts/integration.sh scripts/install.sh scripts/screenshot.sh
       - name: Vet, test and build
         run: go vet ./... && go test ./... && make build
       - name: Check the size of the binary
@@ -29,3 +37,17 @@ jobs:
           size=$(stat -c %s bin/macxvm)
           echo "the binary is $size bytes"
           test "$size" -lt 8388608
+
+  integration:
+    if: github.event_name == 'workflow_dispatch' && inputs.base != ''
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.mod
+      - name: Build
+        run: make build
+      - name: Opt-in KVM integration
+        run: MACXVM_INTEGRATION=1 ./scripts/integration.sh "${{ inputs.base }}"

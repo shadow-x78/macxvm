@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/store"
@@ -48,12 +49,24 @@ func cmdStatus(args []string) error {
 		}
 		return nil
 	}
+	defaults := config.Defaults(cfg.Profile)
+	kind := "standalone"
+	if cfg.Sealed {
+		kind = "base"
+	} else if cfg.BackingOf != "" {
+		kind = "overlay"
+	}
 	rows := [][2]string{
 		{"profile", cfg.Profile},
+		{"kind", kind},
 		{"cpu", strconv.Itoa(cfg.CPUs)},
 		{"memory", strconv.Itoa(cfg.MemoryMiB) + " MiB"},
-		{"disk", strconv.Itoa(cfg.DiskGiB) + " GiB"},
+		{"disk", strconv.Itoa(cfg.DiskGiB) + " GiB (logical qcow2)"},
+		{"profile defaults", fmt.Sprintf("%d CPUs / %d MiB / %d GiB", defaults.CPUs, defaults.MemoryMiB, defaults.DiskGiB)},
 		{"ssh", "127.0.0.1:" + strconv.Itoa(cfg.SSHPort)},
+	}
+	if cfg.BackingOf != "" {
+		rows = append(rows, [2]string{"base", cfg.BackingOf})
 	}
 	if display, ok := runstate.VNC(cfg); ok {
 		rows = append(rows, [2]string{"vnc", "127.0.0.1:" + strconv.Itoa(5900+display)})

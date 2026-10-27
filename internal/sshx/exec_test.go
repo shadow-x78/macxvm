@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/shadow-x78/macxvm/internal/config"
 )
 
 func fakeSSH(t *testing.T) string {
@@ -25,6 +27,9 @@ func fakeSSH(t *testing.T) string {
 func TestOutputRunsSSHWithTheArgumentsOnly(t *testing.T) {
 	record := fakeSSH(t)
 	cfg := testConfig(t)
+	original := isRunning
+	isRunning = func(*config.VMConfig) bool { return true }
+	defer func() { isRunning = original }()
 	if _, err := Output(cfg, "true"); err != nil {
 		t.Fatal(err)
 	}
@@ -50,6 +55,9 @@ func TestOutputRunsSSHWithTheArgumentsOnly(t *testing.T) {
 func TestRunScriptRunsSSHWithTheArgumentsOnly(t *testing.T) {
 	record := fakeSSH(t)
 	cfg := testConfig(t)
+	original := isRunning
+	isRunning = func(*config.VMConfig) bool { return true }
+	defer func() { isRunning = original }()
 	if err := RunScript(cfg, "echo hello"); err != nil {
 		t.Fatal(err)
 	}

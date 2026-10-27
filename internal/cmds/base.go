@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/shadow-x78/macxvm/internal/bootstrap"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/store"
@@ -19,7 +20,7 @@ func init() {
 	register(Command{
 		Name:    "base",
 		Group:   "Machines",
-		Usage:   "macxvm base seal NAME | unseal NAME | list",
+		Usage:   "macxvm base bootstrap NAME [--vnc] [--password-stdin] | seal NAME | unseal NAME | list",
 		Summary: "manage sealed base images",
 		Run:     cmdBase,
 	})
@@ -27,7 +28,7 @@ func init() {
 
 func cmdBase(args []string) error {
 	if len(args) == 0 {
-		return exitcode.New(exitcode.Usage, "base needs a subcommand: seal, unseal or list")
+		return exitcode.New(exitcode.Usage, "base needs a subcommand: bootstrap, seal, unseal or list")
 	}
 	if args[0] == "-h" || args[0] == "--help" {
 		c, _ := Lookup("base")
@@ -35,6 +36,8 @@ func cmdBase(args []string) error {
 		return ErrHelp
 	}
 	switch args[0] {
+	case "bootstrap":
+		return cmdBaseBootstrap(args[1:])
 	case "seal":
 		return baseSeal(args[1:])
 	case "unseal":
@@ -42,7 +45,7 @@ func cmdBase(args []string) error {
 	case "list":
 		return baseList(args[1:])
 	}
-	return exitcode.New(exitcode.Usage, "unknown base subcommand '%s' (use seal, unseal or list)", args[0])
+	return exitcode.New(exitcode.Usage, "unknown base subcommand '%s' (use bootstrap, seal, unseal or list)", args[0])
 }
 
 func baseSeal(args []string) error {
@@ -60,8 +63,21 @@ func baseSeal(args []string) error {
 		return exitcode.New(exitcode.Generic, "another macxvm operation is running on '%s'", name)
 	}
 	defer lock.Close()
+	current, err := store.LockedCurrent(cfg)
+	if err != nil {
+		return err
+	}
+	cfg = current
 	if runstate.IsRunning(cfg) {
 		return exitcode.New(exitcode.AlreadyRunning, "VM '%s' is already running", name)
+	}
+	state, err := bootstrap.Load(cfg)
+	if err != nil {
+		return err
+	}
+	if state.Stage != "ready" {
+		return exitcode.New(exitcode.Generic,
+			"base '%s' is not bootstrap-ready; run 'macxvm base bootstrap %s' and verify it before sealing", name, name)
 	}
 	cfg.Sealed = true
 	if err := store.Save(cfg); err != nil {
@@ -86,7 +102,12 @@ func baseUnseal(args []string) error {
 		return exitcode.New(exitcode.Generic, "another macxvm operation is running on '%s'", name)
 	}
 	defer lock.Close()
-	overlays, err := store.OverlaysOf(name)
+	current, err := store.LockedCurrent(cfg)
+	if err != nil {
+		return err
+	}
+	cfg = current
+	overlays, err := store.OverlaysOfStrict(name)
 	if err != nil {
 		return err
 	}

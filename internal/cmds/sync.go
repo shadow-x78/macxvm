@@ -79,6 +79,9 @@ func checkRelative(path, what string) error {
 }
 
 func runInGuest(cfg *config.VMConfig, command string) error {
+	if err := sshx.EnsureHostKey(cfg, os.Stderr); err != nil {
+		return err
+	}
 	cmd := exec.Command("ssh", sshx.SSHArgs(cfg, sshx.RemoteCommand(command))...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

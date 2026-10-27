@@ -34,7 +34,10 @@ func cmdSSH(args []string) error {
 	if err := ensureSSHKey(); err != nil {
 		return err
 	}
-	cmd := exec.Command("ssh", sshx.SSHArgs(cfg, extra...)...)
+	if err := sshx.EnsureHostKey(cfg, os.Stderr); err != nil {
+		return err
+	}
+	cmd := exec.Command("ssh", sshx.InteractiveSSHArgs(cfg, extra...)...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

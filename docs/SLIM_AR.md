@@ -2,7 +2,7 @@
 
 # تخفيف ضيف macOS - MacXVM
 
-[![الإصدار](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -37,7 +37,7 @@
 
 ضيف macOS يستهلك 30 % من المعالج في وضع الخمول لا يصلح للبناء. تقلص مستويات التخفيف في MacXVM كلفة الخمول: خدمات خلفية أقل، وفهرسة مطفأة، وحركات بلا، وتحديثات تلقائية مطفأة.
 
-كلا المستويين يعملان **داخل الضيف** عبر SSH، ولا يحتاجان صلاحيات root على المضيف، وكلاهما قابل للعكس. يبقى الضيف صالحا للعمل: يجب أن تبقى SSH والشبكة و`xcodebuild` تعمل.
+كل المستويات تعمل **داخل الضيف** عبر SSH ولا تحتاج root على المضيف. الإعدادات والخدمات المحددة قابلة للاستعادة؛ حذف التطبيقات عملية انتقائية منفصلة، والتراجع عنه يكون باستنساخ الأساس المختوم من جديد. تبقى SSH والشبكة وXcode محمية.
 
 ```bash
 macxvm slim demo --level 1
@@ -52,6 +52,7 @@ macxvm slim demo --restore
 
 | التغيير | الأثر |
 |---------|-------|
+| `defaults write NSGlobalDomain AppleInterfaceStyle Dark` | تفعيل الوضع الداكن والتحقق منه في bootstrap |
 | `mdutil -a -i off` | لا فهرسة Spotlight، ولا فهرسة للقرص في الخلفية |
 | `tmutil disable` | لا Time Machine، ولا لقطات متكررة |
 | مؤقتات النوم في `pmset` إلى صفر | لا ينتقل الضيف إلى النوم أبدا |
@@ -116,37 +117,39 @@ com.apple.trustd
 macxvm: warning: skipping the protected label gui com.apple.sshd
 ```
 
-<a id="never"></a>
-## المستوى الثالث (الأخف، اختياري)
+<a id="level-3"></a>
+## المستوى الثالث (انتقائي، اختياري)
 
-المستوى الثالث يفعل كل ما في المستويين الأول والثاني، ويحذف ما لا يحتاجه جهاز البناء:
+المستوى الثالث اسم توافقي لنفس محرك `macxvm apps remove --set default`. لا يحذف إلا قائمة شخصية ثابتة بعد التحقق من bundle identifier والجذور الثابتة وsymlinks وflags وSIP وsudo ونتيجة الحذف. يبقى Safari وXcode وUtilities وFinder وSystem Settings وApp Store وTerminal ومكونات الإقلاع والشبكة وكل بيانات المستخدم.
 
-| ما يحذف | كم |
-|----------|-----|
-| تطبيقات `/Applications` عدا Safari وXcode وUtilities | بضع مئات من الميغابايت |
-| بقايا التثبيت والتحديثات المنزلة | حتى 5 غيغابايت |
-| مشغلات المحاكي ومخابئ Xcode | حتى 20 غيغابايت |
-| المخابئ والسجلات وبريد المستخدم | بضع مئات من الميغابايت |
-
-يبقى Safari وXcode، ولا يمس المستوى الثالث مجلد النظام أبدا.
+Mail وMessages وFaceTime عناصر dock-only: تراجع أو تحذف أيقونة Dock فقط، بينما يبقى التطبيق والحسابات والبريد والبيانات. لا حذف ل caches أو logs أو `/var/folders` أو simulator runtimes أو بقايا التثبيت.
 
 <div dir="ltr" align="left">
 
 ```bash
-macxvm slim demo --level 3
+# معاينة لا تغير الضيف
+macxvm apps remove macos --set default --dry-run
+# الاحتفاظ بتطبيقات محددة
+macxvm apps remove macos --set default --keep "Voice Memos,Mail" --dry-run
+# التنفيذ بعد المراجعة
+macxvm apps remove macos --set default --yes
+# اسم توافقي بنفس الحماية
+macxvm slim macos --level 3 --dry-run
 ```
 
 </div>
 
+تُحفظ النتيجة في `apps-manifest.json` عند الحذف، أو `apps-dry-run.json` للمعاينة، أو `apps-list.json` للعرض، مع الحالة والسبب والمسار والحجم القابل للاستعادة بالكيلوبايت. الفشل أو الانقطاع يترك `remove-partial` بدل ادعاء النجاح.
+
+<a id="never"></a>
 ## ما لا يمس أبدا
 
-- لا يعدل مجلد النظام أبدا.
-- لا تغير SIP ولا يستخدم `csrutil`.
-- لا يحذف أي تطبيق من النظام.
-- لا تعطل في المستوى الثاني إلا التسميات الموجودة في ملف التسميات.
-- لا يحذف المستوى الثالث إلا تطبيقات `/Applications` والمخابئ والسجلات وبقايا التثبيت.
+- لا يعدل مجلد النظام ولا يعطل SIP؛ حالة SIP غير المعروفة تجعل تطبيقات النظام محمية.
+- لا يحذف تطبيقات النظام ولا ملفات الحسابات ولا بيانات Mail.
+- لا حذف جماعي ل caches أو logs أو simulator runtimes أو بقايا التثبيت.
+- فشل حذف Dock يُسجل بوضوح ولا يظهر كحذف نظيف.
 
-إعدادات المستوى الأول لا يراجعها `--restore`، لأن إبقاء التحديثات التلقائية مطفئة هو ما يحمي إقلاع الضيف. الاستعادة تعيد تفعيل المهام المعطلة وتعيد تشغيل Spotlight.
+الاستعادة تعيد الخدمات وSpotlight وسياسة التحديث فقط، لا التطبيقات. للتراجع عن حذف تطبيق استنسخ الأساس من جديد.
 
 <a id="restore"></a>
 ## الاستعادة
@@ -155,7 +158,7 @@ macxvm slim demo --level 3
 macxvm slim demo --restore
 ```
 
-تقرأ الاستعادة الملف `~/.macxvm-slim-disabled` داخل الضيف، وتفعل كل مهمة مذكورة فيه، وتحذف الملف، وتعيد تشغيل Spotlight ب `sudo mdutil -a -i on`. يجب إعادة تشغيل الضيف بعدها لتبدأ المهام من جديد.
+تقرأ الاستعادة الملف `~/.macxvm-slim-disabled` داخل الضيف، وتفعل كل مهمة مذكورة فيه، وتحذف الملف، وتعيد تشغيل Spotlight ب `sudo mdutil -a -i on`، وتعيد سياسة التحديث. يجب إعادة تشغيل الضيف بعدها. لا تستعيد التطبيقات؛ استنسخ الأساس للتراجع عن حذفها.
 
 <a id="measure"></a>
 ## القياس

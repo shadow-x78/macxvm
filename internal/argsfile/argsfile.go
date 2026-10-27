@@ -237,6 +237,49 @@ func DiskOptValue(cfg *config.VMConfig) (string, error) {
 	return "cache=writeback", nil
 }
 
+func ValidateExpansion(cfg *config.VMConfig, text string) error {
+	return ValidateExpansionAt(cfg, text, cfg.File("disk.qcow2"), cfg.File("nvram.fd"))
+}
+
+func ValidateExpansionAt(cfg *config.VMConfig, text, diskPath, nvramPath string) error {
+	normal, install, err := Parse(text)
+	if err != nil {
+		return err
+	}
+	all := make([][]string, 0, len(normal)+len(install))
+	all = append(all, normal...)
+	all = append(all, install...)
+	if err := Validate(all); err != nil {
+		return err
+	}
+	if err := CheckPlaceholders(all); err != nil {
+		return err
+	}
+	if strings.Contains(text, "{{NVRAM}}") {
+		if st, err := os.Stat(nvramPath); err != nil || !st.Mode().IsRegular() || st.Size() == 0 {
+			return fmt.Errorf("args file requires a nonempty per-VM NVRAM file")
+		}
+	}
+	if strings.Contains(text, "{{ASSETS}}") && cfg.Assets == "" {
+		return fmt.Errorf("args file requires an assets directory")
+	}
+	if st, err := os.Stat(diskPath); err != nil || !st.Mode().IsRegular() || st.Size() == 0 {
+		return fmt.Errorf("args file requires a nonempty qcow2 disk")
+	}
+	ctx, err := ContextFor(cfg)
+	if err != nil {
+		return err
+	}
+	ctx.DiskPath = diskPath
+	if strings.Contains(text, "{{NVRAM}}") && nvramPath != "" {
+		ctx.NVRAMPath = nvramPath
+	}
+	if _, err := Expand(all, ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
 func ContextFor(cfg *config.VMConfig) (Context, error) {
 	opts, err := DiskOptValue(cfg)
 	if err != nil {

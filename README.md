@@ -23,7 +23,7 @@ MacXVM is an independent open-source project, not affiliated with or endorsed by
 
 Run slim macOS guests with Xcode on a Linux host.
 
-[![Version](https://img.shields.io/badge/version-0.6.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.8.0-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -66,16 +66,14 @@ Run slim macOS guests with Xcode on a Linux host.
 
 MacXVM turns a Linux machine into a build farm for macOS. It registers macOS guests, starts them under QEMU/KVM, trims them down so that they idle quietly, installs Xcode inside them and builds your projects from Linux with `rsync` and `ssh`.
 
-The tool is a single static binary of about 4 MB with no daemon. QEMU itself is the only long-lived process, so an idle host carries nothing at all.
+The tool is a single static binary of about 7.6 MB with no daemon. QEMU itself is the only long-lived process, so an idle host carries nothing at all.
 
 ```
-macxvm create demo --args-file ./args.txt --assets ./assets
-macxvm start demo --install --vnc
-macxvm slim demo --level 1
-macxvm tools install demo clt
-macxvm xcode install demo --xip ./Xcode.xip
-macxvm base seal demo
-macxvm build --project . --scheme App
+macxvm image prepare macos --profile cli
+macxvm autoinstall macos --yes --accept-license
+macxvm finish macos --password-stdin --apps
+macxvm start macos --wait
+macxvm exec macos -- sh -c 'echo ready'
 ```
 
 A sealed base image plus qcow2 overlays is what makes this fast: a fresh machine costs a few hundred kilobytes and a second, not a copy of a hundred gigabytes. Overlays disappear with `macxvm run`, which starts a throwaway machine, runs one command in it and removes it again.
@@ -92,7 +90,7 @@ Read this before you install anything:
 1. **Apple's macOS license permits macOS in a virtual machine only on Apple-branded hardware.** Running macOS under QEMU/KVM on a PC violates that license, and Apple has enforced it in court. MacXVM is a *launcher*: it ships no Apple software, firmware, keys or boot loaders and only starts what you provide. **You are responsible for compliance.** The compliant alternatives are a Mac (use the Apple-hardware specification) or a rented Mac in the cloud.
 2. **x86_64 only.** The guest is an x86_64 macOS. Apple supports Intel Macs up to macOS 26, so the guest is limited to macOS ≤ 26 and therefore to the Xcode versions that run on it. Pick the macOS version and the Xcode version together, using the release notes of Xcode. This project never hardcodes version pairs.
 3. **Host.** Linux x86_64 with hardware virtualisation (Intel VT-x or AMD-V), a `/dev/kvm` that your user may use, and QEMU 6.0 or newer. ARM Linux hosts are not supported.
-4. **No GPU acceleration.** The user interface and the iOS Simulator are software rendered. Builds are fine, the Simulator is slow.
+4. **No Metal or 3D acceleration.** The supported path is a Bochs framebuffer (`AppleBochVGAFB`) at 1920x1080 (QEMU reserves a 256 MB device aperture; macOS reports 7 MB VRAM). It is a real macOS display driver, but it is 2D only: the iOS Simulator and Metal apps stay slow. NVIDIA RTX passthrough is not a macOS-supported path and is unavailable on this host (no IOMMU groups, and macOS has no RTX 5060 driver).
 5. **Fragility.** A macOS system update inside such a virtual machine can break booting. The slim level 1 switches the automatic updates off, and you should not run system updates in the guest.
 6. **The boot assets are your job.** The machine definition, the bootloader, the firmware files and the macOS installer image come from you, for example by following the documentation of the open-source projects listed in the [credits](#credits). MacXVM copies none of their content.
 7. **No Apple software is ever stored in this repository or in a release of it.** `macxvm image link` prints the addresses of the boot assets, and `macxvm image prepare` fetches them into the state directory of MacXVM on your own machine, when you ask for it. The installer of Apple comes from the recovery service of Apple and is checked against the signature of Apple before it is used. Nothing of Apple is committed, tagged or uploaded, so the repository holds no content of Apple and cannot be taken down for it.
@@ -104,7 +102,8 @@ Read this before you install anything:
 |-------------|--------|
 | Host | Linux x86_64, hardware virtualisation, `/dev/kvm` usable by your user |
 | QEMU | `qemu-system-x86_64` and `qemu-img`, version 6.0 or newer |
-| Host tools | `ssh`, `scp`, `rsync`, `ssh-keygen`, `python3` (for `scripts/screenshot.sh`) |
+| Host tools | `ssh`, `scp`, `rsync`, `ssh-keygen`, `python3` (screenshots) |
+| Automation | `tesseract`, `vncdo`, `genisoimage` or `mkisofs` (for `autoinstall`) |
 | Guest | x86_64 macOS ≤ 26, installed by you, with Remote Login enabled |
 | Go | 1.22 or newer, only to build MacXVM |
 
@@ -153,7 +152,7 @@ The full guide, including the state directory and the removal, is in [docs/INSTA
 - A user-supplied args file as the machine definition: no hardcoded CPU model, no SMC keys, no SMBIOS values, no OpenCore settings, no firmware paths
 - Sealed base images with qcow2 overlays: a fresh machine costs a few hundred kilobytes and a second
 - Throwaway machines with `macxvm run`: the overlay is removed afterwards, even when the command is interrupted
-- Two slimming levels that cut the idle cost of the guest, with a deny list that protects SSH and the network, and a restore that undoes the change
+- Three slimming levels plus a separate selective `apps` engine, with a deny list that protects SSH and the network; level 3 never bulk-deletes caches, logs, mail or simulator data
 - The Command Line Tools, Homebrew and Xcode installed inside the guest from the host
 - `xcodebuild` and `swift build` on a remote guest, with the derived data kept between the builds
 - A project file that holds the defaults of a build, a machine and a base image
@@ -198,155 +197,124 @@ The full guide, including how to adapt an upstream boot script, is in [docs/ARGS
 <a id="quick-start"></a>
 ## Quick Start
 
-The fast way: let MacXVM fetch the boot assets and register the machine.
+The default workflow uses the `cli` profile: 4 vCPUs, 8192 MiB RAM and a 64 GiB logical qcow2 disk. These are logical device sizes, not promises about APFS free space or the speed of a graphical guest. There is one default VM; the `xcode` profile remains available only when you explicitly ask for it.
 
 ```bash
-# 1. fetch the installer of Apple and the OpenCore boot loader, and register
-#    the machine with them
-macxvm image prepare demo --macos sequoia
+# 1. Fetch and verify versioned assets, then create the single default VM.
+macxvm image prepare macos --profile cli
 
-# 2. install macOS in the guest
-macxvm start demo --install --vnc
-#    connect a VNC client to 127.0.0.1:<port shown by macxvm> and follow the
-#    installation guide of the project your assets come from
+# 2. Fully automated installation: OpenCore, Recovery, Terminal, disk erase,
+#    license (only with the explicit flag), target disk and Install.
+#    It stops at the FIRST Setup Assistant page, before any user account.
+macxvm autoinstall macos --yes --accept-license
+
+# 3. Finish Setup Assistant yourself in VNC: country, account, Remote Login.
+#    Then resume the rest without reinstalling anything:
+macxvm finish macos --password-stdin --apps
+
+# 4. This is the single default VM. Optional: use it as a base later.
+#    macxvm stop macos && macxvm base seal macos
+#    macxvm create dev --base macos
+macxvm start macos --wait
+macxvm exec macos -- sh -c 'echo ready'
 ```
 
-The way with your own assets: bring an args file and the boot assets yourself.
+`autoinstall` refuses to erase an existing installation unless the VM was created by `image prepare` and is still at the fresh-install stage. It selects exactly one internal disk whose byte size matches the configured disk and refuses ambiguity. It never types or stores the account password.
+
+`finish` installs the SSH key and sudoers through hidden/stdin password input, verifies `sudo -n`, sets Dark mode and disables sleep, applies slim level 1, switches the display to the macOS-supported Bochs framebuffer, prints an application preview, optionally removes only the allowlisted applications, verifies the guest and optionally seals the base.
+
+### GPU and display
 
 ```bash
-# 1. register the machine
-macxvm create demo --args-file ./args.txt --assets ./assets
-
-# 2. install macOS in the guest
-macxvm start demo --install --vnc
-#    connect a VNC client to 127.0.0.1:<port shown by macxvm> and follow the
-#    installation guide of the project your assets come from
+macxvm gpu macos          # host GPU/IOMMU plus the real macOS kext
+macxvm optimize macos     # stopped VM: -vga none + bochs-display 1920x1080
 ```
+
+Reverse engineering of the guest kexts shows that `AppleVirtualGraphics.kext` matches only Bochs VGA (`0x1234:0x1111`, class `AppleBochVGAFB`) and Cirrus (`0x1013:0x0000`). The default therefore uses Bochs VGA. macOS loads `AppleBochVGAFB`, the display is 1920x1080, and the guest reports a real framebuffer instead of “No Kext Loaded”. This is the fastest supported display path, but it is not Metal or 3D acceleration.
+
+During `autoinstall` the VM temporarily uses `vmware-svga` because Recovery accepts reliable absolute pointer input with it; `finish` switches to Bochs after the manual Setup Assistant. A running VM cannot change display devices; stop it first.
+
+The explicit `xcode` profile remains 4 vCPUs / 8192 MiB / 100 GiB. Values below the supported 4096 MiB or 64 GiB minima are experimental and need `--force`; `--force` never replaces an existing VM. Use `--replace` for a stopped replacement.
 
 ### What `macxvm image prepare` does
 
-| Step | Source |
-|------|--------|
-| The installer of macOS | The recovery service of Apple, over the session of the service. The chunk list and the signature of Apple are checked, and the image is converted into a raw disk with `dmg2img` |
-| The OpenCore boot loader | The repository of the community of OSX-KVM |
-| The UEFI firmware of QEMU | The same repository, the pair `OVMF_CODE_4M.fd` and `OVMF_VARS-1920x1080.fd` |
-| The args file of the machine | Written into the assets directory, with the flags that macOS needs on KVM. Edit it as you like |
-| The partition table of the disk | Written by the tool, so that the firmware and macOS see the disk before anything is installed on it |
+| Step | Source and guarantee |
+|------|----------------------|
+| Apple recovery | Versioned Apple recovery files; RSA signature and every chunk are checked before conversion |
+| OpenCore and firmware | Pinned OSX-KVM references with SHA-256 verification |
+| Assets | `assets/<macos>/<revision>/manifest.json`, size/hash/source records; interrupted files are `.partial`, never final |
+| Disk | GPT in a sparse staging raw file, one conversion to qcow2, `qemu-img check`, atomic rename |
+| NVRAM | A copy of the template per VM; the shared template is never opened writable |
 
-The assets land in `~/.local/share/macxvm/assets` and are shared by every machine. Nothing is
-downloaded without your command, and the repository of the project ships no Apple software.
-
-```bash
-macxvm image prepare demo --macos sonoma --cpus 4 --ram 8G --disk 64 --profile cli
-```
-
-The versions are `high-sierra`, `mojave`, `catalina`, `big-sur`, `monterey`, `ventura`,
-`sonoma`, `sequoia` and `tahoe`.
+Versioned caches are reused only after manifest verification. Unversioned legacy Apple images are not imported into another macOS version. The supported macOS names are `high-sierra`, `mojave`, `catalina`, `big-sur`, `monterey`, `ventura`, `sonoma`, `sequoia` and `tahoe`.
 
 <a id="screenshots"></a>
 ## Screenshots
 
-The images below were taken from a real run of the tool on a Linux host, with
-`macxvm image prepare` and `macxvm start --install --vnc`. They are the screen
-of the guest as it is. To refresh any of them, start the machine and run
-`scripts/screenshot.sh NAME assets/screenshots/FILE.png`, which takes the
-screen of the guest over QMP; the script needs `python3` only.
+The checked-in screenshots are examples, not a claim that every stage has been
+revalidated on this host. Capture fresh evidence with `scripts/screenshot.sh
+NAME assets/screenshots/FILE.png` after checking the VM state.
 
-**The boot devices of the machine as the firmware sees them**
+**Guest overview**
 
-![The picker of OpenCore](assets/screenshots/opencore-picker.png)
+![Guest overview](assets/screenshots/vm-overview.jpg)
 
-**The recovery environment, the macOS utilities window**
+**macOS Recovery boot of the default VM**
 
-![The recovery of macOS](assets/screenshots/macos-recovery.png)
+![Recovery boot](assets/screenshots/vm-recovery.png)
 
-**The installer sees the disk of the machine once it holds an APFS volume
-(68.51 GB available)**
+**Installation progress**
 
-![The disk of the machine](assets/screenshots/installer-disk.png)
+![Installation progress](assets/screenshots/vm-install-progress.png)
 
-**A terminal of the recovery environment, `diskutil` reporting the 68.7 GB
-QEMU disk on SATA**
+**Bochs display with AppleBochVGAFB loaded (login window)**
 
-![The terminal of the guest](assets/screenshots/macos-terminal.png)
+![Bochs login](assets/screenshots/vm-bochs-login.png)
 
-**The installation runs, about two and a half hours on this host**
+**Dark desktop and Remote Login**
 
-![The installation](assets/screenshots/installer-progress.png)
+![Dark desktop](assets/screenshots/vm-desktop.png)
+![Dark mode](assets/screenshots/vm-dark-mode.png)
+![Remote Login](assets/screenshots/vm-remote-login.png)
 
-The screenshots of the installed guest (the desktop, Safari, Xcode and the
-login window) are taken at the end of a full installation; they will return
-here with the next refresh of this page.
-
-> Note: the disk of the machine shows neither in the target list of the
-> installer nor in the Startup Disk panel until it is erased as APFS in Disk
-> Utility. That is how macOS behaves, not a defect of the tool, which is why
-> `macxvm start --install` prints the erase steps after every start.
+> The installer must erase the matching internal QEMU disk as APFS before a
+> target volume appears. Identify it by controller, size and content; never
+> assume a fixed `/dev/diskN` or erase an unverified disk.
 
 <a id="first-boot-checklist"></a>
-### First boot checklist
+### First boot: automated, then one manual window
 
-0. In the recovery environment, erase the disk of the machine, because the
-   installer only offers a volume that is formatted as APFS. Open **Disk
-   Utility**, choose the disk of the machine on the left, press **Erase**, pick
-   **APFS** and erase it. In a terminal of the recovery environment the same
-   is one line:
-
-```bash
-diskutil eraseDisk APFS "Macintosh HD" GPTFormat /dev/disk2
-```
-
-1. Create the user `admin` with a password, skip Apple ID, iCloud, Siri and analytics.
-2. System Settings, General, Sharing, **Remote Login**: on.
-3. In a terminal of the guest:
-
-```bash
-sudo sh -c 'echo "admin ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/admin'
-```
-
-4. On the host, hand the key of MacXVM to the guest:
+1. `macxvm autoinstall macos --yes --accept-license` selects and erases only the
+   matching internal disk, accepts the license, installs, reboots and stops at
+   the first Setup Assistant page. It never creates an account.
+2. In VNC, finish Setup Assistant yourself: country, the local administrator,
+   and **System Settings > General > Sharing > Remote Login**.
+3. Run `macxvm finish macos --password-stdin --apps`. It installs the SSH key,
+   validates sudoers with `visudo` and `sudo -n`, sets Dark mode and no sleep,
+   applies slim level 1, switches to the Bochs display, writes an application
+   preview and verifies the guest.
+4. The system applications live on the SIP-protected system volume. They are
+   reported as `protected` and are never deleted; only unprotected allowlisted
+   applications can be removed. Do not disable SIP to force removal.
+5. There is one default VM. Seal it only if you explicitly want a base for
+   overlays:
 
 ```bash
-macxvm ssh-key --install demo
+macxvm stop macos
+macxvm base seal macos
+macxvm create dev --base macos
 ```
 
-5. Make the guest light and install the tools:
-
-```bash
-macxvm slim demo --level 1
-macxvm tools install demo clt
-macxvm xcode install demo --xip ./Xcode.xip
-macxvm slim demo --level 2
-```
-
-6. Keep the result as a base image:
-
-```bash
-macxvm stop demo
-macxvm base seal demo
-```
-
-7. Install Xcode from the xip of Apple, which needs an Apple ID, and keep the
-   guest light by leaving out the runtime of a platform:
-
-```bash
-macxvm xcode install demo --xip ./Xcode.xip
-```
-
-8. Build:
-
-```bash
-macxvm clone demo work
-macxvm build --vm work --project . --scheme App
-```
+For an Xcode workload, install the Command Line Tools and Xcode explicitly; the
+default `cli` profile does not install Xcode automatically.
 
 <a id="profiles"></a>
 ## Profiles
 
 | Profile | Contents | Default resources | Use |
 |---------|----------|-------------------|-----|
-| `xcode` (default) | slim macOS + Command Line Tools + Xcode | 4 CPU / 8192 MiB / 100 GiB | `xcodebuild`, simulators, `.xcodeproj` and `.xcworkspace` |
-| `cli` | slim macOS + Command Line Tools | 2 CPU / 4096 MiB / 32 GiB | Swift packages for macOS, Homebrew, scripts |
+| `cli` (default) | one slim macOS VM; install CLT/Xcode only when needed | 4 CPU / 8192 MiB / 64 GiB logical qcow2 | Swift packages, Homebrew, scripts, and optional Xcode |
+| `xcode` | explicit alternative with a larger disk | 4 CPU / 8192 MiB / 100 GiB | large Xcode installs and simulators |
 
 | | `cli` | `xcode` |
 | :--- | :---: | :---: |
@@ -361,13 +329,14 @@ macxvm build --vm work --project . --scheme App
 ```bash
 macxvm slim demo --level 1
 macxvm slim demo --level 2 --measure
-macxvm slim demo --level 3
+macxvm apps remove demo --set default --dry-run
+macxvm apps remove demo --set default --yes
 macxvm slim demo --restore
 ```
 
-Level 1 switches off Spotlight indexing, Time Machine, the automatic software updates, the animations and the sleep timers. Level 2 also disables the launchd jobs of `resources/slim-labels.txt`, skipping every job that does not exist on your version of macOS. Level 3 removes the applications that a build machine does not need, the leftovers of the installation, the updates, the caches, the logs and the simulator runtimes. Safari and Xcode stay.
+Level 1 sets Dark mode, disables Spotlight indexing, Time Machine, automatic updates, animations and sleep timers. Level 2 also disables only the selected launchd labels in `resources/slim-labels.txt`, with a deny list for SSH, networking, WindowServer and launchd.
 
-Only the labels of that file are ever touched by level 2. A deny list in the code drops every label that would break SSH, the network or the window server. The system volume is never modified and SIP is never changed. Level 3 removes applications of `/Applications` and caches, and nothing else.
+Level 3 is the same allowlisted application engine as `macxvm apps`, with `dry-run`, explicit confirmation and `--keep`; use `slim --level 3 --dry-run` or `slim --level 3 --yes` for compatibility. It removes only verified, unprotected default applications and Dock entries. It never deletes accounts, Mail data, caches, logs, `/var/folders`, simulator runtimes or boot/network components. `slim --restore` restores services and update policy, not applications; clone the base to roll back removal.
 
 The details are in [docs/SLIM.md](docs/SLIM.md).
 
@@ -438,14 +407,22 @@ builds in a throwaway overlay that is removed afterwards. The full guide, includ
 
 | Command | Purpose |
 |---------|---------|
-| `macxvm create NAME --args-file FILE [...]` | register a virtual machine |
-| `macxvm list [--json]` / `macxvm status NAME [--json]` | show the machines |
-| `macxvm start NAME [--install] [--vnc] [--force]` | start QEMU |
-| `macxvm stop NAME [--force] [--timeout SECONDS]` | stop the guest, gracefully if possible |
+| `macxvm create NAME --args-file FILE [...]` | register a virtual machine atomically |
+| `macxvm create NAME --base BASE` | clone a sealed base with independent NVRAM |
+| `macxvm list [--json]` / `macxvm status NAME [--json]` | show resources, kind, state and VNC |
+| `macxvm start NAME [--install] [--vnc] [--wait] [--force]` | start QEMU; `--wait` proves key-only SSH |
+| `macxvm open NAME [--restart]` | open loopback VNC without waiting for SSH |
+| `macxvm autoinstall NAME --yes [--accept-license]` | automate Recovery through the first Setup Assistant page |
+| `macxvm finish NAME [--password-stdin] [--apps] [--seal]` | post-Setup SSH/sudo/Dark/slim/Bochs/apps automation |
+| `macxvm gpu NAME [--json]` | report host IOMMU/GPU and the real macOS display kext |
+| `macxvm optimize NAME` | switch a stopped VM to the Bochs/AppleBochVGAFB display |
+| `macxvm resize NAME [--cpus N] [--ram SIZE] [--disk GiB]` | resize stopped resources; disk grows only |
+| `macxvm stop NAME [--force] [--timeout SECONDS]` | stop via SSH, ACPI, QMP, then owned-process kill |
 | `macxvm delete NAME [--yes]` | delete a machine |
 | `macxvm clone SRC DST [--full]` | clone a machine, by default an overlay of a sealed base |
 | `macxvm compact NAME` | shrink the disk of a stopped machine |
-| `macxvm base seal NAME` / `unseal NAME` / `list` | manage base images |
+| `macxvm base bootstrap NAME [--vnc] [--password-stdin]` | install once, resume non-secret stages |
+| `macxvm base seal NAME` / `unseal NAME` / `list` | seal only a bootstrap-ready base; protect overlays |
 | `macxvm prune [--all]` | delete the leftovers of temporary machines |
 
 ### Boot assets
@@ -465,7 +442,8 @@ builds in a throwaway overlay that is removed afterwards. The full guide, includ
 | `macxvm cp SRC DST` | copy files, guest paths are `NAME:/path` |
 | `macxvm share add NAME --host DIR [...]` | share a folder between the host and the guest |
 | `macxvm share sync NAME [--watch]` | keep the shared folder in step, both ways |
-| `macxvm slim NAME [--level 1\|2\|3] [--measure] [--restore]` | trim the guest |
+| `macxvm slim NAME [--level 1\|2\|3] [--dry-run] [--yes] [--keep APP] [--measure] [--restore]` | trim settings/services or use selective apps |
+| `macxvm apps list NAME` / `apps remove NAME --set default [--dry-run] [--yes]` | inspect or selectively remove allowlisted apps |
 | `macxvm tools install NAME clt\|brew` | install the Command Line Tools or Homebrew |
 | `macxvm tools brew NAME PKG...` | install Homebrew packages |
 | `macxvm tools list NAME` | show which tools are installed |
@@ -497,7 +475,7 @@ Exit codes: `0` success, `1` error, `2` usage, `3` not found, `4` already runnin
 | Operation | Target | Measured on the reference host |
 |-----------|--------|--------------------------------|
 | `list`, `status` | < 100 ms | 3 ms |
-| Release binary | < 8 MB | 7.20 MB, static, `linux/amd64` |
+| Release binary | < 8 MB | 7.6 MB, static `linux/amd64` v0.8.0 |
 | Overlay clone of a sealed base | < 1 s | < 1 s, a few hundred KiB on disk |
 | Idle cost on the host | none | no process of MacXVM stays alive |
 
@@ -514,10 +492,10 @@ The args file that `macxvm image prepare` writes carries the flags that make the
 | `-global kvm-pit.lost_tick_policy=discard` | the timer of the guest, without the lag that makes the interface feel slow |
 | `-global ICH9-LPC.acpi-pci-hotplug-with-bridge-support=off` | the table of ACPI that macOS needs |
 | `-smp {{CPUS}},cores={{CORES}},sockets=1` | the shape of the processors that the scheduler of macOS expects |
-| `-device vmware-svga` | the card of the display, the fastest one that macOS drives well |
+| `-vga none` + `-device bochs-display,vgamem=256M,xres=1920,yres=1080` | the default display; macOS loads `AppleBochVGAFB` |
 | the disks on the controller `ich9-ahci` | macOS has no driver for the disks of the kernel, so they must not be `virtio` |
 
-The model of the processor has to stay the same between the installation of macOS and every later start, because macOS builds itself for the processor it sees. `macxvm image prepare --cpu host` uses the processor of the host and is the fastest, but then macOS has to be installed with it.
+The default model is the tested `skylake` profile. `--cpu host` may improve performance on a compatible host, but it must be tested with the selected macOS version and kept unchanged between installation and later boots. MacXVM does not promise GUI smoothness from resource settings alone.
 
 <a id="project-structure"></a>
 ## Project Structure

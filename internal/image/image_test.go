@@ -9,6 +9,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
 	"hash/crc32"
 	"os"
 	"path/filepath"
@@ -65,7 +66,6 @@ func TestVerifyChunkList(t *testing.T) {
 	dir := t.TempDir()
 	payload := []byte("the payload of the image")
 	sum := sha256.Sum256(payload)
-
 	chunklist := make([]byte, 0x24)
 	copy(chunklist[:4], "CNKL")
 	binary.LittleEndian.PutUint32(chunklist[4:8], 0x24)
@@ -75,34 +75,67 @@ func TestVerifyChunkList(t *testing.T) {
 	binary.LittleEndian.PutUint64(chunklist[12:20], 1)
 	binary.LittleEndian.PutUint64(chunklist[20:28], 0x24)
 	binary.LittleEndian.PutUint64(chunklist[28:36], 0x24+36)
-
 	entry := make([]byte, 36)
 	binary.LittleEndian.PutUint32(entry[:4], uint32(len(payload)))
 	copy(entry[4:36], sum[:])
 	chunklist = append(chunklist, entry...)
-
 	digest := sha256.Sum256(chunklist)
-	chunklist = append(chunklist, digest[:]...)
-
+	unsigned := append(append([]byte{}, chunklist...), digest[:]...)
 	imagePath := filepath.Join(dir, "image.bin")
 	chunkPath := filepath.Join(dir, "image.chunklist")
 	if err := os.WriteFile(imagePath, payload, 0o600); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.WriteFile(chunkPath, unsigned, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyChunkList(chunkPath, imagePath); err == nil {
+		t.Fatal("digest-only chunklist was accepted as signed")
+	}
+
+	chunklist[10] = 1
+	signature := make([]byte, 256)
+	signature[0] = 1
+	chunklist = append(chunklist, signature...)
 	if err := os.WriteFile(chunkPath, chunklist, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := verifyChunkList(chunkPath, imagePath); err != nil {
-		t.Fatalf("verifyChunkList() = %v", err)
+	original := appleSignatureVerifier
+	appleSignatureVerifier = func(digest, signature []byte) error {
+		if len(signature) != 256 || signature[0] != 1 {
+			return errors.New("invalid synthetic signature")
+		}
+		return nil
 	}
-
+	defer func() { appleSignatureVerifier = original }()
+	if err := verifyChunkList(chunkPath, imagePath); err != nil {
+		t.Fatalf("RSA-signed chunklist = %v", err)
+	}
 	broken := append([]byte{}, chunklist...)
 	broken[0x24+4] ^= 0xff
 	if err := os.WriteFile(chunkPath, broken, 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := verifyChunkList(chunkPath, imagePath); err == nil {
-		t.Fatal("verifyChunkList() = nil error, want an error")
+		t.Fatal("tampered chunk was accepted")
+	}
+}
+
+func TestVerifyChunkListRejectsTruncatedLayout(t *testing.T) {
+	dir := t.TempDir()
+	raw := make([]byte, 0x24+36)
+	copy(raw[:4], "CNKL")
+	binary.LittleEndian.PutUint32(raw[4:8], 0x24)
+	raw[8], raw[9], raw[10] = 1, 1, 1
+	binary.LittleEndian.PutUint64(raw[12:20], 100)
+	binary.LittleEndian.PutUint64(raw[20:28], 0x24)
+	binary.LittleEndian.PutUint64(raw[28:36], 0x24+36)
+	path := filepath.Join(dir, "bad.chunklist")
+	if err := os.WriteFile(path, raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyChunkList(path, path); err == nil {
+		t.Fatal("truncated chunklist was accepted")
 	}
 }
 

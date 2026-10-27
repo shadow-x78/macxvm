@@ -16,6 +16,7 @@ import (
 
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
+	"github.com/shadow-x78/macxvm/internal/paths"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 )
 
@@ -95,7 +96,9 @@ func WaitReady(procRoot string, cfg *config.VMConfig, pid int, sock string, time
 	for {
 		if _, err := os.Stat(pidFile); err == nil {
 			if _, err := os.Stat(sock); err == nil {
-				return nil
+				if runstate.Alive(procRoot, pid, cfg.ID) {
+					return nil
+				}
 			}
 		}
 		if runstate.ProcessGone(procRoot, pid) {
@@ -116,16 +119,72 @@ func Kill(pid int) error {
 	return syscall.Kill(pid, syscall.SIGKILL)
 }
 
+// KillOwned signals a process only while its exact MacXVM marker still
+// identifies it as the QEMU process of cfg, never a reused PID.
+func KillOwned(cfg *config.VMConfig, pid int) error {
+	if pid <= 0 || !runstate.Alive(runstate.ProcRoot(), pid, cfg.ID) {
+		return nil
+	}
+	return Kill(pid)
+}
+
 func FreeVNCDisplay() (int, error) {
+	display, closeListener, releaseLock, err := ReserveVNCDisplay()
+	if err != nil {
+		return 0, err
+	}
+	defer releaseLock()
+	closeListener()
+	return display, nil
+}
+
+// ReserveVNCDisplay holds a loopback port and a global allocation lock. The
+// caller closes the listener immediately before QEMU starts, but keeps the
+// lock until QEMU has bound the port, so another VM cannot steal the display.
+func ReserveVNCDisplay() (int, func(), func(), error) {
+	if err := paths.EnsureRun(); err != nil {
+		return 0, func() {}, func() {}, err
+	}
+	lock, err := runstate.LockOp(filepath.Join(paths.Run(), "vnc.lock"))
+	if err != nil {
+		return 0, func() {}, func() {}, fmt.Errorf("cannot reserve a VNC display: %w", err)
+	}
+	releaseLock := func() { _ = lock.Close() }
 	for display := 1; display < 100; display++ {
 		l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", 5900+display))
 		if err != nil {
 			continue
 		}
-		l.Close()
-		return display, nil
+		once := false
+		closeListener := func() {
+			if once {
+				return
+			}
+			once = true
+			_ = l.Close()
+		}
+		return display, closeListener, releaseLock, nil
 	}
-	return 0, fmt.Errorf("no free VNC display found")
+	releaseLock()
+	return 0, func() {}, func() {}, fmt.Errorf("no free VNC display found")
+}
+
+func WaitVNCListening(display int, timeout time.Duration) error {
+	if display <= 0 {
+		return nil
+	}
+	deadline := time.Now().Add(timeout)
+	for {
+		conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", 5900+display), time.Second)
+		if err == nil {
+			_ = conn.Close()
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("QEMU did not open VNC on 127.0.0.1:%d", 5900+display)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 }
 
 func LogTail(path string, lines int) []string {

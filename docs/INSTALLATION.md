@@ -2,7 +2,7 @@
 
 # Installation Guide - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -37,7 +37,10 @@
 |-------------|--------|
 | Host | Linux x86_64 with hardware virtualisation (Intel VT-x or AMD-V) |
 | KVM | `/dev/kvm` usable by your user, `qemu-system-x86_64` 6.0 or newer, `qemu-img` |
-| Host tools | `ssh`, `scp`, `rsync`, `ssh-keygen`, `python3` (for `scripts/screenshot.sh`) |
+| Host tools | `ssh`, `scp`, `rsync`, `ssh-keygen`, `ssh-keyscan`, `sshpass` (bootstrap password fallback), `python3` (screenshots) |
+| Automation tools | `tesseract`, `vncdo`, and `genisoimage` or `mkisofs` for `autoinstall` |
+| Viewer | `vncviewer`, `gvncviewer`, `remmina` or `xdg-open` with a VNC handler; otherwise `open` prints the actual loopback address |
+| Guest tools | macOS `zsh`, `visudo`, `sudo`, `csrutil`, `PlistBuddy`; SIP remains enabled unless the user deliberately changes it |
 | Go | 1.22 or newer, only to build MacXVM |
 | Guest | x86_64 macOS ≤ 26, installed by you |
 
@@ -77,7 +80,7 @@ make install
 | `make install` | builds and installs the binary into `~/.local/bin` |
 | `make clean` | removes `bin/` |
 
-The binary is about 4 MB and is built with `CGO_ENABLED=0`, so it needs no C library on the target host.
+The binary is static and built with `CGO_ENABLED=0`, so it needs no C library on the target host. Release builds use the version ldflags in the Makefile; the CI limit is 8 MiB. The default `cli` profile needs at least 4096 MiB RAM and a 64 GiB logical disk; free host disk must cover the actual allocated data.
 
 <a id="verify"></a>
 ## Verifying
@@ -96,8 +99,8 @@ Everything MacXVM knows lives in two directories:
 
 | Directory | Default | Content |
 |-----------|---------|---------|
-| `$MACXVM_HOME` | `$XDG_DATA_HOME/macxvm`, else `~/.local/share/macxvm` | the machines, their disks, the configuration, the SSH key |
-| `$MACXVM_RUN` | `$XDG_RUNTIME_DIR/macxvm`, else `/tmp/macxvm-<uid>` | the QMP sockets of the running machines |
+| `$MACXVM_HOME` | `$XDG_DATA_HOME/macxvm`, else `~/.local/share/macxvm` | versioned assets, machines, disks, configuration, per-VM known_hosts and SSH key |
+| `$MACXVM_RUN` | `$XDG_RUNTIME_DIR/macxvm`, else `/tmp/macxvm-<uid>` | QMP sockets and the global VNC allocation lock |
 
 Both can be changed with the environment variables of the same name. The run directory must be a real directory of your user that no other user may write to, because the QMP socket inside it is not authenticated.
 
@@ -125,7 +128,7 @@ rm -f ~/.local/bin/macxvm
 rm -rf ~/.local/share/macxvm
 ```
 
-The second command removes every registered machine, every disk and the SSH key. Copy the state directory somewhere else first if you want to keep the machines.
+The second command removes every registered machine, every disk, every asset manifest and the SSH key. Copy the state directory somewhere else first if you want to keep the machines. Do not delete a base that has overlays; use `macxvm list` and `macxvm delete` with their dependency checks.
 
 <a id="distribution"></a>
 ## Distribution

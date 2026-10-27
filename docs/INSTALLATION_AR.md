@@ -2,7 +2,7 @@
 
 # دليل التثبيت - MacXVM
 
-[![الإصدار](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -37,7 +37,9 @@
 |----------|---------|
 | المضيف | Linux بمعمارية x86_64 مع المحاكاة الافتراضية العتادية (Intel VT-x أو AMD-V) |
 | KVM | `qemu-system-x86_64` بإصدار 6.0 أو أحدث و`qemu-img`، و`/dev/kvm` يستطيع مستخدمك استعماله |
-| أدوات المضيف | `ssh` و`scp` و`rsync` و`ssh-keygen` و`python3` (للسكربت `scripts/screenshot.sh`) |
+| أدوات المضيف | `ssh` و`scp` و`rsync` و`ssh-keygen` و`ssh-keyscan` و`sshpass` (بديل كلمة المرور في bootstrap) و`python3` (للقطات) |
+| أدوات الأتمتة | `tesseract` و`vncdo` و`genisoimage` أو `mkisofs` لأمر `autoinstall` |
+| العارض | `vncviewer` أو `gvncviewer` أو `remmina` أو `xdg-open` مع معالج VNC؛ وإلا يطبع `open` عنوان loopback الفعلي |
 | Go | 1.22 أو أحدث، لبناء MacXVM فقط |
 | الضيف | macOS بمعمارية x86_64 ≤ 26، تثبته أنت |
 
@@ -77,7 +79,7 @@ make install
 | `make install` | يبني ويثبت الملف التنفيذي في `~/.local/bin` |
 | `make clean` | يحذف `bin/` |
 
-حجم الملف التنفيذي نحو 4 ميغابايت، ويبنى ب `CGO_ENABLED=0` فلا يحتاج مكتبة C على المضيف.
+الملف التنفيذي ثابت ويبنى ب `CGO_ENABLED=0` فلا يحتاج مكتبة C على المضيف. إصدارات الإصدار تستخدم ldflags في Makefile، وحد CI هو 8 MiB. الملف الافتراضي `cli` يحتاج 4096 MiB RAM وقرصًا منطقيًا 64 GiB على الأقل، والمساحة الفعلية على المضيف تغطي البيانات المخصصة.
 
 <a id="verify"></a>
 ## التحقق
@@ -96,7 +98,7 @@ macxvm doctor
 
 | المجلد | الافتراضي | المحتوى |
 |--------|-----------|---------|
-| `$MACXVM_HOME` | `$XDG_DATA_HOME/macxvm`، وإلا `~/.local/share/macxvm` | الأجهزة وأقراصها والإعدادات ومفتاح SSH |
+| `$MACXVM_HOME` | `$XDG_DATA_HOME/macxvm`، وإلا `~/.local/share/macxvm` | أصول مفصولة حسب الإصدار، والأجهزة وأقراصها والإعدادات و`known_hosts` ومفتاح SSH |
 | `$MACXVM_RUN` | `$XDG_RUNTIME_DIR/macxvm`، وإلا `/tmp/macxvm-<uid>` | مقابيس QMP للأجهزة العاملة |
 
 يمكن تغيير كليهما بمتغيري البيئة نفسيهما. ويجب أن يكون مجلد التشغيل مجلدا حقيقيا للمستخدم الحالي لا يستطيع غيره الكتابة فيه، لأن مقبس QMP داخله بلا مصادقة.
@@ -125,7 +127,7 @@ rm -f ~/.local/bin/macxvm
 rm -rf ~/.local/share/macxvm
 ```
 
-يحذف الأمر الثاني كل الأجهزة المسجلة والأقراص ومفتاح SSH. انسخ مجلد الحالة إلى مكان آخر أولا إن أردت الاحتفاظ بالأجهزة.
+يحذف الأمر الثاني كل الأجهزة المسجلة والأقراص وmanifests الأصول ومفتاح SSH. انسخ مجلد الحالة أولًا إن أردت الاحتفاظ بالأجهزة. لا تحذف أساسًا له طبقات؛ استخدم `macxvm list` و`macxvm delete` وفحوص الاعتماد.
 
 <a id="distribution"></a>
 ## التوزيع

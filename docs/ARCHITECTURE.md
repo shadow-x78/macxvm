@@ -2,7 +2,7 @@
 
 # Architecture Specification - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -70,8 +70,11 @@ flowchart TD
 | `internal/names` | The VM name rule and its validation |
 | `internal/sizeparse` | Parsing of `--ram` values such as `4096`, `4096M`, `8G` |
 | `internal/config` | The persisted description of a VM, atomic writes, identity generation |
-| `internal/store` | Registration, listing, cloning, sealing, deletion of VMs |
-| `internal/argsfile` | Parsing, validation and expansion of the args file |
+| `internal/store` | Atomic registration, listing, cloning, resizing, sealing and deletion |
+| `internal/argsfile` | Parsing, validation, expansion and required-file checks of the args file |
+| `internal/bootstrap` | Non-secret resumable guest bootstrap and sudo verification |
+| `internal/guestapps` | Fixed default allowlist, dry-run/manifest and selective removal |
+| `internal/automation` | OCR-driven installer automation, seed ISO and setup detection |
 | `internal/runstate` | Process detection through the pid file and `/proc`, the operation lock |
 | `internal/qmp` | The minimal QEMU Machine Protocol client |
 | `internal/qemu` | Preflight, process spawn, QMP socket path, readiness wait, argv assembly |
@@ -102,11 +105,15 @@ create ──► start ──► (slim, tools, xcode) ──► stop ──► b
                                               build / run
 ```
 
-- `create` registers the machine, creates a sparse qcow2 disk, validates the args file and writes `config.json`.
-- `start` spawns QEMU, waits for the pid file and the QMP socket, and performs the QMP handshake.
-- `slim`, `tools` and `xcode` run inside the guest over SSH. They start the machine when it is stopped and stop it again only when they started it.
-- `base seal` marks a machine as a base image. A sealed base is never booted and never modified; it is only used as the backing file of overlays.
-- `clone` creates an overlay of a sealed base. The overlay costs a few hundred kilobytes and boots in seconds.
+- `image prepare` verifies versioned assets and builds a GPT disk in staging, converts once to qcow2, checks it, then atomically publishes the VM. The default `cli` profile is 4 vCPUs / 8192 MiB / 64 GiB logical disk; `xcode` remains an explicit 4 / 8192 / 100 alternative.
+- `create NAME --base BASE` clones a sealed base without reinstalling. Every VM gets an independent NVRAM copy. `--replace` replaces stopped VMs; `--force` only overrides resource limits.
+- `autoinstall` drives OpenCore, Recovery Terminal, exact-size disk erase, license (explicit flag), target disk and Install, then waits for the first Setup Assistant page. It uses QMP screendumps plus OCR and vncdo pointer/keyboard input.
+- `finish` resumes after the manual account/Remote Login steps: key, sudoers, Dark, power, slim level 1, Bochs display, app preview/removal, verification and optional seal.
+- `base bootstrap` persists only non-secret stages `assets`, `install`, `manual-setup`, `ssh`, `verify`, `ready`. Manual Apple/license/account work stays in VNC.
+- `start` spawns QEMU, reserves VNC under a global allocation lock, verifies QMP and the VNC listener, and records `created`, `qmp-ready`, `booting`, `ssh-ready`, `stopping`, `stopped` or `failed`. `start --wait` proves key-only SSH; `open` never waits for SSH.
+- `stop` tries bounded SSH only when trust already exists, then ACPI, QMP quit and finally a signal only after rechecking the exact QEMU marker. A live owned process is never reported as stopped.
+- `base seal` requires a stopped bootstrap-ready VM. A sealed base is never booted; overlays cannot be resized or deleted out from under their dependents.
+- `clone` creates an overlay of a sealed base after reloading the current config under `op.lock`, checking disk/NVRAM/args expansion and publishing atomically.
 - `clone --full` converts the whole disk instead of copying the file, so that the copy is a standalone disk and does not need its base any more.
 - `run` creates a throwaway overlay, runs one command in it and removes it afterwards, including when the command is interrupted.
 
@@ -116,19 +123,26 @@ create ──► start ──► (slim, tools, xcode) ──► stop ──► b
 ```
 $MACXVM_HOME  (default: $XDG_DATA_HOME/macxvm, else ~/.local/share/macxvm)
 ├── id_ed25519, id_ed25519.pub     # the SSH key shared by every machine
-├── staging/                        # half-built machines, removed on failure
-└── vms/<name>/
+    ├── assets/<macos>/<revision>/    # verified, versioned asset manifests
+    ├── staging/                        # half-built machines, removed on failure
+    └── vms/<name>/
     ├── config.json                 # the description of the machine
     ├── args.txt                    # a copy of the args file of the user
     ├── disk.qcow2                  # the disk, or an overlay of a base
     ├── nvram.fd                    # only with --nvram-template
     ├── qemu.pid                    # written by QEMU itself
     ├── console.log                 # the output of QEMU
-    ├── op.lock                     # serialises start, stop, clone, seal, delete
+    ├── op.lock                     # serialises start, stop, clone, seal, resize, delete
+    ├── known_hosts                 # per-VM TOFU key, aliased to macxvm-<id>
+    ├── bootstrap.json              # non-secret resumable bootstrap stages
+    ├── apps-manifest.json          # removal results and recoverable KiB
+    ├── apps-dry-run.json           # preview, never a removal record
+    ├── apps-list.json              # listing, never a removal record
     └── slim-report.txt             # only after slim --measure
 
 $MACXVM_RUN  (default: $XDG_RUNTIME_DIR/macxvm, else /tmp/macxvm-<uid>)
-└── <id>.sock                       # the QMP socket of a machine
+├── <id>.sock                       # the QMP socket of a machine
+└── vnc.lock                        # global VNC allocation
 ```
 
 The run directory holds an unauthenticated QMP socket. MacXVM therefore refuses to use it unless it is a real directory of the current user that no other user may write to.
@@ -149,15 +163,14 @@ The flags may be written before or after the name. A helper splits the leading p
 
 QEMU is started with `Setsid`, so it outlives the command that started it and never receives a hangup from the terminal. The parent closes the process handle without waiting for it.
 
-The state of a machine is derived from the pid file that QEMU writes and from the command line of that process:
+The state of a machine is derived from the pid file that QEMU writes, an exact QEMU marker search when the pid file is missing, and the persisted readiness state:
 
-- the pid file is read and parsed;
 - `/proc/<pid>/stat` decides whether the process is gone or a zombie;
-- `/proc/<pid>/cmdline` must contain `macxvm-<id>`, which makes the check immune to a reused PID.
+- `/proc/<pid>/cmdline` must contain the exact `guest=macxvm-<id>,process=macxvm-<id>` argument (or its process-only equivalent), preventing PID-reuse kills;
+- the config is reloaded after `op.lock` and its stable VM ID is compared, so a stale operation cannot act on a replacement;
+- VNC and QMP readiness are checked separately from SSH readiness. `open` uses the actual VNC listener, not a guessed port.
 
-Because the command line of a process is briefly empty while it starts, the decision "did QEMU exit" is based on the state in `/proc/<pid>/stat` and never on the command line alone.
-
-If a machine does not become ready within 20 seconds, the spawned QEMU is stopped, the pid file and the socket are removed, and the command reports exit code 7. A QEMU that is still alive but lost its pid file is recognised through its command line, so it is never started a second time: two QEMU processes writing one qcow2 image would corrupt it.
+If a machine does not become QMP-ready within 20 seconds, the spawned QEMU is stopped, the pid file and socket are removed, and the command reports exit code 7. `start --wait` has a separate bounded SSH timeout. A QEMU that is still alive but lost its pid file is recognised through its marker, so it is never started a second time.
 
 <a id="networking"></a>
 ## Networking
@@ -170,7 +183,7 @@ user,id=net0,hostfwd=tcp:127.0.0.1:<port>-:22
 
 The port is chosen when the machine is registered, stored in `config.json` and re-checked when the machine starts. If the port is taken in the meantime, a new free port is chosen and written back. This needs no root, no bridge and no IP discovery.
 
-The port of a stopped machine is not reserved, so another local program may take it. This is why the SSH connections use a short `ConnectTimeout` and keepalive options: a program that answers on the port must not be able to hang MacXVM.
+The port of a stopped machine is not reserved, so another local program may take it. SSH trust is therefore local TOFU only while the marked VM is running, and uses `HostKeyAlias=macxvm-<id>` in a per-VM `known_hosts`; a later port change does not change the VM identity. After the first trust, `StrictHostKeyChecking=yes` and `BatchMode=yes` are used. A mismatch fails instead of silently replacing the key. Readiness probes disable stale control masters and verify that QEMU is still alive.
 
 <a id="project-layout"></a>
 ## Project Layout
@@ -199,5 +212,5 @@ macxvm/
 2. **No macOS on QEMU details in the code.** No CPU model, no SMC or OSK values, no SMBIOS values, no OpenCore settings, no firmware paths.
 3. **No Apple software in the repository.** No installer images, no boot loaders, no firmware, no keys. MacXVM launches what the user provides.
 4. **No placeholders.** No `TODO`, no `panic("not implemented")`, no commented out code, no fake output.
-5. **Reversible slimming.** Only the launchd labels of the label file are touched, a deny list protects SSH and the network, and every change can be undone.
+5. **Bounded slimming.** Only selected launchd labels and allowlisted applications are touched. Services/update policy can be restored; application removal is rolled back by cloning the sealed base, never by claiming to restore user data.
 6. **Every subprocess is an argument vector.** `os/exec` never receives a shell command, and every value that comes from the user is quoted for the remote shell.

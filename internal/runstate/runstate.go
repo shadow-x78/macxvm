@@ -37,21 +37,34 @@ func Running(procRoot, pidFile, id string) (int, bool) {
 		os.Remove(pidFile)
 		return 0, false
 	}
-	if !bytes.Contains(cmd, []byte("macxvm-"+id)) {
+	if !hasMarker(cmd, id) {
 		return 0, false
 	}
 	return pid, true
 }
 
 func Alive(procRoot string, pid int, id string) bool {
-	if pid <= 0 {
+	if pid <= 0 || !config.ValidID(id) {
+		return false
+	}
+	if ProcessGone(procRoot, pid) {
 		return false
 	}
 	cmd, err := os.ReadFile(cmdlinePath(procRoot, pid))
 	if err != nil {
 		return false
 	}
-	return bytes.Contains(cmd, []byte("macxvm-"+id))
+	return hasMarker(cmd, id)
+}
+
+func hasMarker(cmd []byte, id string) bool {
+	marker := "guest=macxvm-" + id + ",process=macxvm-" + id
+	for _, arg := range bytes.Split(cmd, []byte{0}) {
+		if string(arg) == marker || string(arg) == "process=macxvm-"+id {
+			return true
+		}
+	}
+	return false
 }
 
 func ProcessGone(procRoot string, pid int) bool {
@@ -80,7 +93,7 @@ func cmdlinePath(procRoot string, pid int) string {
 // VNC returns the display of the VNC server of a running machine, and whether
 // the machine has one. The address is always the loopback of the host.
 func VNC(cfg *config.VMConfig) (int, bool) {
-	pid, ok := Running(ProcRoot(), PidFile(cfg.Dir()), cfg.ID)
+	pid, ok := PID(cfg)
 	if !ok || pid <= 0 {
 		return 0, false
 	}
@@ -95,7 +108,7 @@ func VNC(cfg *config.VMConfig) (int, bool) {
 		}
 		value := args[i+1]
 		idx := strings.LastIndex(value, ":")
-		if idx < 0 {
+		if idx < 0 || (value[:idx] != "127.0.0.1" && value[:idx] != "localhost") {
 			return 0, false
 		}
 		display, err := strconv.Atoi(value[idx+1:])
@@ -108,17 +121,30 @@ func VNC(cfg *config.VMConfig) (int, bool) {
 }
 
 func State(cfg *config.VMConfig) string {
-	if pid, ok := Running(ProcRoot(), PidFile(cfg.Dir()), cfg.ID); ok && pid > 0 {
+	if pid, ok := PID(cfg); ok && pid > 0 {
+		if cfg.Readiness != "" {
+			return cfg.Readiness
+		}
 		return "running"
 	}
 	if cfg.Sealed {
 		return "sealed"
 	}
+	if cfg.Readiness == "failed" || cfg.Readiness == "created" {
+		return cfg.Readiness
+	}
 	return "stopped"
 }
 
+func PID(cfg *config.VMConfig) (int, bool) {
+	if pid, ok := Running(ProcRoot(), PidFile(cfg.Dir()), cfg.ID); ok {
+		return pid, true
+	}
+	return FindByMarker(ProcRoot(), cfg.ID)
+}
+
 func IsRunning(cfg *config.VMConfig) bool {
-	pid, ok := Running(ProcRoot(), PidFile(cfg.Dir()), cfg.ID)
+	pid, ok := PID(cfg)
 	return ok && pid > 0
 }
 
@@ -127,7 +153,9 @@ func FindByMarker(procRoot, id string) (int, bool) {
 	if err != nil {
 		return 0, false
 	}
-	marker := []byte("macxvm-" + id)
+	if !config.ValidID(id) {
+		return 0, false
+	}
 	for _, entry := range entries {
 		pid, err := strconv.Atoi(entry.Name())
 		if err != nil {
@@ -137,7 +165,7 @@ func FindByMarker(procRoot, id string) (int, bool) {
 		if err != nil {
 			continue
 		}
-		if bytes.Contains(cmd, marker) {
+		if hasMarker(cmd, id) {
 			return pid, true
 		}
 	}
