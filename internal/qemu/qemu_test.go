@@ -116,6 +116,7 @@ func TestKillOwnedIgnoresForeignProcess(t *testing.T) {
 
 func TestKillOwnedSignalsOwnedProcess(t *testing.T) {
 	cfg := testConfig(t)
+	cfg.ID = "deadbeef"
 	cmd := exec.Command("sleep", "30")
 	cmd.Args[0] = "guest=macxvm-" + cfg.ID + ",process=macxvm-" + cfg.ID
 	if err := cmd.Start(); err != nil {
