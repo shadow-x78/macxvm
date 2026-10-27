@@ -226,9 +226,13 @@ macxvm exec macos -- sh -c 'echo ready'
 ### GPU and display
 
 ```bash
-macxvm gpu macos          # host GPU/IOMMU plus the real macOS kext
-macxvm optimize macos     # stopped VM: -vga none + bochs-display 1920x1080
+macxvm gpu macos                                  # host GPU/IOMMU plus the real macOS kext
+macxvm optimize macos                             # stopped VM: -vga none + bochs-display 1920x1080
+macxvm optimize macos --width 1440 --height 900   # fewer pixels for a software renderer
 ```
+
+The full reverse engineering, the measured numbers and the passthrough limits
+are in [docs/GPU.md](docs/GPU.md).
 
 Reverse engineering of the guest kexts shows that `AppleVirtualGraphics.kext` matches only Bochs VGA (`0x1234:0x1111`, class `AppleBochVGAFB`) and Cirrus (`0x1013:0x0000`). The default therefore uses Bochs VGA. macOS loads `AppleBochVGAFB`, the display is 1920x1080, and the guest reports a real framebuffer instead of “No Kext Loaded”. This is the fastest supported display path, but it is not Metal or 3D acceleration.
 
@@ -549,6 +553,7 @@ macxvm/
 | [INSTALLATION.md](docs/INSTALLATION.md) | The requirements, the build, the state directory, the removal |
 | [ARGS_FILE.md](docs/ARGS_FILE.md) | The machine definition: format, placeholders, forbidden flags, upstream scripts |
 | [SLIM.md](docs/SLIM.md) | The slimming levels, the deny list, the restore, the measurement |
+| [GPU.md](docs/GPU.md) | The real guest kext, the reverse engineering, the passthrough limits, the measured gains |
 | [BUILDING.md](docs/BUILDING.md) | The build workflow, the project file, the sync, the ephemeral builds |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | The common problems of the host, the machine, the guest and the build |
 | [DECISIONS.md](docs/DECISIONS.md) | Every deviation from the specification and every ambiguity that was resolved |
