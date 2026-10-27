@@ -169,3 +169,22 @@ func TestInstallerScreenRecognition(t *testing.T) {
 		t.Fatal("installation progress was treated as a clickable installer screen")
 	}
 }
+
+func TestResumeHelpers(t *testing.T) {
+	recovery := Screen{Words: []Word{{Text: "Reinstall", X: 1, Y: 1}, {Text: "macOS", X: 2, Y: 1}}}
+	if !recoveryVisible(recovery) {
+		t.Fatal("Recovery screen was not recognized")
+	}
+	terminal := Screen{Words: []Word{{Text: "bash-3.2#", X: 1, Y: 1}}}
+	if !terminalVisible(terminal) {
+		t.Fatal("Terminal prompt was not recognized")
+	}
+	progress := Screen{Words: []Word{{Text: "Installing", X: 1, Y: 1}, {Text: "macOS", X: 2, Y: 1}}}
+	if !installationInProgress(progress) {
+		t.Fatal("installation progress was not recognized")
+	}
+	setup := Screen{Words: []Word{{Text: "Choose", X: 1, Y: 1}, {Text: "Your", X: 2, Y: 1}, {Text: "Country", X: 3, Y: 1}}}
+	if installationInProgress(setup) {
+		t.Fatal("Setup Assistant was mistaken for installation progress")
+	}
+}

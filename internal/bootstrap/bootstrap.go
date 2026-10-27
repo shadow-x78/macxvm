@@ -74,7 +74,7 @@ func ValidatePassword(raw []byte) ([]byte, error) {
 
 func validStage(stage string) bool {
 	switch stage {
-	case "assets", "install", "manual-setup", "ssh", "verify", "ready":
+	case "assets", "install", "installing", "manual-setup", "ssh", "verify", "ready":
 		return true
 	default:
 		return false

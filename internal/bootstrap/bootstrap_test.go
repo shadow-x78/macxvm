@@ -116,3 +116,20 @@ func TestPasswordInputValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestInstallingStageResumesWithoutReinstall(t *testing.T) {
+	cfg := testVM(t)
+	if err := Save(cfg, State{Stage: "installing"}); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := Load(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.Stage != "installing" {
+		t.Fatalf("stage = %q, want installing", loaded.Stage)
+	}
+	if validStage("installing") != true {
+		t.Fatal("installing is not a valid resumable stage")
+	}
+}
