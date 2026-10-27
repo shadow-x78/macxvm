@@ -222,10 +222,28 @@ func EnsureHostKey(cfg *config.VMConfig, output io.Writer) error {
 	if trusted.Len() == 0 {
 		return &Error{Kind: PortUnavailable, VM: cfg.Name, Err: fmt.Errorf("keyscan returned no host key")}
 	}
+	merged := strings.Builder{}
+	if existing, readErr := os.ReadFile(path); readErr == nil {
+		for _, line := range strings.Split(string(existing), "\n") {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "" {
+				continue
+			}
+			if strings.HasPrefix(trimmed, "#") {
+				merged.WriteString(line + "\n")
+				continue
+			}
+			fields := strings.Fields(trimmed)
+			if len(fields) >= 3 && fields[0] != alias {
+				merged.WriteString(line + "\n")
+			}
+		}
+	}
+	merged.WriteString(trusted.String())
 	partial := path + ".partial"
 	os.Remove(partial)
 	defer os.Remove(partial)
-	if err := os.WriteFile(partial, []byte(trusted.String()), 0o600); err != nil {
+	if err := os.WriteFile(partial, []byte(merged.String()), 0o600); err != nil {
 		return err
 	}
 	fingerprint := exec.Command("ssh-keygen", "-lf", partial)
