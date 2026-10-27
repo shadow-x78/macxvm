@@ -267,6 +267,10 @@ NAME assets/screenshots/FILE.png` after checking the VM state.
 
 ![Installation progress](assets/screenshots/vm-install-progress.png)
 
+**Automated installation stops at the first Setup Assistant screen**
+
+![Setup Assistant](assets/screenshots/vm-setup-assistant.png)
+
 **Bochs display with AppleBochVGAFB loaded (login window)**
 
 ![Bochs login](assets/screenshots/vm-bochs-login.png)

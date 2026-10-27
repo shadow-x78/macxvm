@@ -32,6 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `list` and `base list` now warn about an unreadable VM instead of hiding it.
 - Removed unreferenced installer helpers, the level 3 shell stub, an unused
   screenshot and six unused logo files.
+- The shared `BaseSystem.img` is mounted `readonly=on` and validated; a guest
+  could otherwise corrupt the verified installer for every VM.
+- `autoinstall` records `manual-setup` and a visible readiness state on resume,
+  not only on the first pass.
 - Hardened installer disk selection against the real `diskutil` fields, Setup
   detection, resume behavior, process ownership, share locking, glob excludes
   and rsync quoting.
