@@ -46,7 +46,7 @@ func List() ([]*config.VMConfig, error) {
 			continue
 		}
 		cfg, err := config.Load(filepath.Join(root, e.Name()))
-		if err != nil {
+		if err != nil || cfg.Name != e.Name() {
 			continue
 		}
 		out = append(out, cfg)
@@ -65,6 +65,10 @@ func Load(name string) (*config.VMConfig, error) {
 	cfg, err := config.Load(Dir(name))
 	if err != nil {
 		return nil, exitcode.New(exitcode.Generic, "cannot read the configuration of '%s': %v", name, err)
+	}
+	if cfg.Name != name {
+		return nil, exitcode.New(exitcode.Generic,
+			"configuration of '%s' names '%s'; refusing to use another VM's identity", name, cfg.Name)
 	}
 	return cfg, nil
 }
