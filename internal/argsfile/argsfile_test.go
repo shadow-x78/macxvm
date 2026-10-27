@@ -332,3 +332,21 @@ func TestDiskOptValue(t *testing.T) {
 		t.Fatalf("DiskOptValue() = %q", got)
 	}
 }
+
+func TestValidateRequiresReadOnlyBaseSystem(t *testing.T) {
+	base := [][]string{
+		{"-m", "{{RAM_MIB}}"},
+		{"-smp", "{{CPUS}}"},
+		{"-drive", "id=MacHDD,if=none,file={{DISK_IMG}}"},
+		{"-netdev", "{{NETDEV}}"},
+		{"-device", "e1000,mac={{MAC}}"},
+	}
+	writable := append(append([][]string{}, base...), []string{"-drive", "id=InstallMedia,if=none,file={{ASSETS}}/BaseSystem.img,format=raw"})
+	if err := Validate(writable); err == nil {
+		t.Fatal("Validate accepted a writable BaseSystem.img")
+	}
+	readOnly := append(append([][]string{}, base...), []string{"-drive", "id=InstallMedia,if=none,file={{ASSETS}}/BaseSystem.img,format=raw,readonly=on"})
+	if err := Validate(readOnly); err != nil {
+		t.Fatalf("Validate rejected a read-only BaseSystem.img: %v", err)
+	}
+}

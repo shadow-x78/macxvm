@@ -82,9 +82,7 @@ func cmdAutoInstall(args []string) error {
 		if err := installer.Resume(); err != nil {
 			return exitcode.New(exitcode.Generic, "autoinstall stopped: %v", err)
 		}
-		display, _ := runstate.VNC(cfg)
-		fmt.Printf("macOS is at the first Setup Assistant screen. Finish the user account and Remote Login in VNC: 127.0.0.1:%d\n", 5900+display)
-		return nil
+		return recordSetupReady(cfg)
 	}
 	if runstate.IsRunning(cfg) {
 		if _, ok := runstate.VNC(cfg); !ok {
@@ -130,13 +128,27 @@ func cmdAutoInstall(args []string) error {
 	if err := installer.Run(); err != nil {
 		return exitcode.New(exitcode.Generic, "autoinstall stopped: %v", err)
 	}
-	if err := bootstrap.Save(cfg, bootstrap.State{Stage: "manual-setup", MacOS: cfg.MacOSVersion, DiskGiB: cfg.DiskGiB}); err != nil {
+	return recordSetupReady(cfg)
+}
+
+func recordSetupReady(cfg *config.VMConfig) error {
+	if err := bootstrap.Save(cfg, bootstrap.State{
+		Stage: "manual-setup", MacOS: cfg.MacOSVersion, DiskGiB: cfg.DiskGiB,
+	}); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot record the installation stage: %v", err)
 	}
+	updated, err := store.Update(cfg.Name, func(current *config.VMConfig) error {
+		current.Readiness = "manual-setup"
+		return nil
+	})
+	if err != nil {
+		return exitcode.New(exitcode.Generic, "cannot record the readiness of '%s': %v", cfg.Name, err)
+	}
+	*cfg = *updated
 	display, _ := runstate.VNC(cfg)
 	fmt.Printf("macOS is at the first Setup Assistant screen. Finish the user account and Remote Login in VNC: 127.0.0.1:%d\n", 5900+display)
 	fmt.Println("After creating the account and enabling Remote Login, run:")
-	fmt.Println("  macxvm finish " + name + " --password-stdin [--apps] [--seal]")
+	fmt.Println("  macxvm finish " + cfg.Name + " --password-stdin [--apps] [--seal]")
 	return nil
 }
 

@@ -23,7 +23,7 @@ qemu-system-x86_64 \
   -device ich9-ahci,id=sata \
   -drive id=OpenCoreBoot,if=none,snapshot=on,format=qcow2,file={{ASSETS}}/OpenCore.qcow2 \
   -device ide-hd,bus=sata.2,drive=OpenCoreBoot \
-#install -drive id=InstallMedia,if=none,file={{ASSETS}}/BaseSystem.img,format=raw
+#install -drive id=InstallMedia,if=none,file={{ASSETS}}/BaseSystem.img,format=raw,readonly=on
 #install -device ide-hd,bus=sata.3,drive=InstallMedia
   -drive id=MacHDD,if=none,file={{DISK_IMG}},format=qcow2 \
   -device ide-hd,bus=sata.4,drive=MacHDD \
