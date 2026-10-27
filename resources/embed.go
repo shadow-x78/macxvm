@@ -19,3 +19,12 @@ var AppsDefault string
 
 //go:embed install-clt.sh
 var InstallCLT string
+
+//go:embed args-template.txt
+var ArgsTemplate string
+
+//go:embed cpu-models.txt
+var CPUModels string
+
+//go:embed boot-assets.txt
+var BootAssets string

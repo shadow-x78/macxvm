@@ -13,8 +13,23 @@ import (
 	"hash/crc32"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+func TestLookupCPU(t *testing.T) {
+	skylake, err := LookupCPU("skylake")
+	if err != nil || !contains(skylake, "kvm=on") {
+		t.Fatalf("LookupCPU(skylake) = %q, %v", skylake, err)
+	}
+	host, err := LookupCPU("host")
+	if err != nil || !strings.HasPrefix(host, "host,") {
+		t.Fatalf("LookupCPU(host) = %q, %v", host, err)
+	}
+	if _, err := LookupCPU("pentium"); err == nil {
+		t.Fatal("LookupCPU accepted an unknown model")
+	}
+}
 
 func TestLookupRelease(t *testing.T) {
 	rel, err := lookupRelease("sequoia")
@@ -37,7 +52,14 @@ func TestLookupRelease(t *testing.T) {
 }
 
 func TestArgsTemplateCarriesThePlaceholders(t *testing.T) {
-	text := argsTemplate(CPUSkylake)
+	cpu, err := LookupCPU("skylake")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := argsTemplate(cpu)
+	if contains(text, "{{CPU_MODEL}}") {
+		t.Fatal("the CPU model placeholder was not replaced")
+	}
 	for _, want := range []string{
 		"{{CPUS}}", "{{RAM_MIB}}", "{{DISK_IMG}}", "{{NETDEV}}", "{{MAC}}", "{{ASSETS}}",
 		"#install -drive id=InstallMedia",
@@ -163,21 +185,6 @@ func TestRandomID(t *testing.T) {
 		if !((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')) {
 			t.Fatalf("the identifier holds '%c'", c)
 		}
-	}
-}
-
-func TestLookupCPU(t *testing.T) {
-	if _, err := LookupCPU(""); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := LookupCPU("skylake"); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := LookupCPU("host"); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := LookupCPU("pentium"); err == nil {
-		t.Fatal("LookupCPU() = nil error, want an error")
 	}
 }
 
