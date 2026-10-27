@@ -73,11 +73,11 @@ func runSeed(t *testing.T, listing string, info map[string]string) string {
 func TestSeedScriptCountsWholeInternalDisksOnly(t *testing.T) {
 	listing := "/dev/disk0 (internal, physical):\n   0: GUID_partition_scheme *402.7 MB disk0\n" +
 		"/dev/disk1 (internal, physical):\n   0: GUID_partition_scheme *68.7 GB disk1\n   1: Microsoft Basic Data 68.7 GB disk1s1\n" +
-		"/dev/disk2 (internal, physical):\n   0: GUID_partition_scheme *43.2 GB disk2\n"
+		"/dev/disk2 (internal, physical):\n   0: Apple_APFS Container disk3 68.7 GB disk2\n"
 	info := map[string]string{
-		"/dev/disk0": "Whole=true\nInternal=true\nTotalSize=402653184\n",
-		"/dev/disk1": "Whole=true\nInternal=true\nTotalSize=68719476736\n",
-		"/dev/disk2": "Whole=true\nInternal=true\nTotalSize=46385646720\n",
+		"/dev/disk0": "DeviceIdentifier=disk0\nWholeDisk=true\nInternal=true\nParentWholeDisk=disk0\nContent=GUID_partition_scheme\nTotalSize=402653184\n",
+		"/dev/disk1": "DeviceIdentifier=disk1\nWholeDisk=1\nInternal=1\nParentWholeDisk=disk1\nContent=GUID_partition_scheme\nTotalSize=68719476736\n",
+		"/dev/disk2": "DeviceIdentifier=disk2\nWholeDisk=true\nInternal=true\nParentWholeDisk=disk2\nContent=EF57347C-0000-11AA-AA11-00306543ECAC\nTotalSize=68719476736\n",
 	}
 	if out := runSeed(t, listing, info); !strings.Contains(out, "RESULT 777") {
 		t.Fatalf("seed script did not select the single 64 GiB disk: %s", out)
@@ -88,8 +88,8 @@ func TestSeedScriptRefusesTwoMatchingWholeDisks(t *testing.T) {
 	listing := "/dev/disk1 (internal, physical):\n   0: GUID_partition_scheme *68.7 GB disk1\n" +
 		"/dev/disk2 (internal, physical):\n   0: GUID_partition_scheme *68.7 GB disk2\n"
 	info := map[string]string{
-		"/dev/disk1": "Whole=true\nInternal=true\nTotalSize=68719476736\n",
-		"/dev/disk2": "Whole=true\nInternal=true\nTotalSize=68719476736\n",
+		"/dev/disk1": "DeviceIdentifier=disk1\nWholeDisk=1\nInternal=1\nParentWholeDisk=disk1\nContent=GUID_partition_scheme\nTotalSize=68719476736\n",
+		"/dev/disk2": "DeviceIdentifier=disk2\nWholeDisk=true\nInternal=true\nParentWholeDisk=disk2\nContent=GUID_partition_scheme\nTotalSize=68719476736\n",
 	}
 	if out := runSeed(t, listing, info); !strings.Contains(out, "RESULT 333") {
 		t.Fatalf("seed script did not refuse ambiguity: %s", out)
