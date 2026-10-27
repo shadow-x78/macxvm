@@ -237,6 +237,8 @@ func parseGuestGPU(out string) (display, vendor, device, vram, resolution, kext 
 func cmdOptimize(args []string) error {
 	fs := newFlagSet("optimize")
 	check := fs.Bool("check", false, "only report whether the VM uses the Bochs display")
+	width := fs.Int("width", 1920, "display width in pixels")
+	height := fs.Int("height", 1080, "display height in pixels")
 	positional, flagArgs := SplitArgs(fs, args)
 	if err := parseFlags("optimize", fs, flagArgs); err != nil {
 		return err
@@ -252,11 +254,14 @@ func cmdOptimize(args []string) error {
 	if runstate.IsRunning(cfg) {
 		return exitcode.New(exitcode.AlreadyRunning, "stop '%s' before changing its display", name)
 	}
+	if *width < 1024 || *height < 640 || *width > 3840 || *height > 2160 {
+		return exitcode.New(exitcode.Usage, "resolution must be between 1024x640 and 3840x2160")
+	}
 	raw, err := os.ReadFile(cfg.File("args.txt"))
 	if err != nil {
 		return exitcode.New(exitcode.BadArgsFile, "cannot read args.txt: %v", err)
 	}
-	updated, changed := bochsArgs(string(raw))
+	updated, changed := bochsArgsAt(string(raw), *width, *height)
 	if *check {
 		if changed {
 			fmt.Printf("'%s' does not yet use the Bochs display path\n", name)
@@ -279,7 +284,7 @@ func cmdOptimize(args []string) error {
 	if err := config.WriteFileAtomic(cfg.File("args.txt"), []byte(updated), 0o600); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot write args.txt: %v", err)
 	}
-	fmt.Printf("optimized '%s': -vga none + bochs-display (AppleBochVGAFB), 1920x1080, 256 MB framebuffer\n", name)
+	fmt.Printf("optimized '%s': -vga none + bochs-display (AppleBochVGAFB), %dx%d, 256 MB aperture\n", name, *width, *height)
 	fmt.Printf("backup: %s\n", backup)
 	return nil
 }
@@ -335,7 +340,12 @@ func rewriteDisplayArgs(input, mode string) string {
 }
 
 func bochsArgs(input string) (string, bool) {
-	if strings.Contains(input, "bochs-display") && strings.Contains(input, "-vga none") &&
+	return bochsArgsAt(input, 1920, 1080)
+}
+
+func bochsArgsAt(input string, width, height int) (string, bool) {
+	want := fmt.Sprintf("bochs-display,vgamem=256M,xres=%d,yres=%d", width, height)
+	if strings.Contains(input, want) && strings.Contains(input, "-vga none") &&
 		!strings.Contains(input, "vmware-svga") {
 		return input, false
 	}
@@ -353,7 +363,7 @@ func bochsArgs(input string) (string, bool) {
 		}
 		out = append(out, line)
 		if strings.HasPrefix(trimmed, "-smbios type=2") {
-			out = append(out, "  -vga none \\", "  -device bochs-display,vgamem=256M,xres=1920,yres=1080 \\")
+			out = append(out, "  -vga none \\", "  -device "+want+" \\")
 			changed = true
 		}
 	}

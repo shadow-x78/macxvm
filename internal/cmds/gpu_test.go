@@ -45,3 +45,20 @@ func TestDisplayModeOf(t *testing.T) {
 		t.Fatalf("displayModeOf(other) = %q", got)
 	}
 }
+
+func TestBochsArgsAtChangesResolution(t *testing.T) {
+	input := "qemu-system-x86_64 \\\n  -smbios type=2 \\\n  -vga none \\\n  -device bochs-display,vgamem=256M,xres=1920,yres=1080 \\\n  -drive file=x \\\n"
+	out, changed := bochsArgsAt(input, 1440, 900)
+	if !changed {
+		t.Fatal("bochsArgsAt did not change the resolution")
+	}
+	if !strings.Contains(out, "xres=1440,yres=900") {
+		t.Fatalf("resolution not applied: %s", out)
+	}
+	if strings.Contains(out, "xres=1920") {
+		t.Fatalf("old resolution survived: %s", out)
+	}
+	if _, again := bochsArgsAt(out, 1440, 900); again {
+		t.Fatal("bochsArgsAt is not idempotent at the same resolution")
+	}
+}

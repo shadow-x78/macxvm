@@ -262,9 +262,12 @@ macxvm exec macos -- sh -c 'echo ready'
 <div dir="ltr" align="left">
 
 ```bash
-macxvm gpu macos          # GPU وIOMMU في المضيف وkext الفعلي داخل macOS
-macxvm optimize macos     # لجهاز متوقف: -vga none + bochs-display 1920x1080
+macxvm gpu macos                                  # GPU وIOMMU في المضيف وkext الفعلي داخل macOS
+macxvm optimize macos                             # لجهاز متوقف: -vga none + bochs-display 1920x1080
+macxvm optimize macos --width 1440 --height 900   # بكسل أقل لعارض برمجي
 ```
+
+الهندسة العكسية الكاملة والأرقام المقاسة وحدود التمرير في [docs/GPU_AR.md](docs/GPU_AR.md).
 
 </div>
 
@@ -611,6 +614,7 @@ macxvm/
 | [INSTALLATION_AR.md](docs/INSTALLATION_AR.md) | المتطلبات والبناء ومجلد الحالة والحذف |
 | [ARGS_FILE_AR.md](docs/ARGS_FILE_AR.md) | تعريف الجهاز: الصيغة والعناصر النائبة والأعلام الممنوعة والسكربتات الجاهزة |
 | [SLIM_AR.md](docs/SLIM_AR.md) | مستويات التخفيف وقائمة المنع والاستعادة والقياس |
+| [GPU_AR.md](docs/GPU_AR.md) | تعريف الضيف الفعلي والهندسة العكسية وحدود التمرير والمكاسب المقاسة |
 | [BUILDING_AR.md](docs/BUILDING_AR.md) | سير عمل البناء وملف المشروع والمزامنة والبناء المؤقت |
 | [TROUBLESHOOTING_AR.md](docs/TROUBLESHOOTING_AR.md) | مشكلات المضيف والجهاز والضيف والبناء الشائعة |
 | [DECISIONS.md](docs/DECISIONS.md) | كل انحراف عن المواصفة وكل غموض حل |
