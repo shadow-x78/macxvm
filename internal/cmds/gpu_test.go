@@ -24,7 +24,7 @@ func TestRewriteDisplayArgs(t *testing.T) {
 }
 
 func TestBochsArgsIdempotent(t *testing.T) {
-	input := "qemu-system-x86_64 \\\n  -smbios type=2 \\\n  -vga none \\\n  -device bochs-display,vgamem=256M,xres=1920,yres=1080 \\\n  -drive file=x \\\n"
+	input := "qemu-system-x86_64 \\\n  -smbios type=2 \\\n  -vga none \\\n  -device bochs-display,vgamem=256M,xres=1440,yres=900 \\\n  -drive file=x \\\n"
 	out, changed := bochsArgs(input)
 	if changed {
 		t.Fatalf("bochsArgs rewrote an already optimized file: %s", out)
@@ -48,17 +48,17 @@ func TestDisplayModeOf(t *testing.T) {
 
 func TestBochsArgsAtChangesResolution(t *testing.T) {
 	input := "qemu-system-x86_64 \\\n  -smbios type=2 \\\n  -vga none \\\n  -device bochs-display,vgamem=256M,xres=1920,yres=1080 \\\n  -drive file=x \\\n"
-	out, changed := bochsArgsAt(input, 1440, 900)
+	out, changed := bochsArgsAt(input, 1600, 1000)
 	if !changed {
 		t.Fatal("bochsArgsAt did not change the resolution")
 	}
-	if !strings.Contains(out, "xres=1440,yres=900") {
+	if !strings.Contains(out, "xres=1600,yres=1000") {
 		t.Fatalf("resolution not applied: %s", out)
 	}
 	if strings.Contains(out, "xres=1920") {
 		t.Fatalf("old resolution survived: %s", out)
 	}
-	if _, again := bochsArgsAt(out, 1440, 900); again {
+	if _, again := bochsArgsAt(out, 1600, 1000); again {
 		t.Fatal("bochsArgsAt is not idempotent at the same resolution")
 	}
 }

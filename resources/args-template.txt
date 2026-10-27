@@ -19,7 +19,7 @@ qemu-system-x86_64 \
   -device usb-kbd,bus=xhci.0 \
   -device usb-tablet,bus=xhci.0 \
   -vga none \
-  -device bochs-display,vgamem=256M,xres=1920,yres=1080 \
+  -device bochs-display,vgamem=256M,xres=1440,yres=900 \
   -device ich9-ahci,id=sata \
   -drive id=OpenCoreBoot,if=none,snapshot=on,format=qcow2,file={{ASSETS}}/OpenCore.qcow2 \
   -device ide-hd,bus=sata.2,drive=OpenCoreBoot \

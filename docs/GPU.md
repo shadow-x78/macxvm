@@ -84,19 +84,21 @@ Measured on the reference host with the guest running the same workload:
 | 4 to 8 vCPU | a parallel workload dropped from 18.4 s to 6.3 s, about 2.9x |
 | 8 to 12 GiB RAM | no guest swap at idle; `vm_stat` shows zero swapins |
 | `slim --level 1` | reduces motion, transparency, window animations, Dock animation |
-| 1920x1080 frame buffer | the default; a higher resolution means more pixels for the software renderer to blit |
+| 1920x1080 to 1440x900 | `WindowServer` idle dropped from 7.5% to 2.5% CPU |
 | `-cpu host` | **fails to boot** on this host; do not use it |
 
-`macxvm optimize NAME --width 1440 --height 900` trades sharpness for fewer
-pixels if the guest still feels slow. The setting only applies to a stopped VM.
+The default is now 1440x900 because the software renderer blits every pixel on
+the CPU. Measured on the reference host, `WindowServer` at idle fell from 7.5% to
+2.5% CPU. Use `macxvm optimize NAME --width 1920 --height 1080` if you prefer the
+sharper mode; the setting only applies to a stopped VM.
 
 ## Commands
 
 ```bash
 macxvm gpu macos                     # host IOMMU/GPU plus the real guest kext
 macxvm optimize macos --check        # is the Bochs path already in place?
-macxvm optimize macos                # stopped VM, 1920x1080
-macxvm optimize macos --width 1440 --height 900
+macxvm optimize macos                # stopped VM, 1440x900
+macxvm optimize macos --width 1920 --height 1080
 ```
 
 ## Honest summary

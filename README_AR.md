@@ -263,8 +263,8 @@ macxvm exec macos -- sh -c 'echo ready'
 
 ```bash
 macxvm gpu macos                                  # GPU وIOMMU في المضيف وkext الفعلي داخل macOS
-macxvm optimize macos                             # لجهاز متوقف: -vga none + bochs-display 1920x1080
-macxvm optimize macos --width 1440 --height 900   # بكسل أقل لعارض برمجي
+macxvm optimize macos                             # لجهاز متوقف: -vga none + bochs-display 1440x900
+macxvm optimize macos --width 1920 --height 1080  # دقة أعلى، معالج أكثر لكل إطار
 ```
 
 الهندسة العكسية الكاملة والأرقام المقاسة وحدود التمرير في [docs/GPU_AR.md](docs/GPU_AR.md).
