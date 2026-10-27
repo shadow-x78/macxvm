@@ -92,6 +92,9 @@ func cmdOpen(args []string) error {
 		}
 	}
 	viewer, viewerErr := findVNCViewer()
+	if viewerErr != nil {
+		return viewerErr
+	}
 	if running && *restart {
 		if _, err := stopVM(cfg, false, 90); err != nil {
 			return err
@@ -106,9 +109,6 @@ func cmdOpen(args []string) error {
 	}
 	address := fmt.Sprintf("127.0.0.1:%d", 5900+display)
 	fmt.Printf("VNC: %s (no SSH wait required)\n", address)
-	if viewerErr != nil {
-		return viewerErr
-	}
 	return openVNC(viewer, cfg, display)
 }
 
