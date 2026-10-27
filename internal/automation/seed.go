@@ -25,12 +25,21 @@ LOW=%d
 HIGH=%d
 FOUND=""
 COUNT=0
+is_true() { [ "$1" = "1" ] || [ "$1" = "true" ]; }
 for D in $(diskutil list internal | awk '/^\/dev\/disk[0-9]+[[:space:]]/ {print $1}'); do
   INFO=$(diskutil info -plist "$D" 2>/dev/null) || continue
-  WHOLE=$(printf '%%s' "$INFO" | plutil -extract Whole raw -o - - 2>/dev/null)
+  IDENT=$(printf '%%s' "$INFO" | plutil -extract DeviceIdentifier raw -o - - 2>/dev/null)
+  WHOLE=$(printf '%%s' "$INFO" | plutil -extract WholeDisk raw -o - - 2>/dev/null)
   INTERNAL=$(printf '%%s' "$INFO" | plutil -extract Internal raw -o - - 2>/dev/null)
-  [ "$WHOLE" = "true" ] || continue
-  [ "$INTERNAL" = "true" ] || continue
+  PARENT=$(printf '%%s' "$INFO" | plutil -extract ParentWholeDisk raw -o - - 2>/dev/null)
+  CONTENT=$(printf '%%s' "$INFO" | plutil -extract Content raw -o - - 2>/dev/null)
+  is_true "$WHOLE" || continue
+  is_true "$INTERNAL" || continue
+  [ "$PARENT" = "$IDENT" ] || continue
+  case "$CONTENT" in
+    GUID_partition_scheme|FDisk_partition_scheme) ;;
+    *) continue ;;
+  esac
   SIZE=$(printf '%%s' "$INFO" | plutil -extract TotalSize raw -o - - 2>/dev/null)
   [ -n "$SIZE" ] || continue
   if [ "$SIZE" -ge "$LOW" ] && [ "$SIZE" -le "$HIGH" ]; then
