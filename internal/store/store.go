@@ -31,28 +31,45 @@ func Exists(name string) bool {
 	return err == nil && st.IsDir()
 }
 
-func List() ([]*config.VMConfig, error) {
+type ScanProblem struct {
+	Name   string
+	Reason string
+}
+
+func Scan() ([]*config.VMConfig, []ScanProblem, error) {
 	root := filepath.Join(paths.Home(), "vms")
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			return nil, nil, nil
 		}
-		return nil, err
+		return nil, nil, err
 	}
 	var out []*config.VMConfig
+	var problems []ScanProblem
 	for _, e := range entries {
 		if !e.IsDir() {
 			continue
 		}
 		cfg, err := config.Load(filepath.Join(root, e.Name()))
-		if err != nil || cfg.Name != e.Name() {
+		if err != nil {
+			problems = append(problems, ScanProblem{Name: e.Name(), Reason: err.Error()})
+			continue
+		}
+		if cfg.Name != e.Name() {
+			problems = append(problems, ScanProblem{Name: e.Name(), Reason: "config names '" + cfg.Name + "'"})
 			continue
 		}
 		out = append(out, cfg)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
-	return out, nil
+	sort.Slice(problems, func(i, j int) bool { return problems[i].Name < problems[j].Name })
+	return out, problems, nil
+}
+
+func List() ([]*config.VMConfig, error) {
+	vms, _, err := Scan()
+	return vms, err
 }
 
 func Load(name string) (*config.VMConfig, error) {
