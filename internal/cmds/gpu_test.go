@@ -62,3 +62,27 @@ func TestBochsArgsAtChangesResolution(t *testing.T) {
 		t.Fatal("bochsArgsAt is not idempotent at the same resolution")
 	}
 }
+
+func TestParseGuestGPUDetectsResolution(t *testing.T) {
+	out := `Vendor ID: 0x1234
+Device ID: 0x1111
+VRAM (Total): 4 MB
+MACXVM_KEXT
+MACXVM_IOKIT
+  |   "IOClass" = "AppleBochVGAFB"
+  |   "IOFBMemorySize" = 5184000
+`
+	display, vendor, device, vram, resolution, kext := parseGuestGPU(out)
+	if display != "Bochs VGA" || vendor != "0x1234" || device != "0x1111" {
+		t.Fatalf("identity = %q %q %q", display, vendor, device)
+	}
+	if vram != "4 MB" {
+		t.Fatalf("vram = %q", vram)
+	}
+	if resolution != "1440x900" {
+		t.Fatalf("resolution = %q, want 1440x900", resolution)
+	}
+	if !strings.Contains(kext, "AppleBochVGAFB") {
+		t.Fatalf("kext = %q", kext)
+	}
+}
