@@ -2,7 +2,7 @@
 
 # Slimming a macOS Guest - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -37,7 +37,7 @@
 
 A macOS guest that idles at 30 % of the processor is useless for building. The slimming levels of MacXVM cut the idle cost of the guest down: fewer background services, no indexing, no animations, no automatic updates.
 
-Both levels run **inside the guest** over SSH, need no root on the host and are reversible. The guest keeps working: SSH, the network and `xcodebuild` must survive.
+All levels run **inside the guest** over SSH and need no root on the host. Settings and selected services are reversible; application removal is a separate selective operation whose rollback is a fresh clone of the sealed base. SSH, networking and Xcode are protected.
 
 ```bash
 macxvm slim demo --level 1
@@ -52,6 +52,7 @@ Level 1 only changes settings. It never stops a service and never removes a file
 
 | Change | Effect |
 |--------|--------|
+| `defaults write NSGlobalDomain AppleInterfaceStyle Dark` | Dark mode is enabled and verified by bootstrap |
 | `mdutil -a -i off` | no Spotlight indexing, no background indexing of the disk |
 | `tmutil disable` | no Time Machine, no snapshot churn |
 | `pmset` sleep timers to 0 | the guest never puts the display or the disks to sleep |
@@ -119,31 +120,33 @@ macxvm: warning: skipping the protected label gui com.apple.sshd
 <a id="level-3"></a>
 ## Level 3 (the lightest, optional)
 
-Level 3 does everything of level 1 and 2 and removes the parts of the guest that a build machine does not need:
+Level 3 is a compatibility name for the same allowlisted application engine as `macxvm apps remove --set default`. It removes only a fixed default allowlist after checking the real bundle identifier, fixed application roots, symlinks, file flags, SIP state, sudo availability and removal success. Safari, Xcode, Utilities, Finder, System Settings, App Store, Terminal, boot/network/SSH components and all user data stay.
 
-| What | How much |
-|------|----------|
-| The applications of `/Applications` that are not Safari, Xcode or Utilities | several hundred megabytes |
-| The leftovers of the installation and the downloaded updates | up to 5 GB |
-| The simulator runtimes and the caches of Xcode | up to 20 GB |
-| The caches, the logs and the mail of the user | a few hundred megabytes |
-
-Safari and Xcode stay, and the level 3 never touches the system volume.
+Mail, Messages and FaceTime are dock-only entries in this policy: their Dock tile is reviewed or removed, while the application, accounts, mailboxes and data remain. No cache, log, `/var/folders`, simulator runtime, Mail container or installation leftover is deleted.
 
 ```bash
-macxvm slim demo --level 3
+# Preview first; this changes nothing
+macxvm apps remove macos --set default --dry-run
+# Preserve named applications; repeat or use a comma-separated list
+macxvm apps remove macos --set default --keep "Voice Memos,Mail" --dry-run
+# Authorize after reviewing
+macxvm apps remove macos --set default --yes
+# Compatibility alias with the same safeguards
+macxvm slim macos --level 3 --dry-run
 ```
+
+The result is written to `apps-manifest.json` for a removal, `apps-dry-run.json` for a preview, or `apps-list.json` for a listing, with `would-remove`, `removed`, `protected`, `missing` or `kept`, a reason, a path and recoverable KiB. A failed or interrupted removal leaves a `remove-partial` manifest rather than pretending the operation completed.
 
 <a id="never"></a>
 ## What Is Never Touched
 
-- The system volume is never modified.
-- SIP is never changed, `csrutil` is never used.
-- No system application is removed.
+- The system volume is never modified and SIP is never changed or disabled.
+- No system application is removed; `/System/Applications` is protected whenever SIP status is enabled, unknown or unreadable.
 - Only the labels of the label file are ever disabled by level 2.
-- Level 3 only removes the applications of `/Applications`, the caches, the logs and the leftovers of the installation.
+- Level 3 never bulk-deletes caches, logs, Mail data, `/var/folders`, simulator runtimes or installation media.
+- Dock removal failure is reported and does not masquerade as a clean removal.
 
-The level 1 settings are not undone by `--restore`, because keeping the automatic updates off is what protects the boot of the guest. The restore undoes the disabled jobs and turns Spotlight back on.
+`--restore` restores services, Spotlight and update policy. It does not restore applications, because there is no safe general undo for an application removal. Clone the sealed base to get a clean state.
 
 <a id="restore"></a>
 ## Restoring
@@ -152,7 +155,7 @@ The level 1 settings are not undone by `--restore`, because keeping the automati
 macxvm slim demo --restore
 ```
 
-The restore reads `~/.macxvm-slim-disabled` in the guest, enables every job that is listed there, deletes the file and turns Spotlight on again with `sudo mdutil -a -i on`. The guest has to be rebooted afterwards, so that the jobs start again.
+The restore reads `~/.macxvm-slim-disabled` in the guest, enables every job listed there, deletes the file, turns Spotlight on again with `sudo mdutil -a -i on`, and restores the automatic-update schedule. The guest must be rebooted for jobs to start again. Applications are not restored; re-clone the sealed base instead.
 
 <a id="measure"></a>
 ## Measuring

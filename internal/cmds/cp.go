@@ -47,6 +47,9 @@ func cmdCopy(args []string) error {
 	if err := ensureSSHKey(); err != nil {
 		return err
 	}
+	if err := sshx.EnsureHostKey(cfg, os.Stderr); err != nil {
+		return err
+	}
 	srcPath, err := expandGuestPath(cfg, src)
 	if err != nil {
 		return err

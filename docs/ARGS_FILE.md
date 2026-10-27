@@ -2,7 +2,7 @@
 
 # The Args File - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -137,7 +137,7 @@ After your arguments, MacXVM appends:
 -display none
 ```
 
-With `--vnc` the last line becomes `-vnc 127.0.0.1:<n>`, where `<n>` is the first free display number starting at 1. The port of the display is `5900+n` and is printed when the machine starts.
+With `--vnc` the last line becomes `-vnc 127.0.0.1:<n>`, where `<n>` is allocated under a global VNC lock starting at 1. The port is `5900+n`; `open` reads the actual listener and never waits for SSH. A running headless VM cannot gain VNC without `open --restart`.
 
 <a id="adapting"></a>
 ## Adapting an Upstream Boot Script
@@ -147,7 +147,7 @@ The boot assets of a macOS guest come from you. Two open-source projects documen
 - [OSX-KVM](https://github.com/kholia/OSX-KVM) by kholia
 - [ultimate-macOS-KVM](https://github.com/Coopydood/ultimate-macOS-KVM) by Coopydood
 
-MacXVM copies none of their content, downloads no Apple installer and does not automate the installation of macOS. To use their boot script:
+MacXVM copies none of their content into the repository. When you explicitly run `image prepare`, it fetches versioned assets into your state directory and verifies their signatures/hashes; it does not accept Apple terms or automate the manual account steps. To use an upstream boot script:
 
 1. Follow the guide of the project to get the installer image, the bootloader and the firmware files into a directory of your choice. This directory becomes the `--assets` directory of the machine.
 2. Open the boot script of that project and take the QEMU arguments from it.
@@ -159,7 +159,7 @@ MacXVM copies none of their content, downloads no Apple installer and does not a
 <a id="validation"></a>
 ## Validation and Errors
 
-The args file is validated twice: when the machine is registered and when it starts. Both times the same rules apply.
+The args file is validated when the machine is registered, cloned and started. Before publication, MacXVM also expands it and checks that the staged disk, required NVRAM and assets exist. `image prepare` writes a manifest next to versioned assets and stores `macosVersion` in the VM; a version mismatch is rejected.
 
 | Problem | Exit code | Message |
 |---------|-----------|---------|
@@ -190,4 +190,4 @@ macxvm create demo \
 Created 'demo' (profile xcode, 4 CPUs, 8192 MiB RAM, 100 GiB disk, ssh 127.0.0.1:34851)
 ```
 
-The machine is now registered. `macxvm start demo --install --vnc` starts it with the installation lines of the args file and opens a VNC display, so that you can install macOS.
+The machine is now registered. `macxvm start demo --install --vnc` starts it with the installation lines and VNC. `macxvm base bootstrap demo --vnc` is the guided path for a new base; `macxvm start demo --wait` is for later boots and waits for key-only SSH, not merely QMP.

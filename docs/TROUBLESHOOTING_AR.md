@@ -2,7 +2,7 @@
 
 # حل المشكلات - MacXVM
 
-[![الإصدار](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -124,9 +124,21 @@ tail -n 40 ~/.local/share/macxvm/vms/X/console.log
 <a id="guest"></a>
 ## الضيف
 
-**`could not reach 'X' over SSH after 240 s (is Remote Login enabled? see README: First boot checklist)`**
+**`SSH port-unavailable` أو `boot-timeout` أو `authentication`**
 
-داخل الضيف افتح إعدادات النظام، ثم عام، ثم المشاركة، وفعل **Remote Login**. يجب أن يملك مستخدم الجهاز كلمة مرور، وصلاحية sudo بلا كلمة مرور التي يطلبها [قائمة إقلاع أول مرة](../README_AR.md#قائمة-إقلاع-أول-مرة) تتيح ل MacXVM تشغيل الأوامر التي تحتاج root.
+فعّل **Remote Login** من إعدادات النظام، عام، المشاركة. `macxvm base bootstrap X --vnc` يستأنف الإعداد اليدوي ويثبت المفتاح بكلمة مرور عبر stdin فقط ويتحقق من SSH بالمفتاح. اختلاف host key لا يستبدل تلقائيًا: تحقق من هوية الجهاز ثم احذف `known_hosts` الخاص بهذا الجهاز فقط إن كان التغيير متوقعًا.
+
+**`sudo-missing` أو فشل `sudo -n`**
+
+استأنف bootstrap؛ يتحقق من sudoers عبر `visudo` ويختبر `sudo -n`. لا تمرر كلمات المرور في arguments أو `config.json`.
+
+**`start --wait` ينتهي بينما VNC يعمل**
+
+جاهزية QMP وSSH منفصلتان. استخدم `macxvm open X` لفحص الضيف؛ `open` لا ينتظر SSH. وإذا كان الجهاز يعمل headless فاستخدم `open X --restart` بوعي.
+
+**`resize` يرفض القرص**
+
+يجب إيقاف الجهاز ونجاح فحص qcow2، ولا يمكن تعديل أساس له طبقات. التوسيع فقط مدعوم؛ التصغير يحتاج أساسًا أصغر وترحيل ملفات انتقائيًا. توسيع جهاز qcow2 لا يوسع APFS تلقائيًا.
 
 **`Command Line Tools are not installed in 'X' (run: macxvm tools install X clt)`**
 
@@ -144,11 +156,13 @@ macxvm tools install X clt
 أول تشغيل ل Xcode وأول بناء يملآن المخابئ. يستغرق ذلك وقتا مرة واحدة، على قرص الضيف.
 
 **الضيف لا يرد بعد التخفيف.**
-استعده وأعد تشغيله:
+استعد الخدمات وسياسة التحديث ثم أعد التشغيل:
 
 ```bash
 macxvm slim X --restore
 ```
+
+لا تستعيد هذه العملية التطبيقات. للتراجع عن حذف التطبيقات احذف الطبقة وأنشئ أخرى من الأساس المختوم. عاين أولًا ب`macxvm apps remove X --set default --dry-run`.
 
 <a id="build"></a>
 ## البناء

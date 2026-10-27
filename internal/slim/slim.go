@@ -53,7 +53,10 @@ if [ -f "$LOG" ]; then
   rm -f "$LOG"
 fi
 sudo mdutil -a -i on || true
-echo "slim restore done, reboot the guest to start the jobs again"
+sudo softwareupdate --schedule on || true
+sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true || true
+sudo defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload -bool true || true
+echo "slim restore done for services and update policy only; applications are not restored"
 `
 
 const measureScript = `echo "processes: $(ps -A | wc -l | tr -d ' ')"
@@ -129,6 +132,10 @@ func Apply(cfg *config.VMConfig, level int) error {
 	if level == 1 {
 		return nil
 	}
+	if level == 3 {
+		return exitcode.New(exitcode.Usage,
+			"level 3 is the selective application engine; use macxvm apps remove with --dry-run and --yes")
+	}
 	labels, err := ParseLabels(resources.SlimLabels)
 	if err != nil {
 		return exitcode.New(exitcode.Generic, "cannot read the labels file: %v", err)
@@ -142,12 +149,6 @@ func Apply(cfg *config.VMConfig, level int) error {
 	}
 	if err := runScript(cfg, resources.Slim2); err != nil {
 		return exitcode.New(exitcode.Generic, "slim level 2 failed: %v", err)
-	}
-	if level == 2 {
-		return nil
-	}
-	if err := runScript(cfg, resources.Slim3); err != nil {
-		return exitcode.New(exitcode.Generic, "slim level 3 failed: %v", err)
 	}
 	return nil
 }

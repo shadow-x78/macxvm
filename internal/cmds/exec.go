@@ -37,6 +37,9 @@ func cmdExec(args []string) error {
 	if err := ensureSSHKey(); err != nil {
 		return err
 	}
+	if err := sshx.EnsureHostKey(cfg, os.Stderr); err != nil {
+		return err
+	}
 	remote := sshx.RemoteCommand(joinCommand(command))
 	cmd := exec.Command("ssh", sshx.SSHArgs(cfg, remote)...)
 	cmd.Stdin = os.Stdin

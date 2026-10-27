@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"hash/crc32"
 	"os"
-	"path/filepath"
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/hostcheck"
@@ -26,27 +25,45 @@ var gptBasicData = [16]byte{
 	0x87, 0xC0, 0x68, 0xB6, 0xB7, 0x26, 0x99, 0xC7,
 }
 
-func PrepareDisk(diskPath string, runner hostcheck.Runner) error {
+func CreateDisk(diskPath string, sizeGiB int, runner hostcheck.Runner) (err error) {
+	if sizeGiB <= 0 {
+		return exitcode.New(exitcode.Usage, "disk size must be greater than zero")
+	}
 	if runner == nil {
 		runner = hostcheck.ExecRunner{}
 	}
-	if !hostcheck.HaveBinary("qemu-img") {
-		return exitcode.New(exitcode.UnsupportedHost, "qemu-img is not in PATH (run: macxvm doctor)")
+	if _, statErr := os.Lstat(diskPath); statErr == nil {
+		return exitcode.New(exitcode.Generic, "refusing to overwrite the existing disk '%s'", diskPath)
 	}
-	raw := filepath.Join(filepath.Dir(diskPath), "gpt.raw")
-	if err := runner.Run("qemu-img", "convert", "-O", "raw", "-S", "4k", diskPath, raw); err != nil {
-		return exitcode.New(exitcode.Generic, "cannot read the disk: %v", err)
+	raw := diskPath + ".raw.partial"
+	partial := diskPath + ".partial"
+	defer os.Remove(raw)
+	defer os.Remove(partial)
+	f, err := os.OpenFile(raw, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0o600)
+	if err != nil {
+		return exitcode.New(exitcode.Generic, "cannot create the staging disk: %v", err)
+	}
+	if err := f.Truncate(int64(sizeGiB) * 1024 * 1024 * 1024); err != nil {
+		f.Close()
+		return exitcode.New(exitcode.Generic, "cannot size the staging disk: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		return exitcode.New(exitcode.Generic, "cannot close the staging disk: %v", err)
 	}
 	if err := writeGPT(raw); err != nil {
-		os.Remove(raw)
 		return err
 	}
-	if err := runner.Run("qemu-img", "convert", "-O", "qcow2", raw, diskPath); err != nil {
-		os.Remove(raw)
-		return exitcode.New(exitcode.Generic, "cannot write the disk: %v", err)
+	if err := runner.Run("qemu-img", "convert", "-O", "qcow2", "-S", "4k", raw, partial); err != nil {
+		return exitcode.New(exitcode.Generic, "cannot write the qcow2 disk: %v", err)
 	}
-	if err := os.Remove(raw); err != nil {
-		return exitcode.New(exitcode.Generic, "cannot remove '%s': %v", raw, err)
+	if err := runner.Run("qemu-img", "check", partial); err != nil {
+		return exitcode.New(exitcode.Generic, "the new qcow2 disk failed its integrity check: %v", err)
+	}
+	if st, err := os.Stat(partial); err != nil || st.Size() == 0 {
+		return exitcode.New(exitcode.Generic, "the qcow2 conversion produced no valid disk")
+	}
+	if err := os.Rename(partial, diskPath); err != nil {
+		return exitcode.New(exitcode.Generic, "cannot publish the qcow2 disk: %v", err)
 	}
 	return nil
 }

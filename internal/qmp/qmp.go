@@ -84,6 +84,72 @@ func (q *Client) Execute(cmd string, args map[string]any) (json.RawMessage, erro
 
 func (q *Client) Close() error { return q.c.Close() }
 
+func (q *Client) Status() (string, error) {
+	raw, err := q.Execute("query-status", nil)
+	if err != nil {
+		return "", err
+	}
+	var status struct {
+		Status string `json:"status"`
+	}
+	if err := json.Unmarshal(raw, &status); err != nil {
+		return "", err
+	}
+	return status.Status, nil
+}
+
+func (q *Client) Wake() error {
+	status, err := q.Status()
+	if err != nil {
+		return err
+	}
+	switch status {
+	case "suspended":
+		_, err = q.Execute("system_wakeup", nil)
+	case "paused", "prelaunch":
+		_, err = q.Execute("cont", nil)
+	}
+	return err
+}
+
+func (q *Client) Screendump(path string) error {
+	_, err := q.Execute("screendump", map[string]any{"filename": path})
+	return err
+}
+
+// SendKey presses a sequence of QEMU qcodes as one chord. It is used for
+// installer automation, so no external VNC keyboard helper is required.
+func (q *Client) SendKey(keys []string, holdMS int) error {
+	items := make([]map[string]string, 0, len(keys))
+	for _, key := range keys {
+		items = append(items, map[string]string{"type": "qcode", "data": key})
+	}
+	args := map[string]any{"keys": items}
+	if holdMS > 0 {
+		args["hold-time"] = holdMS
+	}
+	_, err := q.Execute("send-key", args)
+	return err
+}
+
+// ClickAbs sends an absolute pointer position and a left click to a tablet
+// device. Coordinates are scaled to the QEMU absolute axis range.
+func (q *Client) ClickAbs(x, y, width, height int) error {
+	if width <= 0 || height <= 0 {
+		return fmt.Errorf("invalid pointer dimensions %dx%d", width, height)
+	}
+	ax := x * 0x7fff / width
+	ay := y * 0x7fff / height
+	events := []map[string]any{
+		{"type": "abs", "data": map[string]any{"axis": "x", "value": ax}},
+		{"type": "abs", "data": map[string]any{"axis": "y", "value": ay}},
+		{"type": "btn", "data": map[string]any{"down": true, "button": "left"}},
+		{"type": "btn", "data": map[string]any{"down": false, "button": "left"}},
+	}
+	_, err := q.Execute("input-send-event", map[string]any{"events": events})
+	return err
+}
+
 func (q *Client) Powerdown() error {
 	return q.tolerant("system_powerdown")
 }

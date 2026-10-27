@@ -17,9 +17,9 @@ var Groups = []struct {
 	Title    string
 	Commands []string
 }{
-	{"Machines", []string{"create", "list", "status", "start", "stop", "delete", "clone", "compact", "base", "prune"}},
+	{"Machines", []string{"create", "list", "status", "start", "stop", "open", "resize", "autoinstall", "finish", "optimize", "gpu", "delete", "clone", "compact", "base", "prune"}},
 	{"Boot assets", []string{"image"}},
-	{"Guests", []string{"ssh", "ssh-key", "exec", "cp", "share", "slim", "tools", "xcode"}},
+	{"Guests", []string{"ssh", "ssh-key", "exec", "cp", "share", "slim", "apps", "tools", "xcode"}},
 	{"Projects", []string{"init", "up", "down", "build", "run"}},
 	{"Host", []string{"doctor", "version", "completion"}},
 }
@@ -54,8 +54,9 @@ func Usage(w io.Writer) {
 	started := [][2]string{
 		{"macxvm doctor", "check this host"},
 		{"macxvm image link", "see where the boot assets come from"},
-		{"macxvm image prepare", "fetch them and register a machine"},
-		{"macxvm start", "start the machine with a screen"},
+		{"macxvm image prepare", "prepare the default machine with profile defaults"},
+		{"macxvm base bootstrap", "install once with guided VNC and SSH setup"},
+		{"macxvm autoinstall", "automate Recovery through the first Setup screen"},
 	}
 	for _, row := range started {
 		if len(row[0]) > width {

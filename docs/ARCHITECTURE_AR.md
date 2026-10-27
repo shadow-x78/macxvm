@@ -2,7 +2,7 @@
 
 # مواصفات البنية - MacXVM
 
-[![الإصدار](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -70,8 +70,11 @@ flowchart TD
 | `internal/names` | قاعدة اسم الجهاز والتحقق منها |
 | `internal/sizeparse` | تحليل قيم `--ram` مثل `4096` و`4096M` و`8G` |
 | `internal/config` | وصف الجهاز المحفوظ، الكتابة الذرية، توليد الهوية |
-| `internal/store` | تسجيل الأجهزة، عرضها، نسخها، ختمها، حذفها |
-| `internal/argsfile` | تحليل ملف الوسائط والتحقق منه وتوسيعه |
+| `internal/store` | تسجيل ذري، عرض، نسخ، resize، ختم وحذف الأجهزة |
+| `internal/argsfile` | تحليل ملف الوسائط والتحقق منه وتوسيعه وفحص ملفاته المطلوبة |
+| `internal/bootstrap` | bootstrap غير سري قابل للاستئناف والتحقق من sudo |
+| `internal/guestapps` | allowlist افتراضية ثابتة، dry-run/manifest وحذف انتقائي |
+| `internal/automation` | أتمتة المثبت عبر OCR وseed ISO واكتشاف Setup |
 | `internal/runstate` | كشف العملية عبر ملف المعرف و`/proc`، وقفل العمليات |
 | `internal/qmp` | عميل بروتوكول QMP المصغر |
 | `internal/qemu` | الفحص المسبق، تشغيل العملية، مسار مقبس QMP، انتظار الجاهزية |
@@ -102,11 +105,15 @@ create ──► start ──► (slim, tools, xcode) ──► stop ──► b
                                               build / run
 ```
 
-- `create` يسجل الجهاز، وينشئ قرص qcow2 متفرقا، ويتحقق من ملف الوسائط، ويكتب `config.json`.
-- `start` يشغل QEMU، وينتظر ملف المعرف ومقبس QMP، ثم ينفذ مصافحة QMP.
-- `slim` و`tools` و`xcode` تعمل داخل الضيف عبر SSH. تشغل الجهاز إن كان متوقفا، وتوقفه مجددا فقط إن كانت هي التي شغلته.
-- `base seal` يضع علامة على الجهاز كصورة أساس. الأساس الختم لا يشغل ولا يعدل أبدا، بل يستخدم كملف backing للطبقات.
-- `clone` ينشئ طبقة فوق أساس ختم. الطبقة تكلف بضعة مئات كيلوبايت وتقلع في ثوان.
+- `image prepare` يتحقق من أصول مفصولة حسب الإصدار، ويبني GPT في staging، ويحول مرة واحدة إلى qcow2، ويفحصه ثم ينشر ذريًا. `cli` افتراضيًا 4 vCPU / 8192 MiB / 64 GiB منطقية، و`xcode` بديل صريح 4 / 8192 / 100.
+- `create NAME --base BASE` يستنسخ أساسًا مختومًا دون إعادة تثبيت، ولكل VM نسخة NVRAM مستقلة. `--replace` يستبدل جهازًا متوقفًا، و`--force` لتجاوز حدود الموارد التجريبية فقط.
+- `autoinstall` يقود OpenCore ثم Recovery Terminal ثم مسح القرص المطابق ثم الترخيص (بعلم صريح) ثم القرص ثم Install، وينتظر أول صفحة Setup Assistant. يستخدم QMP screendump مع OCR وvncdo للإدخال.
+- `finish` يستأنف بعد الحساب وRemote Login اليدويين: المفتاح وsudoers وDark والطاقة وslim level 1 وعرض Bochs ومعاينة التطبيقات والحذف الاختياري والتحقق والختم الاختياري.
+- `base bootstrap` يحفظ مراحل غير سرية فقط: `assets` و`install` و`manual-setup` و`ssh` و`verify` و`ready`. خطوات ترخيص Apple والحساب تبقى يدوية في VNC.
+- `start` يشغل QEMU ويحجز VNC تحت قفل عام، ويتحقق من QMP ومن مستمع VNC، ويسجل `created` أو `qmp-ready` أو `booting` أو `ssh-ready` أو `stopping` أو `stopped` أو `failed`. و`start --wait` يثبت SSH بالمفتاح، و`open` لا ينتظر SSH.
+- `stop` يحاول SSH المحدود فقط عند وجود ثقة سابقة، ثم ACPI، ثم QMP quit، ثم إشارة بعد إعادة فحص marker QEMU الدقيق. لا يعلن نجاح الإيقاف وعملية مملوكة ما زالت حية.
+- `base seal` يتطلب جهازًا متوقفًا اجتاز bootstrap. الأساس المختوم لا يقلع، ولا تحذف أو تعدل طبقاته من تحته.
+- `clone` ينشئ طبقة بعد إعادة تحميل config الحالي تحت `op.lock`، وفحص القرص وNVRAM وقابلية توسيع args، ثم ينشر ذريًا.
 - `clone --full` يحول القرص كله بدل نسخ الملف، فيكون القرص مستقلا ولا يحتاج أساسه بعد الآن.
 - `run` ينشئ طبقة مؤقتة، ينفذ أمرا واحدا فيها، ثم يحذفها، حتى عند مقاطعة الأمر.
 
@@ -115,23 +122,30 @@ create ──► start ──► (slim, tools, xcode) ──► stop ──► b
 
 ```
 $MACXVM_HOME  (افتراضيا: $XDG_DATA_HOME/macxvm، وإلا ~/.local/share/macxvm)
+├── assets/<macos>/<revision>/    # أصول موثقة بmanifest مفصولة حسب الإصدار
 ├── id_ed25519, id_ed25519.pub     # مفتاح SSH المشترك بين كل الأجهزة
 ├── staging/                        # أجهزة قيد الإنشاء، تحذف عند الفشل
 └── vms/<name>/
     ├── config.json                 # وصف الجهاز
     ├── args.txt                    # نسخة من ملف وسائط المستخدم
     ├── disk.qcow2                  # القرص، أو طبقة فوق أساس
-    ├── nvram.fd                    # فقط مع ‎--nvram-template
+    ├── nvram.fd                    # نسخة NVRAM المستقلة
+    ├── known_hosts                 # TOFU لكل VM باسم macxvm-<id>
+    ├── bootstrap.json              # مراحل bootstrap غير السرية
+    ├── apps-manifest.json          # نتائج الحذف والمساحة القابلة للاستعادة
+    ├── apps-dry-run.json           # معاينة لا تُعد سجل حذف
+    ├── apps-list.json              # عرض لا يُعد سجل حذف
     ├── qemu.pid                    # يكتبه QEMU نفسه
     ├── console.log                 # مخرجات QEMU
-    ├── op.lock                     # يسلسل start وstop وclone وseal وdelete
+    ├── op.lock                     # يسلسل start وstop وclone وseal وresize وdelete
     └── slim-report.txt             # فقط بعد slim --measure
 
 $MACXVM_RUN  (افتراضيا: $XDG_RUNTIME_DIR/macxvm، وإلا /tmp/macxvm-<uid>)
-└── <id>.sock                       # مقبس QMP الخاص بالجهاز
+├── <id>.sock                       # مقبس QMP الخاص بالجهاز
+└── vnc.lock                        # حجز VNC العام
 ```
 
-مجلد التشغيل يحتوي مقبس QMP بلا مصادقة، لذلك يرفض MacXVM用它 ما لم يكن مجلدا حقيقيا للمستخدم الحالي لا يستطيع غيره الكتابة فيه.
+مجلد التشغيل يحتوي مقبس QMP بلا مصادقة، لذلك يرفض MacXVM استخدامه ما لم يكن مجلدا حقيقيا للمستخدم الحالي لا يستطيع غيره الكتابة فيه.
 
 <a id="command-flow"></a>
 ## مسار الأوامر
@@ -149,15 +163,14 @@ $MACXVM_RUN  (افتراضيا: $XDG_RUNTIME_DIR/macxvm، وإلا /tmp/macxvm-<
 
 يشغل QEMU مع `Setsid`، فيبقى حيا بعد خروج الأمر الذي شغله ولا يستقبل إشارة hangup من الطرفية. يغلق الوالد مقبض العملية دون انتظارها.
 
-تشتق حالة الجهاز من ملف المعرف الذي يكتبه QEMU ومن سطر أوامر تلك العملية:
+تشتق الحالة من ملف المعرف، ومن بحث دقيق عن marker QEMU عند غياب الملف، ومن حالة الجاهزية المحفوظة:
 
-- تقرأ ملف المعرف ويحلل رقمها؛
-- يقرر `/proc/<pid>/stat` ما إذا كانت العملية قد اختفت أو صارت زومبي؛
-- يجب أن يحتوي `/proc/<pid>/cmdline` على `macxvm-<id>`، وهذا ما يجعل الفحص محصنا ضد إعادة استخدام أرقام العمليات.
+- يقرر `/proc/<pid>/stat` ما إذا كانت العملية اختفت أو صارت زومبي؛
+- يجب أن يحتوي `/proc/<pid>/cmdline` على الوسيط الدقيق `guest=macxvm-<id>,process=macxvm-<id>`، فلا يمكن قتل عملية أعيد استخدام PID الخاص بها؛
+- يعاد تحميل config بعد `op.lock` وتقارن هوية VM، فلا تعمل عملية قديمة على بديل جديد؛
+- جاهزية VNC وQMP منفصلة عن جاهزية SSH. `open` يستخدم مستمع VNC الفعلي لا منفذًا مخمنًا.
 
-لأن سطر أوامر العملية يكون فارغا لحظة بدءها، فإن قرار "هل خرج QEMU" يقوم على الحالة في `/proc/<pid>/stat` ولا يقوم على سطر الأوامر وحده.
-
-إذا لم تصبح الجهاز جاهزا خلال 20 ثانية، يوقف QEMU المشغل، وتحذف ملف المعرف والمقبس، ويبلغ الأمر برمز الخروج 7. أما QEMU الذي ما زال حيا فقد فقد ملف المعرف فيعرف من سطر أوامره، فلا يشغل مرتين: عمليتا QEMU تكتبان صورة qcow2 واحدة تفسدها.
+إذا لم يصبح QMP جاهزًا خلال 20 ثانية، يوقف QEMU المشغل وتحذف الملفات ويبلغ رمز الخروج 7. ل`start --wait` مهلة SSH منفصلة. وQEMU الحي الذي فقد pidfile يعرف من marker، فلا يشغل مرتين.
 
 <a id="networking"></a>
 ## الشبكة
@@ -170,7 +183,7 @@ user,id=net0,hostfwd=tcp:127.0.0.1:<port>-:22
 
 يختار المنفذ عند تسجيل الجهاز، ويحفظ في `config.json`، ويعاد فحصه عند الإقلاع. إن كان مشغولا في تلك الأثناء، يختار منفذ حر جديد ويكتب من جديد. لا حاجة لصلاحيات root ولا جسور ولا اكتشاف عناوين IP.
 
-منفذ الجهاز المتوقف غير محجوز، فقد يأخذه برنامج محلي آخر. لهذا تستخدم اتصالات SSH مهلة اتصال قصيرة وخيارات إبقاء حي: برنامج يرد على المنفذ يجب أن لا يستطيع تعليق MacXVM.
+منفذ الجهاز المتوقف غير محجوز، فقد يأخذه برنامج محلي آخر. لذلك تكون ثقة SSH محلية TOFU فقط أثناء عمل VM المملوكة، وتستخدم `HostKeyAlias=macxvm-<id>` في `known_hosts` مستقل؛ تغيير المنفذ لا يغير هوية الجهاز. بعد الثقة يستخدم `StrictHostKeyChecking=yes` و`BatchMode=yes`، وأي اختلاف مفتاح يفشل بدل استبداله. فحوص الجاهزية تعطل control master القديم وتتحقق من أن QEMU ما زال حيًا.
 
 <a id="project-layout"></a>
 ## تنظيم المشروع

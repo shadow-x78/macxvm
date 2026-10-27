@@ -10,6 +10,7 @@ import (
 
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/hostcheck"
+	"github.com/shadow-x78/macxvm/internal/runstate"
 )
 
 const (
@@ -19,10 +20,11 @@ const (
 )
 
 type Options struct {
-	Dir    string
-	OS     string
-	CPU    string
-	Runner hostcheck.Runner
+	Dir       string
+	LegacyDir string
+	OS        string
+	CPU       string
+	Runner    hostcheck.Runner
 }
 
 type Link struct {
@@ -87,30 +89,60 @@ func Prepare(opts Options) error {
 		return err
 	}
 	opts.CPU = cpu
-	if err := os.MkdirAll(opts.Dir, 0o755); err != nil {
-		return exitcode.New(exitcode.Generic, "cannot create '%s': %v", opts.Dir, err)
+	rel, err := lookupRelease(opts.OS)
+	if err != nil {
+		return err
+	}
+	assetDir, err := AssetDir(opts.Dir, rel.Name)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(assetDir, 0o700); err != nil {
+		return exitcode.New(exitcode.Generic, "cannot create '%s': %v", assetDir, err)
+	}
+	lock, err := runstate.LockOp(filepath.Join(assetDir, "fetch.lock"))
+	if err != nil {
+		return exitcode.New(exitcode.Generic, "another asset preparation is running for this macOS revision")
+	}
+	defer lock.Close()
+	if _, ok := validManifest(assetDir, rel.Name); ok {
+		describe("the verified local asset manifest is current; no download is needed")
+		opts.Dir = assetDir
+		return writeArgs(opts)
 	}
 	if err := requireTools(opts.Runner); err != nil {
 		return err
 	}
-	if err := fetchInstaller(opts); err != nil {
+	opts.LegacyDir = opts.Dir
+	opts.Dir = assetDir
+	installerAssets, product, err := fetchInstaller(opts)
+	if err != nil {
 		return err
 	}
-	if err := fetchOpenCore(opts); err != nil {
+	bootAssets, err := fetchOpenCore(opts)
+	if err != nil {
 		return err
 	}
 	if err := writeArgs(opts); err != nil {
 		return err
 	}
-	fmt.Println("next: macxvm start <name> --install --vnc, then erase the disk of")
-	fmt.Println("the machine as APFS in the Disk Utility of the guest — the installer")
-	fmt.Println("shows no target disk before that")
+	manifest := Manifest{
+		MacOS: rel.Name, Product: product, Version: rel.Name,
+		Assets: append(installerAssets, bootAssets...),
+	}
+	if err := saveManifest(assetDir, manifest); err != nil {
+		return err
+	}
+	fmt.Println("next: macxvm base bootstrap <name> --vnc")
+	fmt.Println("complete the Apple license, local account and Remote Login steps yourself")
 	return nil
 }
 
+var haveBinary = hostcheck.HaveBinary
+
 func requireTools(r hostcheck.Runner) error {
 	for _, tool := range []string{"dmg2img"} {
-		if !hostcheck.HaveBinary(tool) {
+		if !haveBinary(tool) {
 			return exitcode.New(exitcode.UnsupportedHost,
 				"the preparation of the image needs '%s' (on Fedora: sudo dnf install dmg2img)", tool)
 		}

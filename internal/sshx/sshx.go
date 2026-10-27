@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,11 +19,14 @@ import (
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/hostcheck"
 	"github.com/shadow-x78/macxvm/internal/paths"
+	"github.com/shadow-x78/macxvm/internal/runstate"
 )
 
 const DefaultTimeout = 240 * time.Second
 
 const attemptTimeout = 15 * time.Second
+
+var isRunning = runstate.IsRunning
 
 // BaseOptions are the options every SSH command of a machine carries. The
 // control path turns the connection of a machine into a socket that later
@@ -31,8 +35,10 @@ func BaseOptions(cfg *config.VMConfig) []string {
 	return []string{
 		"-i", paths.KeyPath(),
 		"-p", strconv.Itoa(cfg.SSHPort),
-		"-o", "StrictHostKeyChecking=no",
-		"-o", "UserKnownHostsFile=/dev/null",
+		"-o", "StrictHostKeyChecking=yes",
+		"-o", "UserKnownHostsFile=" + KnownHostsPath(cfg),
+		"-o", "GlobalKnownHostsFile=/dev/null",
+		"-o", "HostKeyAlias=" + HostKeyAlias(cfg),
 		"-o", "LogLevel=ERROR",
 		"-o", "ConnectTimeout=5",
 		"-o", "IdentitiesOnly=yes",
@@ -45,7 +51,15 @@ func BaseOptions(cfg *config.VMConfig) []string {
 
 // Options returns the SSH options of a machine.
 func Options(cfg *config.VMConfig) []string {
-	return BaseOptions(cfg)
+	return append(BaseOptions(cfg), "-o", "BatchMode=yes")
+}
+
+func KnownHostsPath(cfg *config.VMConfig) string {
+	return cfg.File("known_hosts")
+}
+
+func HostKeyAlias(cfg *config.VMConfig) string {
+	return "macxvm-" + cfg.ID
 }
 
 // ControlPath is the socket of the shared connection of a machine. It lives
@@ -69,6 +83,9 @@ type Session struct {
 // own connection, which keeps the behaviour of the operation unchanged.
 func Begin(cfg *config.VMConfig) *Session {
 	s := &Session{cfg: cfg}
+	if err := EnsureHostKey(cfg, os.Stderr); err != nil {
+		return s
+	}
 	if err := paths.EnsureRun(); err != nil {
 		return s
 	}
@@ -82,7 +99,9 @@ func Begin(cfg *config.VMConfig) *Session {
 		"-o", "ControlPersist=30",
 		"-o", "BatchMode=yes",
 	)
-	cmd := exec.Command("ssh", append(opts, "-f", "-n", "-N", Target(cfg))...)
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "ssh", append(opts, "-f", "-n", "-N", Target(cfg))...)
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	_ = cmd.Run()
@@ -93,7 +112,9 @@ func Begin(cfg *config.VMConfig) *Session {
 // not an error.
 func (s *Session) End() {
 	opts := append(BaseOptions(s.cfg), "-O", "exit")
-	cmd := exec.Command("ssh", append(opts, Target(s.cfg))...)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "ssh", append(opts, Target(s.cfg))...)
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	_ = cmd.Run()
@@ -103,10 +124,120 @@ func Target(cfg *config.VMConfig) string {
 	return cfg.SSHUser + "@127.0.0.1"
 }
 
+func knownHostEntry(path, alias string) bool {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	for _, line := range strings.Split(string(raw), "\n") {
+		if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) >= 3 && fields[0] == alias {
+			return true
+		}
+	}
+	return false
+}
+
 func SSHArgs(cfg *config.VMConfig, extra ...string) []string {
 	args := Options(cfg)
 	args = append(args, Target(cfg))
 	return append(args, extra...)
+}
+
+func probeOptions(cfg *config.VMConfig) []string {
+	base := BaseOptions(cfg)
+	out := make([]string, 0, len(base)+8)
+	for i := 0; i < len(base); i++ {
+		if base[i] == "-o" && i+1 < len(base) &&
+			(strings.HasPrefix(base[i+1], "ControlMaster=") || strings.HasPrefix(base[i+1], "ControlPath=")) {
+			i++
+			continue
+		}
+		out = append(out, base[i])
+	}
+	out = append(out, "-o", "ControlMaster=no", "-o", "ControlPath=none", "-o", "BatchMode=yes")
+	return out
+}
+
+func InteractiveSSHArgs(cfg *config.VMConfig, extra ...string) []string {
+	args := BaseOptions(cfg)
+	args = append(args, Target(cfg))
+	return append(args, extra...)
+}
+
+// EnsureHostKey performs local trust on first use. The fingerprint is shown
+// before the key is published; later connections use StrictHostKeyChecking=yes.
+func EnsureHostKey(cfg *config.VMConfig, output io.Writer) error {
+	path := KnownHostsPath(cfg)
+	alias := HostKeyAlias(cfg)
+	if knownHostEntry(path, alias) {
+		return nil
+	}
+	if !isRunning(cfg) {
+		return &Error{Kind: PortUnavailable, VM: cfg.Name,
+			Err: fmt.Errorf("refusing to trust an SSH endpoint while the VM is not running")}
+	}
+	if output == nil {
+		output = os.Stderr
+	}
+	if err := os.MkdirAll(cfg.Dir(), 0o700); err != nil {
+		return err
+	}
+	lock, err := runstate.LockOp(cfg.File("known_hosts.lock"))
+	if err != nil {
+		return fmt.Errorf("another SSH trust operation is running for '%s'", cfg.Name)
+	}
+	defer lock.Close()
+	if knownHostEntry(path, alias) {
+		return nil
+	}
+	if !isRunning(cfg) {
+		return &Error{Kind: PortUnavailable, VM: cfg.Name,
+			Err: fmt.Errorf("VM exited before its host key could be trusted")}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	scan := exec.CommandContext(ctx, "ssh-keyscan", "-T", "5", "-p", strconv.Itoa(cfg.SSHPort), "127.0.0.1")
+	var scanErr strings.Builder
+	scan.Stderr = &scanErr
+	keys, err := scan.Output()
+	if err != nil || len(strings.TrimSpace(string(keys))) == 0 {
+		return &Error{Kind: PortUnavailable, VM: cfg.Name,
+			Err: fmt.Errorf("no host key on 127.0.0.1:%d (%v %s)", cfg.SSHPort, err, strings.TrimSpace(scanErr.String()))}
+	}
+	trusted := strings.Builder{}
+	for _, line := range strings.Split(string(keys), "\n") {
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 3 {
+			return &Error{Kind: HostKeyMismatch, VM: cfg.Name, Err: fmt.Errorf("invalid keyscan response")}
+		}
+		trusted.WriteString(alias + " " + fields[1] + " " + fields[2] + "\n")
+	}
+	if trusted.Len() == 0 {
+		return &Error{Kind: PortUnavailable, VM: cfg.Name, Err: fmt.Errorf("keyscan returned no host key")}
+	}
+	partial := path + ".partial"
+	os.Remove(partial)
+	defer os.Remove(partial)
+	if err := os.WriteFile(partial, []byte(trusted.String()), 0o600); err != nil {
+		return err
+	}
+	fingerprint := exec.Command("ssh-keygen", "-lf", partial)
+	fp, err := fingerprint.CombinedOutput()
+	if err != nil || len(strings.TrimSpace(string(fp))) == 0 {
+		return fmt.Errorf("cannot fingerprint the host key of '%s': %v %s", cfg.Name, err, strings.TrimSpace(string(fp)))
+	}
+	fmt.Fprintf(output, "MacXVM local TOFU for '%s' (127.0.0.1:%d):\n%s\n", cfg.Name, cfg.SSHPort, strings.TrimSpace(string(fp)))
+	if err := os.Rename(partial, path); err != nil {
+		return err
+	}
+	return os.Chmod(path, 0o600)
 }
 
 func SCPArgs(cfg *config.VMConfig, src, dst string) []string {
@@ -195,6 +326,9 @@ func PublicKey() (string, error) {
 }
 
 func Run(cfg *config.VMConfig, command string, stdin io.Reader, stdout, stderr io.Writer) error {
+	if err := EnsureHostKey(cfg, stderr); err != nil {
+		return err
+	}
 	cmd := exec.Command("ssh", SSHArgs(cfg, RemoteCommand(command))...)
 	cmd.Stdin = stdin
 	cmd.Stdout = stdout
@@ -203,9 +337,19 @@ func Run(cfg *config.VMConfig, command string, stdin io.Reader, stdout, stderr i
 }
 
 func RunBounded(cfg *config.VMConfig, command string, timeout time.Duration) error {
+	if timeout <= 0 {
+		return fmt.Errorf("SSH attempt skipped because its timeout is zero")
+	}
+	if knownHostEntry(KnownHostsPath(cfg), HostKeyAlias(cfg)) {
+		if !isRunning(cfg) {
+			return fmt.Errorf("SSH endpoint is not owned by a running VM")
+		}
+	} else {
+		return fmt.Errorf("SSH trust is not established; skip shutdown SSH and use QMP")
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, "ssh", SSHArgs(cfg, RemoteCommand(command))...)
+	cmd := exec.CommandContext(ctx, "ssh", append(probeOptions(cfg), Target(cfg), RemoteCommand(command))...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
@@ -216,13 +360,24 @@ func RunBounded(cfg *config.VMConfig, command string, timeout time.Duration) err
 }
 
 func Output(cfg *config.VMConfig, command string) (string, error) {
+	if err := EnsureHostKey(cfg, os.Stderr); err != nil {
+		return "", err
+	}
 	cmd := exec.Command("ssh", SSHArgs(cfg, RemoteCommand(command))...)
-	cmd.Stderr = os.Stderr
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
 	out, err := cmd.Output()
-	return string(out), err
+	if err != nil {
+		return string(out), &Error{Kind: Classify(stderr.String() + err.Error()), VM: cfg.Name,
+			Err: fmt.Errorf("%s (%v)", strings.TrimSpace(stderr.String()), err)}
+	}
+	return string(out), nil
 }
 
 func RunScript(cfg *config.VMConfig, script string) error {
+	if err := EnsureHostKey(cfg, os.Stderr); err != nil {
+		return err
+	}
 	cmd := exec.Command("ssh", SSHArgs(cfg, "zsh -s")...)
 	cmd.Stdin = strings.NewReader(script)
 	cmd.Stdout = os.Stdout
@@ -230,23 +385,61 @@ func RunScript(cfg *config.VMConfig, script string) error {
 	return cmd.Run()
 }
 
-func WaitForSSH(cfg *config.VMConfig, timeout time.Duration) error {
+func WaitForEndpoint(cfg *config.VMConfig, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	for {
-		ctx, cancel := context.WithTimeout(context.Background(), attemptTimeout)
-		cmd := exec.CommandContext(ctx, "ssh", SSHArgs(cfg, "true")...)
-		cmd.Stdout = nil
-		cmd.Stderr = nil
-		err := cmd.Run()
-		cancel()
+		if !isRunning(cfg) {
+			return &Error{Kind: BootTimeout, VM: cfg.Name, Err: fmt.Errorf("QEMU exited before SSH port became available")}
+		}
+		conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", cfg.SSHPort), time.Second)
 		if err == nil {
+			_ = conn.Close()
 			return nil
 		}
 		if time.Now().After(deadline) {
-			return exitcode.New(exitcode.Timeout,
-				"could not reach '%s' over SSH after %d s (is Remote Login enabled? see README: First boot checklist)",
-				cfg.Name, int(timeout.Seconds()))
+			return &Error{Kind: BootTimeout, VM: cfg.Name, Err: err}
 		}
-		time.Sleep(3 * time.Second)
+		time.Sleep(time.Second)
+	}
+}
+
+func WaitForSSH(cfg *config.VMConfig, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	var last error
+	for {
+		if !isRunning(cfg) {
+			return &Error{Kind: BootTimeout, VM: cfg.Name, Err: fmt.Errorf("QEMU is not running; inspect the guest console")}
+		}
+		if err := EnsureHostKey(cfg, os.Stderr); err == nil {
+			attempt := attemptTimeout
+			if remaining := time.Until(deadline); remaining < attempt {
+				attempt = remaining
+			}
+			if attempt <= 0 {
+				return &Error{Kind: BootTimeout, VM: cfg.Name, Err: last}
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), attempt)
+			cmd := exec.CommandContext(ctx, "ssh", append(append(probeOptions(cfg), Target(cfg)), "true")...)
+			out, runErr := cmd.CombinedOutput()
+			cancel()
+			if runErr == nil {
+				if isRunning(cfg) {
+					return nil
+				}
+				return &Error{Kind: BootTimeout, VM: cfg.Name, Err: fmt.Errorf("QEMU exited during SSH readiness")}
+			}
+			text := string(out) + runErr.Error()
+			kind := Classify(text)
+			last = fmt.Errorf("%s (%v)", strings.TrimSpace(string(out)), runErr)
+			if kind == Authentication || kind == HostKeyMismatch {
+				return &Error{Kind: kind, VM: cfg.Name, Err: last}
+			}
+		} else {
+			last = err
+		}
+		if time.Now().After(deadline) {
+			return &Error{Kind: BootTimeout, VM: cfg.Name, Err: last}
+		}
+		time.Sleep(1 * time.Second)
 	}
 }

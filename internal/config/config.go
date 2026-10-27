@@ -10,13 +10,18 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 
 	"github.com/shadow-x78/macxvm/internal/names"
 	"github.com/shadow-x78/macxvm/internal/paths"
 )
 
-const SchemaVersion = 1
+const (
+	SchemaVersion = 1
+	MinRAMMiB     = 4096
+	MinDiskGiB    = 64
+)
 
 const (
 	ProfileCLI   = "cli"
@@ -24,6 +29,24 @@ const (
 )
 
 const DefaultQemuBinary = "qemu-system-x86_64"
+
+var (
+	idPattern   = regexp.MustCompile(`^[a-f0-9]{8}$`)
+	userPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_-]{0,30}$`)
+)
+
+func ValidID(id string) bool        { return idPattern.MatchString(id) }
+func ValidSSHUser(user string) bool { return userPattern.MatchString(user) }
+
+func ValidateIdentity(c *VMConfig) error {
+	if !ValidID(c.ID) {
+		return fmt.Errorf("config has an invalid VM identity")
+	}
+	if !ValidSSHUser(c.SSHUser) {
+		return fmt.Errorf("config has an invalid SSH user %q", c.SSHUser)
+	}
+	return nil
+}
 
 type VMConfig struct {
 	SchemaVersion int       `json:"schemaVersion"`
@@ -43,6 +66,8 @@ type VMConfig struct {
 	Ephemeral     bool      `json:"ephemeral,omitempty"`
 	BackingOf     string    `json:"backingOf,omitempty"`
 	MacOSVersion  string    `json:"macosVersion,omitempty"`
+	VNCDisplay    int       `json:"vncDisplay,omitempty"`
+	Readiness     string    `json:"readiness,omitempty"`
 	Shares        []Share   `json:"shares,omitempty"`
 	CreatedAt     time.Time `json:"createdAt"`
 }
@@ -62,7 +87,7 @@ func Defaults(profile string) VMConfig {
 		QemuBinary:    DefaultQemuBinary,
 	}
 	if profile == ProfileCLI {
-		c.CPUs, c.MemoryMiB, c.DiskGiB = 2, 4096, 32
+		c.CPUs, c.MemoryMiB, c.DiskGiB = 4, 8192, 64
 		return c
 	}
 	c.CPUs, c.MemoryMiB, c.DiskGiB = 4, 8192, 100
@@ -108,11 +133,17 @@ func Load(dir string) (*VMConfig, error) {
 		return nil, fmt.Errorf("config was created by a newer macxvm")
 	}
 	c.Normalize()
+	if err := ValidateIdentity(&c); err != nil {
+		return nil, fmt.Errorf("config.json of '%s': %w", dir, err)
+	}
 	return &c, nil
 }
 
 func Save(dir string, c *VMConfig) error {
 	c.Normalize()
+	if err := ValidateIdentity(c); err != nil {
+		return err
+	}
 	b, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return err
@@ -125,25 +156,37 @@ func WriteFileAtomic(path string, data []byte, perm os.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
-	tmp := path + ".tmp"
-	f, err := os.OpenFile(tmp, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, perm)
+	f, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".tmp-*")
 	if err != nil {
 		return err
 	}
+	tmp := f.Name()
+	published := false
+	defer func() {
+		if !published {
+			_ = os.Remove(tmp)
+		}
+	}()
+	if err := f.Chmod(perm); err != nil {
+		_ = f.Close()
+		return err
+	}
 	if _, err := f.Write(data); err != nil {
-		f.Close()
-		os.Remove(tmp)
+		_ = f.Close()
+		return err
+	}
+	if err := f.Sync(); err != nil {
+		_ = f.Close()
 		return err
 	}
 	if err := f.Close(); err != nil {
-		os.Remove(tmp)
 		return err
 	}
-	if err := os.Chmod(tmp, perm); err != nil {
-		os.Remove(tmp)
+	if err := os.Rename(tmp, path); err != nil {
 		return err
 	}
-	return os.Rename(tmp, path)
+	published = true
+	return nil
 }
 
 func NewID() string {

@@ -54,8 +54,9 @@ a Mac (use the Apple-hardware specification) or a rented Mac in the cloud.
 
 The guest is an x86_64 macOS. Apple supports Intel Macs up to macOS 26, so the
 macOS version and the Xcode version must be chosen together from the Xcode
-release notes. There is no GPU acceleration: the user interface and the iOS
-Simulator are software rendered. macOS system updates inside such a virtual
+release notes. The supported display is a Bochs framebuffer with the macOS
+AppleBochVGAFB driver at 1920x1080; it is 2D only, so the iOS Simulator and
+Metal apps remain software rendered. RTX passthrough is not supported by macOS. macOS system updates inside such a virtual
 machine can break booting, so MacXVM disables automatic updates and you should
 not run system updates in the guest.
 
@@ -63,8 +64,10 @@ The boot assets are yours: the machine definition, the bootloader, the firmware
 and the macOS installer image come from you, for example by following the
 documentation of the open-source projects OSX-KVM (github.com/kholia/OSX-KVM) or
 ultimate-macOS-KVM (github.com/Coopydood/ultimate-macOS-KVM). MacXVM copies
-none of their content, fetches no Apple installers and does not automate the
-macOS installation.
+none of their content into the repository. Only when you explicitly run
+macxvm image prepare does it fetch versioned assets into your state directory,
+verify their signatures or hashes, and it never accepts Apple's license or
+automates the manual macOS installation.
 
 MacXVM is an independent open-source project, not affiliated with or endorsed
 by Apple Inc. macOS, Xcode and iOS are trademarks of Apple Inc. MacXVM does not
@@ -111,6 +114,7 @@ func Run() []Check {
 	checks = append(checks, kvmAccelCheck())
 	checks = append(checks, kvmModuleCheck())
 	checks = append(checks, toolsCheck())
+	checks = append(checks, automationToolsCheck())
 	checks = append(checks, diskCheck())
 	checks = append(checks, memoryCheck())
 	checks = append(checks, vmCheck())
@@ -151,8 +155,8 @@ func kvmAccelCheck() Check {
 	case !usable:
 		return Check{name, Fail, "QEMU cannot use the accelerator of KVM"}
 	case !isDefault:
-		return Check{name, Warn,
-			"add '-accel kvm' to the args file"}
+		return Check{name, OK,
+			"KVM is available; the generated args include -accel kvm"}
 	}
 	return Check{name, OK, "QEMU uses KVM"}
 }
@@ -181,6 +185,23 @@ func toolsCheck() Check {
 		return Check{name, Fail, "not in PATH: " + strings.Join(missing, ", ")}
 	}
 	return Check{name, OK, "ssh, scp, rsync and ssh-keygen"}
+}
+
+func automationToolsCheck() Check {
+	const name = "autoinstall tools"
+	var missing []string
+	for _, tool := range []string{"tesseract", "vncdo"} {
+		if !hostcheck.HaveBinary(tool) {
+			missing = append(missing, tool)
+		}
+	}
+	if !hostcheck.HaveBinary("genisoimage") && !hostcheck.HaveBinary("mkisofs") {
+		missing = append(missing, "genisoimage/mkisofs")
+	}
+	if len(missing) > 0 {
+		return Check{name, Warn, "autoinstall needs: " + strings.Join(missing, ", ")}
+	}
+	return Check{name, OK, "tesseract, vncdo and an ISO builder"}
 }
 
 func diskCheck() Check {

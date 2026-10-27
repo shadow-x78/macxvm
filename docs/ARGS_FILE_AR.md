@@ -2,7 +2,7 @@
 
 # ملف الوسائط - MacXVM
 
-[![الإصدار](https://img.shields.io/badge/version-0.6.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.8.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -147,7 +147,7 @@ macxvm: error: args file must not contain '-monitor' (MacXVM adds it itself)
 - [OSX-KVM](https://github.com/kholia/OSX-KVM) ل kholia
 - [ultimate-macOS-KVM](https://github.com/Coopydood/ultimate-macOS-KVM) ل Coopydood
 
-‏MacXVM لا ينسخ أي محتوى منهما، ولا ينزل أي مثبت من Apple، ولا يؤتمت تثبيت macOS. لاستخدام سكربت الإقلاع الخاص بهما:
+‏MacXVM لا ينسخ أي محتوى منهما إلى المستودع. عند تشغيل `image prepare` صراحةً يجلب أصولًا مفصولة حسب الإصدار إلى مجلد حالتك ويتحقق من توقيعها/بصمتها؛ ولا يقبل ترخيص Apple ولا يؤتمت خطوات الحساب اليدوية. لاستخدام سكربت الإقلاع الخاص بهما:
 
 - ‏ اتبع دليل المشروع للحصول على صورة التثبيت والمحمل والبرنامج الثابت في مجلد تختاره. هذا المجلد هو مجلد `--assets` للجهاز.
 - ‏ افتح سكربت الإقلاع وخذ منه وسائط QEMU.
@@ -190,4 +190,4 @@ macxvm create demo \
 Created 'demo' (profile xcode, 4 CPUs, 8192 MiB RAM, 100 GiB disk, ssh 127.0.0.1:34851)
 ```
 
-سجل الجهاز الآن. يشغله `macxvm start demo --install --vnc` مع أسطر التثبيت من ملف الوسائط، ويفتح شاشة VNC لتثبيت macOS.
+سجل الجهاز الآن. `macxvm start demo --install --vnc` يشغله مع أسطر التثبيت وVNC. `macxvm base bootstrap demo --vnc` هو المسار الموجه للأساس الجديد، و`macxvm start demo --wait` للإقلاعات اللاحقة وينتظر SSH بالمفتاح لا QMP وحده.

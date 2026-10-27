@@ -172,15 +172,7 @@ func downloadAsset(client *http.Client, rawURL, token, dest string) error {
 		return exitcode.New(exitcode.Generic, "cannot download '%s': %s",
 			filepath.Base(rawURL), resp.Status)
 	}
-	out, err := os.Create(dest)
-	if err != nil {
-		return exitcode.New(exitcode.Generic, "cannot write '%s': %v", dest, err)
-	}
-	defer out.Close()
-	if _, err := io.Copy(out, resp.Body); err != nil {
-		return exitcode.New(exitcode.Generic, "cannot write '%s': %v", dest, err)
-	}
-	return nil
+	return writeDownloadAtomic(resp.Body, dest, "")
 }
 
 func verifyChunkList(chunklistPath, imagePath string) error {
@@ -204,8 +196,18 @@ func verifyChunkList(chunklistPath, imagePath string) error {
 	if chunkOffset != 0x24 {
 		return exitcode.New(exitcode.Generic, "the chunk list of Apple has an unknown layout")
 	}
-	if uint64(len(raw)) < signatureOffset+32 {
-		return exitcode.New(exitcode.Generic, "the chunk list of Apple is too short")
+	if signatureMethod != 1 {
+		return exitcode.New(exitcode.Generic, "the chunk list of Apple is not RSA-signed; unsigned or unknown signatures are rejected")
+	}
+	rawLen := uint64(len(raw))
+	if chunkOffset > signatureOffset || signatureOffset > rawLen {
+		return exitcode.New(exitcode.Generic, "the chunk list of Apple has invalid offsets")
+	}
+	if signatureOffset+256 > rawLen {
+		return exitcode.New(exitcode.Generic, "the RSA signature of the chunk list is truncated")
+	}
+	if chunkCount > (signatureOffset-chunkOffset)/36 {
+		return exitcode.New(exitcode.Generic, "the chunk list of Apple declares too many chunks")
 	}
 	digest := sha256.New()
 	digest.Write(raw[:chunkOffset])
@@ -218,6 +220,9 @@ func verifyChunkList(chunklistPath, imagePath string) error {
 
 	offset := chunkOffset
 	for i := uint64(0); i < chunkCount; i++ {
+		if offset+36 > signatureOffset || offset+36 > rawLen {
+			return exitcode.New(exitcode.Generic, "a chunk entry in the chunk list is truncated")
+		}
 		entry := raw[offset : offset+36]
 		offset += 36
 		digest.Write(entry)
@@ -233,24 +238,20 @@ func verifyChunkList(chunklistPath, imagePath string) error {
 				"the chunk %d of the image does not match the chunk list of Apple", i)
 		}
 	}
-	signature := raw[signatureOffset : signatureOffset+32]
-	if signatureMethod == 2 {
-		sum := digest.Sum(nil)
-		if string(sum) != string(signature) {
-			return exitcode.New(exitcode.Generic,
-				"the signature of the chunk list of Apple does not match")
-		}
-	} else if signatureMethod == 1 {
-		if err := verifyAppleSignature(digest.Sum(nil), raw[signatureOffset:signatureOffset+256]); err != nil {
-			return err
-		}
-	} else {
-		return exitcode.New(exitcode.Generic, "the chunk list of Apple uses an unknown signature")
+	signature := raw[signatureOffset : signatureOffset+256]
+	if err := verifyAppleSignature(digest.Sum(nil), signature); err != nil {
+		return err
 	}
 	return nil
 }
 
+var appleSignatureVerifier = verifySignatureWithAppleKey
+
 func verifyAppleSignature(digest, signature []byte) error {
+	return appleSignatureVerifier(digest, signature)
+}
+
+func verifySignatureWithAppleKey(digest, signature []byte) error {
 	return verifySignature(digest, signature, new(big.Int).SetBytes(applePublicKey))
 }
 
