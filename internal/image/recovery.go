@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"math/big"
 	"net/http"
@@ -319,8 +318,4 @@ func readRandom(buf []byte) (int, error) {
 
 func newClient() *http.Client {
 	return &http.Client{Timeout: 30 * time.Minute}
-}
-
-func formatSize(n int64) string {
-	return fmt.Sprintf("%.1f GiB", float64(n)/(1024*1024*1024))
 }

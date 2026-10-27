@@ -128,16 +128,6 @@ func KillOwned(cfg *config.VMConfig, pid int) error {
 	return Kill(pid)
 }
 
-func FreeVNCDisplay() (int, error) {
-	display, closeListener, releaseLock, err := ReserveVNCDisplay()
-	if err != nil {
-		return 0, err
-	}
-	defer releaseLock()
-	closeListener()
-	return display, nil
-}
-
 // ReserveVNCDisplay holds a loopback port and a global allocation lock. The
 // caller closes the listener immediately before QEMU starts, but keeps the
 // lock until QEMU has bound the port, so another VM cannot steal the display.

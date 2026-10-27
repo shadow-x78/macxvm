@@ -240,64 +240,6 @@ func (s *Session) FocusCenter() error {
 	return nil
 }
 
-func qcodes(r rune) ([]string, error) {
-	switch r {
-	case '\n', '\r':
-		return []string{"ret"}, nil
-	case '\t':
-		return []string{"tab"}, nil
-	case ' ':
-		return []string{"spc"}, nil
-	}
-	if r >= 'a' && r <= 'z' {
-		return []string{string(r)}, nil
-	}
-	if r >= 'A' && r <= 'Z' {
-		return []string{"shift", strings.ToLower(string(r))}, nil
-	}
-	if r >= '0' && r <= '9' {
-		return []string{string(r)}, nil
-	}
-	symbols := map[rune][]string{
-		'-':  {"minus"},
-		'=':  {"equal"},
-		'[':  {"bracket_left"},
-		']':  {"bracket_right"},
-		'\\': {"backslash"},
-		';':  {"semicolon"},
-		'\'': {"apostrophe"},
-		',':  {"comma"},
-		'.':  {"dot"},
-		'/':  {"slash"},
-		'`':  {"grave"},
-		'_':  {"shift", "minus"},
-		'+':  {"shift", "equal"},
-		'{':  {"shift", "bracket_left"},
-		'}':  {"shift", "bracket_right"},
-		'|':  {"shift", "backslash"},
-		':':  {"shift", "semicolon"},
-		'"':  {"shift", "apostrophe"},
-		'<':  {"shift", "comma"},
-		'>':  {"shift", "dot"},
-		'?':  {"shift", "slash"},
-		'~':  {"shift", "grave"},
-		'!':  {"shift", "1"},
-		'@':  {"shift", "2"},
-		'#':  {"shift", "3"},
-		'$':  {"shift", "4"},
-		'%':  {"shift", "5"},
-		'^':  {"shift", "6"},
-		'&':  {"shift", "7"},
-		'*':  {"shift", "8"},
-		'(':  {"shift", "9"},
-		')':  {"shift", "0"},
-	}
-	if keys, ok := symbols[r]; ok {
-		return keys, nil
-	}
-	return nil, fmt.Errorf("installer automation cannot type rune %q", r)
-}
-
 func trim(value string, limit int) string {
 	value = strings.Join(strings.Fields(value), " ")
 	if len(value) <= limit {

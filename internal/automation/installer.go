@@ -7,10 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
-	"regexp"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/shadow-x78/macxvm/internal/config"
@@ -159,17 +155,6 @@ func (i *Installer) eraseMatchedDisk() error {
 	}
 }
 
-func (i *Installer) command(command string) error {
-	if err := i.Session.Type(command); err != nil {
-		return err
-	}
-	if err := i.Session.Enter(); err != nil {
-		return err
-	}
-	time.Sleep(3 * time.Second)
-	return nil
-}
-
 func (i *Installer) startInstaller() error {
 	// The Recovery window must be frontmost after quitting Terminal.
 	time.Sleep(2 * time.Second)
@@ -287,78 +272,6 @@ func isInstallerScreen(screen Screen) bool {
 		}
 	}
 	return false
-}
-
-var diskBlock = regexp.MustCompile(`/dev/disk(\d+)\s+\(internal,\s*physical\)`)
-var sizeToken = regexp.MustCompile(`(?i)(\d+(?:[.,]\d+)?)\s*([KMGT]?[B8])`)
-
-// SelectDisk identifies exactly one internal physical disk whose size matches
-// the VM's configured qcow2. OCR often loses the decimal point ("68.7" becomes
-// "687") or reads GB as 6B, so the comparison accepts those variants while
-// still refusing ambiguity. It never guesses among two plausible disks.
-func SelectDisk(text string, expectedGiB int) (string, error) {
-	if expectedGiB <= 0 {
-		return "", errors.New("the VM has no valid disk size")
-	}
-	matches := diskBlock.FindAllStringSubmatchIndex(text, -1)
-	if len(matches) == 0 {
-		return "", errors.New("no internal physical disk was found")
-	}
-	expectedGB := float64(expectedGiB) * 1.073741824
-	type candidate struct {
-		disk string
-		size float64
-	}
-	var candidates []candidate
-	for idx, match := range matches {
-		start := match[0]
-		end := len(text)
-		if idx+1 < len(matches) {
-			end = matches[idx+1][0]
-		}
-		block := text[start:end]
-		for _, token := range sizeToken.FindAllStringSubmatch(block, -1) {
-			value, err := strconv.ParseFloat(strings.ReplaceAll(token[1], ",", "."), 64)
-			if err != nil {
-				continue
-			}
-			unit := strings.ToUpper(token[2])
-			switch {
-			case strings.HasPrefix(unit, "T"):
-				value *= 1024
-			case strings.HasPrefix(unit, "M"):
-				value /= 1024
-			case strings.HasPrefix(unit, "K"):
-				continue
-			}
-			if value < 10 {
-				continue
-			}
-			for _, variant := range []float64{value, value / 10, value / 100} {
-				if math.Abs(variant-expectedGB) <= expectedGB*0.25 {
-					candidates = append(candidates, candidate{disk: "/dev/disk" + text[match[2]:match[3]], size: variant})
-					break
-				}
-			}
-		}
-	}
-	unique := map[string]candidate{}
-	for _, item := range candidates {
-		unique[item.disk] = item
-	}
-	if len(unique) == 1 {
-		for _, item := range unique {
-			return item.disk, nil
-		}
-	}
-	if len(unique) == 0 {
-		return "", fmt.Errorf("no internal disk matches the expected %.1f GB", expectedGB)
-	}
-	names := make([]string, 0, len(unique))
-	for _, item := range unique {
-		names = append(names, fmt.Sprintf("%s (%.1f GB)", item.disk, item.size))
-	}
-	return "", fmt.Errorf("more than one internal disk matches; refusing to guess: %s", strings.Join(names, ", "))
 }
 
 func (i *Installer) logf(format string, args ...any) {

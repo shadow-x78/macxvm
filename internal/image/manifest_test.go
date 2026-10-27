@@ -50,10 +50,13 @@ func TestVersionedCacheAndManifestVerification(t *testing.T) {
 	}
 	writeTestManifest(t, sonoma, "sonoma")
 	writeTestManifest(t, ventura, "ventura")
-	if CachedVersion(sonoma) != "sonoma" || CachedVersion(ventura) != "ventura" {
-		t.Fatal("valid versioned cache was not reused")
+	if _, ok := validManifest(sonoma, "sonoma"); !ok {
+		t.Fatal("valid sonoma cache was not reused")
 	}
-	if err := CheckVersion(sonoma, "ventura"); err == nil {
+	if _, ok := validManifest(ventura, "ventura"); !ok {
+		t.Fatal("valid ventura cache was not reused")
+	}
+	if _, err := AssetVersion(sonoma, "ventura"); err == nil {
 		t.Fatal("asset/macOS version mismatch was accepted")
 	}
 	if err := os.WriteFile(filepath.Join(sonoma, InstallerName), []byte("tampered"), 0o600); err != nil {
@@ -62,7 +65,7 @@ func TestVersionedCacheAndManifestVerification(t *testing.T) {
 	if _, ok := validManifest(sonoma, "sonoma"); ok {
 		t.Fatal("tampered asset passed manifest verification")
 	}
-	if CachedVersion(sonoma) != "" {
+	if _, err := AssetVersion(sonoma, "sonoma"); err == nil {
 		t.Fatal("tampered cache was reported as reusable")
 	}
 }
