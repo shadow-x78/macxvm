@@ -202,7 +202,29 @@ func (s *Session) QuitTerminal() error {
 		return err
 	}
 	time.Sleep(2 * time.Second)
-	return nil
+	if s.recoveryVisible() {
+		return nil
+	}
+	_ = s.FocusCenter()
+	if err := s.Type("killall Terminal"); err != nil {
+		return err
+	}
+	if err := s.Enter(); err != nil {
+		return err
+	}
+	time.Sleep(3 * time.Second)
+	if s.recoveryVisible() {
+		return nil
+	}
+	return fmt.Errorf("Terminal is still open after quit and killall")
+}
+
+func (s *Session) recoveryVisible() bool {
+	screen, err := s.Capture()
+	if err != nil {
+		return false
+	}
+	return screen.Has("Reinstall macOS") || screen.Has("macOS Utilities")
 }
 
 func (s *Session) FocusCenter() error {
