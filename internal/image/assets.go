@@ -17,13 +17,22 @@ import (
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/hostcheck"
+	"github.com/shadow-x78/macxvm/resources"
 )
 
-const (
-	openCoreURL = "https://raw.githubusercontent.com/kholia/OSX-KVM/" + openCoreCommit + "/OpenCore/OpenCore.qcow2"
-	firmwareURL = "https://raw.githubusercontent.com/kholia/OSX-KVM/" + firmwareCommit + "/OVMF_CODE_4M.fd"
-	varsURL     = "https://raw.githubusercontent.com/kholia/OSX-KVM/" + firmwareCommit + "/OVMF_VARS-1920x1080.fd"
-)
+func bootAssetURL(key string) (string, error) {
+	for _, line := range strings.Split(resources.BootAssets, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "|", 2)
+		if len(parts) == 2 && parts[0] == key {
+			return strings.TrimSpace(parts[1]), nil
+		}
+	}
+	return "", exitcode.New(exitcode.Generic, "the pinned source of '%s' is missing", key)
+}
 
 const (
 	FirmwareName = "OVMF_CODE_4M.fd"
@@ -122,6 +131,18 @@ func convertDmg(runner hostcheck.Runner, dmg, img string) error {
 }
 
 func fetchOpenCore(opts Options) ([]AssetRecord, error) {
+	openCoreURL, err := bootAssetURL("opencore")
+	if err != nil {
+		return nil, err
+	}
+	firmwareURL, err := bootAssetURL("firmware")
+	if err != nil {
+		return nil, err
+	}
+	varsURL, err := bootAssetURL("vars")
+	if err != nil {
+		return nil, err
+	}
 	items := []struct {
 		name   string
 		url    string
@@ -251,53 +272,28 @@ func writeArgs(opts Options) error {
 	return nil
 }
 
-const (
-	CPUSkylake = "Skylake-Client,-hle,-rtm,kvm=on,vendor=GenuineIntel," +
-		"+invtsc,vmware-cpuid-freq=on,+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,check"
-	CPUHost = "host,-hypervisor,kvm=on,vendor=GenuineIntel," +
-		"+invtsc,vmware-cpuid-freq=on,+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,check"
-)
-
 func LookupCPU(name string) (string, error) {
-	switch name {
-	case "", "skylake":
-		return CPUSkylake, nil
-	case "host":
-		return CPUHost, nil
+	key := strings.ToLower(strings.TrimSpace(name))
+	if key == "" {
+		key = "skylake"
+	}
+	for _, line := range strings.Split(resources.CPUModels, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "|", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		if parts[0] == key {
+			return strings.TrimSpace(parts[1]), nil
+		}
 	}
 	return "", exitcode.New(exitcode.Usage,
 		"unknown processor model '%s' (use skylake or host)", name)
 }
 
 func argsTemplate(cpuModel string) string {
-	var b strings.Builder
-	b.WriteString("qemu-system-x86_64 \\\n")
-	b.WriteString("  -accel kvm \\\n")
-	b.WriteString("  -machine q35 \\\n")
-	b.WriteString("  -cpu " + cpuModel + " \\\n")
-	b.WriteString("  -smp {{CPUS}},cores={{CORES}},sockets=1 \\\n")
-	b.WriteString("  -m {{RAM_MIB}} \\\n")
-	b.WriteString("  -rtc base=utc,clock=host \\\n")
-	b.WriteString("  -global ICH9-LPC.acpi-pci-hotplug-with-bridge-support=off \\\n")
-	b.WriteString("  -global kvm-pit.lost_tick_policy=discard \\\n")
-	b.WriteString("  -device isa-applesmc,osk=ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc \\\n")
-	b.WriteString("  -smbios type=2 \\\n")
-	b.WriteString("  -drive if=pflash,format=raw,readonly=on,file={{ASSETS}}/" + FirmwareName + " \\\n")
-	b.WriteString("  -drive if=pflash,format=raw,file={{NVRAM}} \\\n")
-	b.WriteString("  -device ich9-intel-hda -device hda-duplex \\\n")
-	b.WriteString("  -device qemu-xhci,id=xhci \\\n")
-	b.WriteString("  -device usb-kbd,bus=xhci.0 \\\n")
-	b.WriteString("  -device usb-tablet,bus=xhci.0 \\\n")
-	b.WriteString("  -vga none \\\n")
-	b.WriteString("  -device bochs-display,vgamem=256M,xres=1920,yres=1080 \\\n")
-	b.WriteString("  -device ich9-ahci,id=sata \\\n")
-	b.WriteString("  -drive id=OpenCoreBoot,if=none,snapshot=on,format=qcow2,file={{ASSETS}}/" + OpenCoreName + " \\\n")
-	b.WriteString("  -device ide-hd,bus=sata.2,drive=OpenCoreBoot \\\n")
-	b.WriteString("#install -drive id=InstallMedia,if=none,file={{ASSETS}}/" + InstallerName + ",format=raw\n")
-	b.WriteString("#install -device ide-hd,bus=sata.3,drive=InstallMedia\n")
-	b.WriteString("  -drive id=MacHDD,if=none,file={{DISK_IMG}},format=qcow2 \\\n")
-	b.WriteString("  -device ide-hd,bus=sata.4,drive=MacHDD \\\n")
-	b.WriteString("  -netdev {{NETDEV}} \\\n")
-	b.WriteString("  -device virtio-net-pci,netdev=net0,mac={{MAC}}\n")
-	return b.String()
+	return strings.ReplaceAll(resources.ArgsTemplate, "{{CPU_MODEL}}", cpuModel)
 }

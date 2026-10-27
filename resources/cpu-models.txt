@@ -1,0 +1,8 @@
+# ─────────────────────────────────────────────
+# MacXVM - Guest CPU Models
+# https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+
+# ── Tested Models ──
+skylake|Skylake-Client,-hle,-rtm,kvm=on,vendor=GenuineIntel,+invtsc,vmware-cpuid-freq=on,+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,check
+host|host,-hypervisor,kvm=on,vendor=GenuineIntel,+invtsc,vmware-cpuid-freq=on,+ssse3,+sse4.2,+popcnt,+avx,+aes,+xsave,+xsaveopt,check

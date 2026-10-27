@@ -1,0 +1,9 @@
+# ─────────────────────────────────────────────
+# MacXVM - Pinned Boot Asset Sources
+# https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+
+# ── OSX-KVM Revisions ──
+opencore|https://raw.githubusercontent.com/kholia/OSX-KVM/086e3f938a900c6614ecbafbc1f399a866f9628b/OpenCore/OpenCore.qcow2
+firmware|https://raw.githubusercontent.com/kholia/OSX-KVM/4c378a4b5e0b219783683012bec680325eb40719/OVMF_CODE_4M.fd
+vars|https://raw.githubusercontent.com/kholia/OSX-KVM/4c378a4b5e0b219783683012bec680325eb40719/OVMF_VARS-1920x1080.fd

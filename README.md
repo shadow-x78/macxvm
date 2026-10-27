@@ -149,7 +149,7 @@ The full guide, including the state directory and the removal, is in [docs/INSTA
 ## Features
 
 - Registers, starts, stops, clones and deletes macOS guests under QEMU/KVM
-- A user-supplied args file as the machine definition: no hardcoded CPU model, no SMC keys, no SMBIOS values, no OpenCore settings, no firmware paths
+- A reviewed default args template in `resources/args-template.txt`, or your own args file, as the machine definition: the macOS-on-QEMU values are data, not Go source
 - Sealed base images with qcow2 overlays: a fresh machine costs a few hundred kilobytes and a second
 - Throwaway machines with `macxvm run`: the overlay is removed afterwards, even when the command is interrupted
 - Three slimming levels plus a separate selective `apps` engine, with a deny list that protects SSH and the network; level 3 never bulk-deletes caches, logs, mail or simulator data

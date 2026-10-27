@@ -40,7 +40,7 @@ Contributions to MacXVM are welcome. Please note that this project is released w
 ## The Rules
 
 1. **The standard library only.** `go.mod` never gets a `require` line, `CGO_ENABLED=0` is always used and the binary stays static.
-2. **No macOS on QEMU details in the code.** No CPU model, no SMC or OSK values, no SMBIOS values, no OpenCore settings, no firmware paths. They belong in the args file of the user.
+2. **No macOS on QEMU details in Go source.** No CPU model, no SMC or OSK values, no SMBIOS values, no OpenCore settings and no firmware paths in `.go` files. The reviewed defaults live as data in `resources/args-template.txt` and `resources/cpu-models.txt`; a user may supply their own args file instead.
 3. **No Apple software in the repository.** No installer images, no boot loaders, no firmware, no keys.
 4. **No placeholders.** No `TODO`, no `panic("not implemented")`, no commented out code, no fake output.
 5. **Every subprocess is an argument vector.** `os/exec` never receives a shell command, and every value that comes from the user is quoted for the remote shell.

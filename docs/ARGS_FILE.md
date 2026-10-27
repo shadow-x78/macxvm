@@ -36,7 +36,7 @@
 
 The args file is the machine definition. You write the QEMU arguments of your guest, MacXVM substitutes a few placeholders, adds the flags it needs to manage the machine and starts QEMU with the result.
 
-MacXVM knows nothing about macOS on QEMU. There is no CPU model, no SMC key, no SMBIOS value, no OpenCore setting and no firmware path anywhere in the code. If your guest needs something, you write it into the args file.
+MacXVM does not hardcode a macOS machine in Go. The reviewed default template and CPU models are data files under `resources/`, and the code only substitutes placeholders. If your guest needs something different, you write it into your own args file.
 
 The file is copied into the state directory of the machine when it is registered, and the copy is used from then on.
 

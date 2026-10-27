@@ -36,7 +36,7 @@
 
 MacXVM is a single static Go binary with no daemon. The only long-lived process is QEMU itself; MacXVM starts it, manages it over the QMP socket and exits. An idle host therefore carries no MacXVM process at all.
 
-The tool never describes a macOS machine. The machine definition lives in a user-supplied args file, MacXVM substitutes a handful of placeholders into it, appends its own management flags and starts QEMU with the result. This keeps every macOS-on-QEMU detail (CPU model, SMC keys, SMBIOS values, OpenCore settings, firmware paths) out of the code and out of the repository.
+The Go code never describes a macOS machine. The reviewed default machine definition is data in `resources/args-template.txt`, with CPU models in `resources/cpu-models.txt`; MacXVM substitutes a handful of placeholders into it, appends its own management flags and starts QEMU with the result. A user may supply a different args file. This keeps every macOS-on-QEMU detail out of the Go source and ships no Apple binary.
 
 ```mermaid
 flowchart TD
@@ -209,8 +209,8 @@ macxvm/
 ## Design Rules
 
 1. **The standard library only.** `go.mod` never gets a `require` line, `CGO_ENABLED=0` is always used and the binary stays static.
-2. **No macOS on QEMU details in the code.** No CPU model, no SMC or OSK values, no SMBIOS values, no OpenCore settings, no firmware paths.
-3. **No Apple software in the repository.** No installer images, no boot loaders, no firmware, no keys. MacXVM launches what the user provides.
+2. **No macOS on QEMU details in Go source.** The reviewed defaults are data resources, never constants in `.go` files.
+3. **No Apple software in the repository.** No installer images, no boot loaders, no firmware, no keys. MacXVM launches the reviewed template or the args file the user provides.
 4. **No placeholders.** No `TODO`, no `panic("not implemented")`, no commented out code, no fake output.
 5. **Bounded slimming.** Only selected launchd labels and allowlisted applications are touched. Services/update policy can be restored; application removal is rolled back by cloning the sealed base, never by claiming to restore user data.
 6. **Every subprocess is an argument vector.** `os/exec` never receives a shell command, and every value that comes from the user is quoted for the remote shell.

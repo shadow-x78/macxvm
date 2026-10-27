@@ -1,0 +1,44 @@
+# ─────────────────────────────────────────────
+# MacXVM - Default QEMU Arguments Template
+# https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+
+# ── Machine ──
+qemu-system-x86_64 \
+  -accel kvm \
+  -machine q35 \
+  -cpu {{CPU_MODEL}} \
+  -smp {{CPUS}},cores={{CORES}},sockets=1 \
+  -m {{RAM_MIB}} \
+  -rtc base=utc,clock=host \
+  -global ICH9-LPC.acpi-pci-hotplug-with-bridge-support=off \
+  -global kvm-pit.lost_tick_policy=discard \
+  -device isa-applesmc,osk=ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc \
+  -smbios type=2
+
+# ── Firmware ──
+  -drive if=pflash,format=raw,readonly=on,file={{ASSETS}}/OVMF_CODE_4M.fd \
+  -drive if=pflash,format=raw,file={{NVRAM}} \
+
+# ── Devices ──
+  -device ich9-intel-hda -device hda-duplex \
+  -device qemu-xhci,id=xhci \
+  -device usb-kbd,bus=xhci.0 \
+  -device usb-tablet,bus=xhci.0 \
+  -vga none \
+  -device bochs-display,vgamem=256M,xres=1920,yres=1080 \
+  -device ich9-ahci,id=sata \
+  -drive id=OpenCoreBoot,if=none,snapshot=on,format=qcow2,file={{ASSETS}}/OpenCore.qcow2 \
+  -device ide-hd,bus=sata.2,drive=OpenCoreBoot
+
+# ── Installation Media ──
+#install -drive id=InstallMedia,if=none,file={{ASSETS}}/BaseSystem.img,format=raw
+#install -device ide-hd,bus=sata.3,drive=InstallMedia
+
+# ── Storage ──
+  -drive id=MacHDD,if=none,file={{DISK_IMG}},format=qcow2 \
+  -device ide-hd,bus=sata.4,drive=MacHDD
+
+# ── Network ──
+  -netdev {{NETDEV}} \
+  -device virtio-net-pci,netdev=net0,mac={{MAC}}

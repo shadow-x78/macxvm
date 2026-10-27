@@ -20,8 +20,6 @@ const (
 	manifestName   = "manifest.json"
 	manifestSchema = 1
 	bootRevision   = "086e3f9-4c378a4"
-	openCoreCommit = "086e3f938a900c6614ecbafbc1f399a866f9628b"
-	firmwareCommit = "4c378a4b5e0b219783683012bec680325eb40719"
 	openCoreSHA256 = "719837249bd479ffe644f80c64169966115bde69e8f5360fa68d23b169ccb3ac"
 	firmwareSHA256 = "7decd7fa9965e7f943a1f79d1d05ce6d881540d625cc2a9641a57f89721b4577"
 	varsSHA256     = "6ed987af3a3c155be71665f510eae3e007eda9b8b94afd59d45e91c4a11565cc"

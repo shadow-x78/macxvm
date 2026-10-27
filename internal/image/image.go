@@ -39,6 +39,18 @@ func Links(version string) ([]Link, error) {
 	if err != nil {
 		return nil, err
 	}
+	openCoreURL, err := bootAssetURL("opencore")
+	if err != nil {
+		return nil, err
+	}
+	firmwareURL, err := bootAssetURL("firmware")
+	if err != nil {
+		return nil, err
+	}
+	varsURL, err := bootAssetURL("vars")
+	if err != nil {
+		return nil, err
+	}
 	return []Link{
 		{
 			What: "the installer of macOS, about 916 MiB",
