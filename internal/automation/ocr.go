@@ -133,7 +133,11 @@ func (s Screen) Find(phrase string) (Rect, bool) {
 	}
 	for _, word := range s.Words {
 		if strings.Contains(normalize(word.Text), want) {
-			consider(Rect{X: word.X, Y: word.Y, W: word.W, H: word.H})
+			rect := Rect{X: word.X, Y: word.Y, W: word.W, H: word.H}
+			if !strings.Contains(want, " ") && s.Height > 0 && rect.Y <= s.Height/12 {
+				return rect, true
+			}
+			consider(rect)
 		}
 	}
 	return best, found
