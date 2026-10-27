@@ -93,11 +93,6 @@ func cmdStart(args []string) error {
 	return nil
 }
 
-// InstallChecklist prints the steps of the installation inside the guest.
-// The empty disk of the machine carries no APFS volume yet, so the installer
-// and the Startup Disk panel show nothing to install onto until it is erased
-// as APFS from Disk Utility. Without this hint that behaviour reads as a
-// missing disk.
 func InstallChecklist(w io.Writer, vnc bool) {
 	rows := [][2]string{
 		{"1", "in the OpenCore picker, boot macOS Base System"},

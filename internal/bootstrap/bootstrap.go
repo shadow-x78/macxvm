@@ -147,9 +147,6 @@ func InstallKey(cfg *config.VMConfig, password []byte) error {
 	return nil
 }
 
-// newAskpassCommand supplies a password through a private Unix socket, not
-// argv, environment, config or a persistent file. SSH_ASKPASS is forced so the
-// fallback works on hosts without sshpass and without a terminal.
 func newAskpassCommand(cfg *config.VMConfig, args []string, password []byte) (*exec.Cmd, func(), error) {
 	dir, err := os.MkdirTemp(cfg.Dir(), "askpass-")
 	if err != nil {

@@ -63,19 +63,15 @@ func enabled() bool {
 
 const Content = 66
 
-// Section prints a dim uppercase header, the way the reference CLIs label
-// a group of lines. Nothing frames the content: the text carries itself.
 func Section(w io.Writer, title string) {
 	fmt.Fprintf(w, "%s%s%s%s\n", Dim, Bold, strings.ToUpper(title), Reset)
 }
 
-// Line renders one aligned key-value row: the key bold, the value plain.
 func Line(key, value string) string {
 	return fmt.Sprintf("%s%s%-*s%s  %s%s%s", Bold, Text, keyWidth(key, value), key,
 		Reset, Subtext, value, Reset)
 }
 
-// Lines renders aligned key-value rows and wraps the values that are long.
 func Lines(rows [][2]string) []string {
 	keyCol := 0
 	for _, row := range rows {
@@ -102,8 +98,6 @@ func Lines(rows [][2]string) []string {
 	return out
 }
 
-// Table renders an aligned table: a dim header row and the rows under it.
-// cells may already carry colour; alignment uses the visible width only.
 func Table(w io.Writer, headers []string, rows [][]string) {
 	if len(headers) == 0 {
 		return
@@ -228,9 +222,6 @@ func Blank(w io.Writer) {
 	fmt.Fprintln(w)
 }
 
-// Ok, Warn and Fail return the status badge of a line. The coloured badges are
-// one symbol; the plain ones spell the state and are all six columns wide, so
-// reports line up with and without colours.
 func Ok() string {
 	if Enabled() {
 		return Green + "✔" + Reset

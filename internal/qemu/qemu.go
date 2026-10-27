@@ -119,8 +119,6 @@ func Kill(pid int) error {
 	return syscall.Kill(pid, syscall.SIGKILL)
 }
 
-// KillOwned signals a process only while its exact MacXVM marker still
-// identifies it as the QEMU process of cfg, never a reused PID.
 func KillOwned(cfg *config.VMConfig, pid int) error {
 	if pid <= 0 || !runstate.Alive(runstate.ProcRoot(), pid, cfg.ID) {
 		return nil
@@ -128,9 +126,6 @@ func KillOwned(cfg *config.VMConfig, pid int) error {
 	return Kill(pid)
 }
 
-// ReserveVNCDisplay holds a loopback port and a global allocation lock. The
-// caller closes the listener immediately before QEMU starts, but keeps the
-// lock until QEMU has bound the port, so another VM cannot steal the display.
 func ReserveVNCDisplay() (int, func(), func(), error) {
 	if err := paths.EnsureRun(); err != nil {
 		return 0, func() {}, func() {}, err

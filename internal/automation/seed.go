@@ -52,8 +52,6 @@ fi
 `, expected, low, high)
 }
 
-// WriteSeed builds a small ISO with setup.sh. The guest mounts it read-only,
-// so no arbitrary host file is shared and the script is fixed by the tool.
 func WriteSeed(path string, diskGiB int) error {
 	if diskGiB <= 0 {
 		return fmt.Errorf("invalid disk size")

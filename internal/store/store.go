@@ -80,8 +80,6 @@ func Save(cfg *config.VMConfig) error {
 	return config.Save(cfg.Dir(), cfg)
 }
 
-// LockedCurrent reloads the VM while its caller owns op.lock and rejects a
-// snapshot whose VM was replaced or whose identity changed.
 func LockedCurrent(cfg *config.VMConfig) (*config.VMConfig, error) {
 	current, err := Load(cfg.Name)
 	if err != nil {

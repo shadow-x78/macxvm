@@ -156,7 +156,6 @@ func (i *Installer) eraseMatchedDisk() error {
 }
 
 func (i *Installer) startInstaller() error {
-	// The Recovery window must be frontmost after quitting Terminal.
 	time.Sleep(2 * time.Second)
 	if err := i.Session.DoubleClickPhrase("Reinstall macOS"); err != nil {
 		return err
@@ -278,7 +277,6 @@ func (i *Installer) logf(format string, args ...any) {
 	fmt.Fprintf(i.Log, "macxvm autoinstall: "+format+"\n", args...)
 }
 
-// Resume continues after the disk was erased. It never erases again.
 func (i *Installer) Resume() error {
 	if i.Session == nil || i.VM == nil {
 		return errors.New("installer automation is not configured")
