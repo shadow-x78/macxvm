@@ -139,6 +139,7 @@ func (i *Installer) eraseMatchedDisk() error {
 	}
 	_, screen, err := i.Session.WaitFor([]string{
 		"RESULT 777", "RESULT 111", "RESULT 222", "RESULT 333",
+		"No such file", "not found",
 	}, 3*time.Minute)
 	if err != nil {
 		return fmt.Errorf("disk erase did not report a result: %w", err)
@@ -147,6 +148,8 @@ func (i *Installer) eraseMatchedDisk() error {
 	case screen.Has("RESULT 777"):
 		i.logf("internal disk erased and formatted APFS")
 		return nil
+	case seedMissing(screen):
+		return fmt.Errorf("installer seed is not mounted at %s", SeedScript)
 	case screen.Has("RESULT 222"):
 		return fmt.Errorf("no internal disk matches the expected %d GiB; nothing was erased", i.VM.DiskGiB)
 	case screen.Has("RESULT 333"):
@@ -410,6 +413,10 @@ func (i *Installer) Resume() error {
 		}
 		time.Sleep(3 * time.Second)
 	}
+}
+
+func seedMissing(screen Screen) bool {
+	return screen.Has("No such file") || screen.Has("not found")
 }
 
 func recoveryVisible(screen Screen) bool {

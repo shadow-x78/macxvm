@@ -188,3 +188,14 @@ func TestResumeHelpers(t *testing.T) {
 		t.Fatal("Setup Assistant was mistaken for installation progress")
 	}
 }
+
+func TestSeedMissingDetection(t *testing.T) {
+	missing := Screen{Words: []Word{{Text: "No", X: 1, Y: 1}, {Text: "such", X: 2, Y: 1}, {Text: "file", X: 3, Y: 1}}}
+	if !seedMissing(missing) {
+		t.Fatal("missing seed was not detected")
+	}
+	ok := Screen{Words: []Word{{Text: "RESULT", X: 1, Y: 1}, {Text: "777", X: 2, Y: 1}}}
+	if seedMissing(ok) {
+		t.Fatal("a successful erase was treated as a missing seed")
+	}
+}
