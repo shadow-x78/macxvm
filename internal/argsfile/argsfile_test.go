@@ -211,6 +211,25 @@ func TestValidateForbiddenFlags(t *testing.T) {
 	}
 }
 
+func TestValidateForbiddenDoubleDashFlags(t *testing.T) {
+	for _, flag := range ForbiddenFlags {
+		spelling := "-" + flag
+		err := Validate([][]string{{spelling}})
+		if err == nil {
+			t.Errorf("Validate(%q) = nil error, want an error", spelling)
+			continue
+		}
+		want := "args file must not contain '" + spelling + "' (MacXVM adds it itself)"
+		if err.Error() != want {
+			t.Errorf("Validate(%q) = %q, want %q", spelling, err.Error(), want)
+		}
+	}
+	err := Validate([][]string{{"--display=none"}})
+	if err == nil {
+		t.Fatal("Validate(--display=none) = nil error, want an error")
+	}
+}
+
 func TestValidateRequiredPlaceholders(t *testing.T) {
 	full := [][]string{{"{{DISK_IMG}}", "{{NETDEV}}", "{{MAC}}", "{{RAM_MIB}}", "{{CPUS}}"}}
 	if err := Validate(full); err != nil {
