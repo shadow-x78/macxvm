@@ -17,7 +17,7 @@ var Groups = []struct {
 	Title    string
 	Commands []string
 }{
-	{"Machines", []string{"create", "list", "status", "start", "stop", "open", "resize", "autoinstall", "finish", "optimize", "gpu", "delete", "clone", "compact", "base", "prune"}},
+	{"Machines", []string{"create", "list", "status", "start", "stop", "open", "resize", "autoinstall", "finish", "optimize", "accel", "gpu", "delete", "clone", "compact", "base", "prune"}},
 	{"Boot assets", []string{"image"}},
 	{"Guests", []string{"ssh", "ssh-key", "exec", "cp", "share", "slim", "apps", "tools", "xcode"}},
 	{"Projects", []string{"init", "up", "down", "build", "run"}},

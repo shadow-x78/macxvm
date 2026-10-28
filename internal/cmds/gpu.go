@@ -16,6 +16,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/argsfile"
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
+	"github.com/shadow-x78/macxvm/internal/hostcheck"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/sshx"
 	"github.com/shadow-x78/macxvm/internal/store"
@@ -26,6 +27,8 @@ type hostGPU struct {
 	IOMMUGroups  int      `json:"iommuGroups"`
 	IOMMUCommand string   `json:"iommuKernelCommandLine,omitempty"`
 	NvidiaLoaded bool     `json:"nvidiaDriverLoaded"`
+	VFIOLoaded   bool     `json:"vfioLoaded"`
+	Display      []string `json:"displayDevices,omitempty"`
 }
 
 type guestGPU struct {
@@ -42,16 +45,23 @@ type guestGPU struct {
 }
 
 type gpuReport struct {
-	Host           hostGPU  `json:"host"`
-	Guest          guestGPU `json:"guest"`
-	Recommendation string   `json:"recommendation"`
+	Host           hostGPU          `json:"host"`
+	Guest          guestGPU         `json:"guest"`
+	Passthrough    *passthroughInfo `json:"passthrough,omitempty"`
+	Recommendation string           `json:"recommendation"`
+}
+
+type passthroughInfo struct {
+	Ready   bool     `json:"ready"`
+	Reasons []string `json:"reasons,omitempty"`
+	Lines   []string `json:"lines"`
 }
 
 func init() {
 	register(Command{
 		Name:    "gpu",
 		Group:   "Machines",
-		Usage:   "macxvm gpu NAME [--json]",
+		Usage:   "macxvm gpu NAME [--json] [--passthrough] [--enable-iommu] [--bind-vfio ADDR]",
 		Summary: "report host and guest display support, including the real macOS kext",
 		Run:     cmdGPU,
 	})
@@ -67,6 +77,9 @@ func init() {
 func cmdGPU(args []string) error {
 	fs := newFlagSet("gpu")
 	asJSON := fs.Bool("json", false, "print JSON")
+	passthrough := fs.Bool("passthrough", false, "report whether a display device can be passed through")
+	enableIOMMU := fs.Bool("enable-iommu", false, "enable VT-d in the kernel command line (needs sudo and a reboot)")
+	bindVFIO := fs.String("bind-vfio", "", "bind a PCI address to vfio-pci (needs sudo)")
 	positional, flagArgs := SplitArgs(fs, args)
 	if err := parseFlags("gpu", fs, flagArgs); err != nil {
 		return err
@@ -79,7 +92,16 @@ func cmdGPU(args []string) error {
 	if err != nil {
 		return err
 	}
+	if *enableIOMMU {
+		return enableIOMMUOnHost()
+	}
+	if *bindVFIO != "" {
+		return bindDeviceToVFIO(*bindVFIO)
+	}
 	report := inspectGPU(cfg)
+	if *passthrough {
+		report.Passthrough = passthroughReport(report.Host)
+	}
 	if *asJSON {
 		raw, err := json.MarshalIndent(report, "", "  ")
 		if err != nil {
@@ -97,6 +119,10 @@ func cmdGPU(args []string) error {
 		fmt.Printf("  IOMMU kernel command line: %s\n", report.Host.IOMMUCommand)
 	}
 	fmt.Printf("  NVIDIA driver loaded: %v\n", report.Host.NvidiaLoaded)
+	fmt.Printf("  vfio-pci available: %v\n", report.Host.VFIOLoaded)
+	for _, line := range report.Host.Display {
+		fmt.Printf("  %s\n", line)
+	}
 	fmt.Println("\nGUEST DISPLAY")
 	if !report.Guest.Running {
 		fmt.Println("  guest is not running; start it to inspect macOS kexts")
@@ -111,6 +137,12 @@ func cmdGPU(args []string) error {
 			fmt.Printf("  vCPUs: %d\n", report.Guest.CPUs)
 		}
 	}
+	if report.Passthrough != nil {
+		fmt.Println("\nPASSTHROUGH")
+		for _, line := range report.Passthrough.Lines {
+			fmt.Printf("  %s\n", line)
+		}
+	}
 	fmt.Printf("\n%s\n", report.Recommendation)
 	return nil
 }
@@ -122,6 +154,14 @@ func inspectGPU(cfg *config.VMConfig) gpuReport {
 	}
 	if _, err := os.Stat("/sys/module/nvidia"); err == nil {
 		report.Host.NvidiaLoaded = true
+	}
+	report.Host.VFIOLoaded = hostcheck.VFIOAvailable()
+	for _, device := range hostcheck.DisplayDevices() {
+		line := fmt.Sprintf("%s %s:%s driver=%s", device.Address, device.Vendor, device.Device, device.Driver)
+		if hostcheck.VFIOBound(device.Address) {
+			line += " (bound to vfio-pci)"
+		}
+		report.Host.Display = append(report.Host.Display, line)
 	}
 	report.Guest = guestGPU{Running: runstate.IsRunning(cfg), Acceleration: "software (no GPU passthrough)"}
 	if raw, err := os.ReadFile(cfg.File("args.txt")); err == nil {
@@ -149,34 +189,131 @@ func inspectGPU(cfg *config.VMConfig) gpuReport {
 	case configuredBochs:
 		report.Recommendation = "Bochs is configured but the guest has not reported AppleBochVGAFB yet; inspect the guest after login."
 	case report.Host.IOMMUGroups == 0 || !report.Host.NvidiaLoaded:
-		report.Recommendation = "RTX passthrough is unavailable: IOMMU/VFIO is not enabled, and macOS has no driver for the RTX 5060. Use 'macxvm optimize NAME' for the AppleBochVGAFB path."
+		report.Recommendation = "RTX passthrough is unavailable: the kernel has no IOMMU group (run 'macxvm gpu NAME --enable-iommu' and reboot), and macOS has no driver for any NVIDIA GeForce card. Use 'macxvm accel NAME' for the native accelerators and 'macxvm optimize NAME' for the AppleBochVGAFB path."
 	default:
-		report.Recommendation = "Run 'macxvm optimize NAME' while the VM is stopped to load AppleBochVGAFB. RTX 5060 passthrough is not a macOS-supported path."
+		report.Recommendation = "Run 'macxvm optimize NAME' while the VM is stopped to load AppleBochVGAFB, and 'macxvm accel NAME' for the native accelerators. RTX passthrough is not a macOS-supported path: the guest has no driver for it."
 	}
 	return report
 }
 
 func hostGPUDisplayLines() []string {
-	out, err := exec.Command("lspci", "-nnk").Output()
-	if err != nil {
-		return []string{"lspci unavailable"}
+	lines := hostcheck.LspciDisplayLines()
+	if len(lines) == 0 {
+		return []string{"no PCI display device found"}
 	}
-	lines := strings.Split(string(out), "\n")
-	var result []string
-	for i, line := range lines {
-		lower := strings.ToLower(line)
-		if !strings.Contains(lower, "vga compatible") && !strings.Contains(lower, "3d controller") && !strings.Contains(lower, "display controller") {
-			continue
+	return lines
+}
+
+// passthroughReport explains whether the host can hand a display device to
+// a guest and what still stands in the way.
+func passthroughReport(host hostGPU) *passthroughInfo {
+	info := &passthroughInfo{}
+	info.Lines = append(info.Lines,
+		fmt.Sprintf("IOMMU groups: %d", host.IOMMUGroups),
+		fmt.Sprintf("vfio-pci available: %v", host.VFIOLoaded),
+	)
+	for _, line := range host.Display {
+		info.Lines = append(info.Lines, line)
+	}
+	if host.IOMMUGroups == 0 {
+		info.Reasons = append(info.Reasons,
+			"the kernel exposes no IOMMU group, run 'macxvm gpu NAME --enable-iommu' and reboot")
+	}
+	if !host.VFIOLoaded {
+		info.Reasons = append(info.Reasons, "the vfio-pci module is not loaded, run 'sudo modprobe vfio-pci'")
+	}
+	if len(host.Display) == 0 {
+		info.Reasons = append(info.Reasons, "the host has no PCI display device")
+	}
+	info.Ready = len(info.Reasons) == 0
+	if info.Ready {
+		info.Lines = append(info.Lines,
+			"the host is ready for 'macxvm gpu NAME --bind-vfio ADDRESS'")
+	}
+	info.Lines = append(info.Lines,
+		"macOS has no driver for the NVIDIA GeForce RTX 5060, so a passed through card stays unused by the guest")
+	return info
+}
+
+// enableIOMMUOnHost turns on the IOMMU of the processor in the kernel
+// command line. The change needs a reboot to take effect.
+func enableIOMMUOnHost() error {
+	flags := hostcheck.IOMMUFlags()
+	if hostcheck.IOMMUEnabled() {
+		fmt.Printf("the IOMMU is already enabled (%d groups)\n", hostcheck.IOMMUGroups())
+		return nil
+	}
+	if !hostcheck.HaveBinary("grubby") {
+		return exitcode.New(exitcode.UnsupportedHost,
+			"grubby is not installed; add '%s' to GRUB_CMDLINE_LINUX in /etc/default/grub and reboot", flags)
+	}
+	cmd := exec.Command("sudo", "grubby", "--update-kernel=ALL", "--args="+flags)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return exitcode.New(exitcode.Generic,
+			"cannot update the kernel command line: %v", err)
+	}
+	fmt.Printf("added '%s' to every kernel entry\n", flags)
+	fmt.Println("reboot the host, then run 'macxvm doctor' to verify the IOMMU groups")
+	return nil
+}
+
+// bindDeviceToVFIO hands a PCI device to vfio-pci so that QEMU can pass
+// it through to a guest.
+func bindDeviceToVFIO(address string) error {
+	if !hostcheck.IOMMUEnabled() {
+		return exitcode.New(exitcode.UnsupportedHost,
+			"the host has no IOMMU group; run 'macxvm gpu NAME --enable-iommu' and reboot first")
+	}
+	devices := hostcheck.PCIDevices()
+	found := false
+	for _, device := range devices {
+		if device.Address == address {
+			found = true
+			break
 		}
-		result = append(result, strings.TrimSpace(line))
-		if i+1 < len(lines) && strings.Contains(lines[i+1], "Kernel driver in use:") {
-			result = append(result, strings.TrimSpace(lines[i+1]))
+	}
+	if !found {
+		return exitcode.New(exitcode.NotFound, "the host has no PCI device at %s", address)
+	}
+	if hostcheck.VFIOBound(address) {
+		fmt.Printf("%s is already bound to vfio-pci\n", address)
+		return nil
+	}
+	displays := hostcheck.DisplayDevices()
+	if len(displays) == 1 && displays[0].Address == address {
+		return exitcode.New(exitcode.Generic,
+			"%s is the only display device of the host; binding it to vfio-pci removes the desktop of the host", address)
+	}
+	steps := [][]string{
+		{"modprobe", "vfio-pci"},
+		{"modprobe", "-r", "nvidia", "nvidia_modeset", "nvidia_uvm", "nvidia_drm"},
+		{"sh", "-c", "echo " + address + " > /sys/bus/pci/drivers/" + hostcheck.DriverOf(address) + "/unbind"},
+		{"sh", "-c", "echo " + address + " > /sys/bus/pci/drivers/vfio-pci/bind"},
+	}
+	for _, step := range steps {
+		if err := runRoot(step...); err != nil {
+			return exitcode.New(exitcode.Generic, "%s failed: %v", strings.Join(step, " "), err)
 		}
 	}
-	if len(result) == 0 {
-		result = append(result, "no PCI display device found")
+	fmt.Printf("%s is bound to vfio-pci\n", address)
+	fmt.Println("add '-device vfio-pci,host=" + address + "' to the args file of the machine")
+	return nil
+}
+
+// runRoot runs a command with the privileges of the administrator. The
+// terminal stays attached, so sudo can ask for the password.
+func runRoot(args ...string) error {
+	cmd := exec.Command("sudo", args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%s: %w", strings.Join(args, " "), err)
 	}
-	return result
+	return nil
 }
 
 func iommuCmdline() string {
