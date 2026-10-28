@@ -1,6 +1,8 @@
 #!/bin/sh
+# ─────────────────────────────────────────────
 # MacXVM - Guest Screenshot (MIT)
 # https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
 
 set -eu
 
