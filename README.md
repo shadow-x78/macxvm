@@ -66,7 +66,7 @@ Run slim macOS guests with Xcode on a Linux host.
 
 MacXVM turns a Linux machine into a build farm for macOS. It registers macOS guests, starts them under QEMU/KVM, trims them down so that they idle quietly, installs Xcode inside them and builds your projects from Linux with `rsync` and `ssh`.
 
-The tool is a single static binary of about 7.6 MB with no daemon. QEMU itself is the only long-lived process, so an idle host carries nothing at all.
+The tool is a single static binary of about 7.8 MB with no daemon. QEMU itself is the only long-lived process, so an idle host carries nothing at all.
 
 ```
 macxvm image prepare macos --profile cli
@@ -142,7 +142,7 @@ make build
 make install          # installs ~/.local/bin/macxvm
 ```
 
-The binary is about 4 MB, static and built for `linux/amd64`. It needs no daemon and no service.
+The binary is about 7.8 MB, static and built for `linux/amd64`. It needs no daemon and no service.
 The full guide, including the state directory and the removal, is in [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 <a id="features"></a>
@@ -157,7 +157,7 @@ The full guide, including the state directory and the removal, is in [docs/INSTA
 - `xcodebuild` and `swift build` on a remote guest, with the derived data kept between the builds
 - A project file that holds the defaults of a build, a machine and a base image
 - Headless by default, a VNC display on the loopback interface when you need to see the screen
-- One static binary of about 4 MB, the Go standard library only, no third-party modules, no daemon, no background process
+- One static binary of about 7.8 MB, the Go standard library only, no third-party modules, no daemon, no background process
 
 <a id="args-file"></a>
 ## The Args File
@@ -502,7 +502,7 @@ Exit codes: `0` success, `1` error, `2` usage, `3` not found, `4` already runnin
 | Operation | Target | Measured on the reference host |
 |-----------|--------|--------------------------------|
 | `list`, `status` | < 100 ms | 3 ms |
-| Release binary | < 8 MB | 8,032,416 bytes, static `linux/amd64` v0.9.0 |
+| Release binary | < 10 MB | 8,196,256 bytes, static `linux/amd64`, the v0.10.0 cycle |
 | Overlay clone of a sealed base | < 1 s | < 1 s, a few hundred KiB on disk |
 | Idle cost on the host | none | no process of MacXVM stays alive |
 

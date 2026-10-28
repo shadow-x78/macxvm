@@ -40,6 +40,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   plugin `AppleParavirtGPUMetal`, and that the absence of a virtio GPU driver
   is proven by the missing virtio device type `0x10` in `AppleVirtIO.kext`.
 
+### Fixed
+- `macxvm gpu NAME --bind-vfio ADDRESS` no longer fails on a host that has no
+  NVIDIA module loaded. The removal of the modules of the driver of the card
+  is best effort, the unbind and the bind keep failing hard, and the driver
+  comes from the host, so a card of another vendor is handled too.
+- The unbind step reports that the device has no driver, instead of writing
+  into the empty path `/sys/bus/pci/drivers//unbind`.
+- The JSON of `macxvm accel NAME --json` uses lower case keys, like every
+  other JSON output of the tool.
+- The validator of an args file rejects the forbidden flags with one dash and
+  with two dashes, so `--display` cannot pass a check that rejects `-display`.
+
+### Audit
+- The doc comments and the inline comments of the seven files that the
+  acceleration cycle added are removed, so every code file carries only the
+  credit banner of the project, as the decision A50 asks.
+- The dead `KindOther` constant and the dead `&& false` of the VFIO check are
+  removed.
+- `resources/args-template.txt` carries the header block of the project, like
+  every other data file.
+- The size gate of the CI moves from 8 MiB to 10 MiB, and the documented size
+  of the binary follows it.
+
 ## [v0.9.0] - 2026-10-27
 
 This release supersedes the unreleased v0.8.0 milestone and is the first tagged
