@@ -26,27 +26,26 @@ const (
 	KindVirtio   Kind = "virtio"
 	KindAudio    Kind = "audio"
 	KindPassthru Kind = "passthrough"
-	KindOther    Kind = "other"
 )
 
 // Device is one virtual device that the machine exposes to the guest.
 type Device struct {
-	Kind   Kind
-	Name   string
-	Detail string
-	Driver string
-	Native bool
-	System bool
-	Line   int
+	Kind   Kind   `json:"kind"`
+	Name   string `json:"name"`
+	Detail string `json:"detail"`
+	Driver string `json:"driver"`
+	Native bool   `json:"native"`
+	System bool   `json:"system"`
+	Line   int    `json:"line"`
 	spec   string
 }
 
 // Finding is one recommendation of the analysis.
 type Finding struct {
-	Title  string
-	Detail string
-	Action string
-	State  string
+	Title  string `json:"title"`
+	Detail string `json:"detail"`
+	Action string `json:"action"`
+	State  string `json:"state"`
 }
 
 // States of a finding.

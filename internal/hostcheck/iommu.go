@@ -80,7 +80,7 @@ func VFIOAvailable() bool {
 	if _, err := os.Stat(filepath.Join(sysModules, "vfio")); err == nil {
 		return true
 	}
-	return HaveBinary("vfio-pci") && false
+	return false
 }
 
 // VFIOBound reports whether the device at the PCI address is bound to

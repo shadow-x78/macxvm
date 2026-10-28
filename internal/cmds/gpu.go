@@ -287,16 +287,24 @@ func bindDeviceToVFIO(address string) error {
 		return exitcode.New(exitcode.Generic,
 			"%s is the only display device of the host; binding it to vfio-pci removes the desktop of the host", address)
 	}
-	steps := [][]string{
-		{"modprobe", "vfio-pci"},
-		{"modprobe", "-r", "nvidia", "nvidia_modeset", "nvidia_uvm", "nvidia_drm"},
-		{"sh", "-c", "echo " + address + " > /sys/bus/pci/drivers/" + hostcheck.DriverOf(address) + "/unbind"},
-		{"sh", "-c", "echo " + address + " > /sys/bus/pci/drivers/vfio-pci/bind"},
+	driver := hostcheck.DriverOf(address)
+	if err := runRoot("modprobe", "vfio-pci"); err != nil {
+		return exitcode.New(exitcode.Generic, "modprobe vfio-pci failed: %v", err)
 	}
-	for _, step := range steps {
-		if err := runRoot(step...); err != nil {
-			return exitcode.New(exitcode.Generic, "%s failed: %v", strings.Join(step, " "), err)
+	if driver != "" {
+		if err := runRoot("modprobe", "-r", driver); err != nil {
+			fmt.Printf("the modules of %s stay loaded: %v\n", driver, err)
 		}
+		unbind := "echo " + address + " > /sys/bus/pci/drivers/" + driver + "/unbind"
+		if err := runRoot("sh", "-c", unbind); err != nil {
+			return exitcode.New(exitcode.Generic, "cannot unbind %s from %s: %v", address, driver, err)
+		}
+	} else {
+		fmt.Printf("%s has no driver, the unbind is skipped\n", address)
+	}
+	bind := "echo " + address + " > /sys/bus/pci/drivers/vfio-pci/bind"
+	if err := runRoot("sh", "-c", bind); err != nil {
+		return exitcode.New(exitcode.Generic, "cannot bind %s to vfio-pci: %v", address, err)
 	}
 	fmt.Printf("%s is bound to vfio-pci\n", address)
 	fmt.Println("add '-device vfio-pci,host=" + address + "' to the args file of the machine")
