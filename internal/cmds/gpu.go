@@ -204,8 +204,6 @@ func hostGPUDisplayLines() []string {
 	return lines
 }
 
-// passthroughReport explains whether the host can hand a display device to
-// a guest and what still stands in the way.
 func passthroughReport(host hostGPU) *passthroughInfo {
 	info := &passthroughInfo{}
 	info.Lines = append(info.Lines,
@@ -235,8 +233,6 @@ func passthroughReport(host hostGPU) *passthroughInfo {
 	return info
 }
 
-// enableIOMMUOnHost turns on the IOMMU of the processor in the kernel
-// command line. The change needs a reboot to take effect.
 func enableIOMMUOnHost() error {
 	flags := hostcheck.IOMMUFlags()
 	if hostcheck.IOMMUEnabled() {
@@ -260,8 +256,6 @@ func enableIOMMUOnHost() error {
 	return nil
 }
 
-// bindDeviceToVFIO hands a PCI device to vfio-pci so that QEMU can pass
-// it through to a guest.
 func bindDeviceToVFIO(address string) error {
 	if !hostcheck.IOMMUEnabled() {
 		return exitcode.New(exitcode.UnsupportedHost,
@@ -311,8 +305,6 @@ func bindDeviceToVFIO(address string) error {
 	return nil
 }
 
-// runRoot runs a command with the privileges of the administrator. The
-// terminal stays attached, so sudo can ask for the password.
 func runRoot(args ...string) error {
 	cmd := exec.Command("sudo", args...)
 	cmd.Stdin = os.Stdin

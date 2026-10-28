@@ -1,10 +1,6 @@
 // MacXVM - Native Acceleration Analysis (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package accel compares the devices of a virtual machine with the
-// devices that macOS can drive natively. The comparison comes from the
-// IOKit personalities that the guest itself exposes, so it is evidence
-// and not guesswork.
 package accel
 
 import (
@@ -16,7 +12,6 @@ import (
 	"github.com/shadow-x78/macxvm/internal/kextmap"
 )
 
-// Kind groups the devices that MacXVM reports.
 type Kind string
 
 const (
@@ -28,7 +23,6 @@ const (
 	KindPassthru Kind = "passthrough"
 )
 
-// Device is one virtual device that the machine exposes to the guest.
 type Device struct {
 	Kind   Kind   `json:"kind"`
 	Name   string `json:"name"`
@@ -40,7 +34,6 @@ type Device struct {
 	spec   string
 }
 
-// Finding is one recommendation of the analysis.
 type Finding struct {
 	Title  string `json:"title"`
 	Detail string `json:"detail"`
@@ -48,27 +41,23 @@ type Finding struct {
 	State  string `json:"state"`
 }
 
-// States of a finding.
 const (
 	StateGain = "gain"
 	StateOK   = "ok"
 	StateGap  = "gap"
 )
 
-// Report is the result of the analysis.
 type Report struct {
 	Devices  []Device
 	Findings []Finding
 }
 
-// Options selects the native accelerators that Apply turns on.
 type Options struct {
 	NVMe    bool
 	RNG     bool
 	Balloon bool
 }
 
-// DefaultOptions enables every native accelerator that macOS supports.
 func DefaultOptions() Options {
 	return Options{NVMe: true, RNG: true, Balloon: true}
 }
@@ -81,14 +70,11 @@ const (
 	virtioTypeNet   = 0x0001
 )
 
-// argLine is one line of the args file with its tokens.
 type argLine struct {
 	tokens []string
 	number int
 }
 
-// Analyze inspects the args file of a machine and reports what macOS will
-// drive natively and what it will not.
 func Analyze(argsText string, m kextmap.Map) Report {
 	var report Report
 	virtioTypes := m.VirtioTypes()
@@ -120,7 +106,6 @@ func Analyze(argsText string, m kextmap.Map) Report {
 	return report
 }
 
-// systemDriveID returns the id of the drive that holds {{DISK_IMG}}.
 func systemDriveID(lines []argLine) string {
 	for _, line := range lines {
 		if len(line.tokens) < 2 || line.tokens[0] != "-drive" {
@@ -417,8 +402,6 @@ func describeMatches(p kextmap.Personality) string {
 	return strings.Join(parts, ", ")
 }
 
-// Apply rewrites the args file so the guest uses the native accelerators
-// that macOS supports. It returns the new text and whether it changed.
 func Apply(argsText string, opts Options) (string, bool, error) {
 	lines := strings.Split(argsText, "\n")
 	changed := false

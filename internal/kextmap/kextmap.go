@@ -10,25 +10,22 @@ import (
 	"strings"
 )
 
-// Kind tells how a personality selects the device it attaches to.
 type Kind string
 
 const (
-	// KindPCI matches a PCI vendor and device identifier.
 	KindPCI Kind = "pci"
-	// KindClass matches a PCI class code.
+
 	KindClass Kind = "class"
-	// KindVirtio matches a virtio device type and vendor.
+
 	KindVirtio Kind = "virtio"
-	// KindName matches an IODevice name.
+
 	KindName Kind = "name"
 )
 
-// Match is one selection rule of an IOKit personality.
 type Match struct {
 	Kind     Kind
-	High     uint16 // PCI device id or virtio device type
-	Low      uint16 // PCI vendor id or virtio vendor id
+	High     uint16
+	Low      uint16
 	HasHigh  bool
 	HasLow   bool
 	Class    uint32
@@ -37,7 +34,6 @@ type Match struct {
 	Raw      string
 }
 
-// Personality is one IOKit personality of one kernel extension.
 type Personality struct {
 	Kext        string
 	Bundle      string
@@ -49,19 +45,16 @@ type Personality struct {
 	Matches     []Match
 }
 
-// Map is the set of personalities that were read from the guest.
 type Map struct {
 	Personalities []Personality
 	Sources       []string
 }
 
-// Add merges another map into this one.
 func (m *Map) Add(other Map) {
 	m.Personalities = append(m.Personalities, other.Personalities...)
 	m.Sources = append(m.Sources, other.Sources...)
 }
 
-// Sort orders the personalities by kext and driver.
 func (m *Map) Sort() {
 	sort.SliceStable(m.Personalities, func(i, j int) bool {
 		a, b := m.Personalities[i], m.Personalities[j]
@@ -73,7 +66,6 @@ func (m *Map) Sort() {
 	sort.Strings(m.Sources)
 }
 
-// FromKext reads the personalities of one kernel extension.
 func FromKext(kext string, plist Plist) (Map, error) {
 	root, ok := plist.Dict()
 	if !ok {
@@ -147,8 +139,6 @@ func parseMatches(dict map[string]any) []Match {
 	return out
 }
 
-// parseID reads an IOKit identifier such as "0xEEEE106B" (device 0xEEEE,
-// vendor 0x106B) with an optional "&0xFFFFFFFF" mask.
 func parseID(raw string) (Match, bool) {
 	text := strings.TrimSpace(raw)
 	if !strings.HasPrefix(text, "0x") && !strings.HasPrefix(text, "0X") {
@@ -208,7 +198,6 @@ func parseClass(raw string) (Match, bool) {
 	return Match{Kind: KindClass, Class: uint32(value) & mask, HasClass: true, Raw: raw}, true
 }
 
-// PCIIdent renders a PCI match as "vendor:device".
 func (m Match) PCIIdent() string {
 	vendor, device := "*", "*"
 	if m.HasLow {
@@ -220,12 +209,10 @@ func (m Match) PCIIdent() string {
 	return vendor + ":" + device
 }
 
-// VirtioType renders a virtio match as "type 0xNNNN (vendor 0xNNNN)".
 func (m Match) VirtioType() string {
 	return fmt.Sprintf("type 0x%04x", m.High)
 }
 
-// Capability describes what the driver of the personality provides.
 func (p Personality) Capability() string {
 	name := p.Driver
 	switch {
@@ -273,22 +260,16 @@ func (p Personality) Capability() string {
 	return "device"
 }
 
-// Display reports whether the personality drives a display.
 func (p Personality) Display() bool {
 	return p.Category == "IOFramebuffer" || p.Category == "IOAccelerator" ||
 		strings.Contains(p.Driver, "GraphicsFramebuffer") ||
 		strings.Contains(p.Driver, "VGAFB")
 }
 
-// Accelerates reports whether the personality provides hardware acceleration
-// beyond a framebuffer.
 func (p Personality) Accelerates() bool {
 	return p.Category == "IOAccelerator" || strings.Contains(p.Driver, "ParavirtGPU")
 }
 
-// Reference returns the macOS Sonoma 14.8 map that was read from a guest
-// with the command "macxvm accel NAME --re". It lets MacXVM report the
-// capabilities of the guest even when it is not running.
 func Reference() Map {
 	m := Map{Sources: []string{"macOS Sonoma 14.8 (reference)"}}
 	m.Personalities = []Personality{
@@ -386,8 +367,6 @@ var referenceVirtio = []virtioDevice{
 	{0x001a, "AppleVirtIOFS"},
 }
 
-// VirtioTypes returns the virtio device types that macOS can drive, mapped
-// to the driver that handles them.
 func (m Map) VirtioTypes() map[uint16]string {
 	out := map[uint16]string{}
 	for _, p := range m.Personalities {
@@ -403,7 +382,6 @@ func (m Map) VirtioTypes() map[uint16]string {
 	return out
 }
 
-// SupportsClass reports whether macOS has a driver for a PCI class code.
 func (m Map) SupportsClass(class uint32) bool {
 	for _, p := range m.Personalities {
 		for _, match := range p.Matches {
@@ -415,7 +393,6 @@ func (m Map) SupportsClass(class uint32) bool {
 	return false
 }
 
-// DisplayDrivers returns the personalities that can drive a display.
 func (m Map) DisplayDrivers() []Personality {
 	var out []Personality
 	for _, p := range m.Personalities {
@@ -426,7 +403,6 @@ func (m Map) DisplayDrivers() []Personality {
 	return out
 }
 
-// AcceleratorDrivers returns the personalities that provide acceleration.
 func (m Map) AcceleratorDrivers() []Personality {
 	var out []Personality
 	for _, p := range m.Personalities {
