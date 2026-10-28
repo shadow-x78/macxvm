@@ -174,9 +174,6 @@ func kvmModuleCheck() Check {
 		"ignore_msrs is disabled; the guides of OSX-KVM and ultimate-macOS-KVM ask for it, check their README"}
 }
 
-// iommuCheck reports whether the host can pass a PCI device to a guest.
-// The check never fails: macOS runs fine without it, and only a device
-// passthrough needs the IOMMU.
 func iommuCheck() Check {
 	const name = "IOMMU"
 	groups := hostcheck.IOMMUGroups()

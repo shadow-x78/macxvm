@@ -11,8 +11,6 @@ import (
 	"github.com/shadow-x78/macxvm/internal/sshx"
 )
 
-// GuestKexts are the kernel extensions that decide which virtual devices
-// macOS is able to drive.
 var GuestKexts = []string{
 	"AppleVirtualGraphics",
 	"AppleParavirtGPU",
@@ -26,7 +24,6 @@ var GuestKexts = []string{
 
 const marker = "MACXVM_KEXT:"
 
-// GuestCommand builds the command that reads the personalities of the guest.
 func GuestCommand() string {
 	var sb strings.Builder
 	sb.WriteString("for k in")
@@ -39,7 +36,6 @@ func GuestCommand() string {
 	return sb.String()
 }
 
-// ParseGuestOutput reads the output of GuestCommand.
 func ParseGuestOutput(out string) (Map, error) {
 	var all Map
 	segments := strings.Split(out, marker)
@@ -72,7 +68,6 @@ func ParseGuestOutput(out string) (Map, error) {
 	return all, nil
 }
 
-// LoadFromGuest reads the personality map of a running guest.
 func LoadFromGuest(cfg *config.VMConfig) (Map, error) {
 	out, err := sshx.Output(cfg, GuestCommand())
 	if err != nil {

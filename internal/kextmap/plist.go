@@ -1,10 +1,6 @@
 // MacXVM - Property List Parser (MIT)
 // https://github.com/shadow-x78/macxvm
 
-// Package kextmap reads the IOKit personalities of the macOS kernel
-// extensions that ship inside a guest. It is the basis of the reverse
-// engineering that tells MacXVM which virtual devices macOS can drive
-// natively and which ones it will ignore.
 package kextmap
 
 import (
@@ -17,23 +13,17 @@ import (
 	"strings"
 )
 
-// Value is a decoded property list value: map[string]any, []any, string,
-// int64, float64, bool or []byte.
 type Value any
 
-// Plist is a decoded property list document.
 type Plist struct {
 	Root Value
 }
 
-// Dict returns the root value as a dictionary.
 func (p Plist) Dict() (map[string]any, bool) {
 	d, ok := p.Root.(map[string]any)
 	return d, ok
 }
 
-// ParsePlistXML decodes an XML property list, the format that the guest
-// produces with "plutil -convert xml1 -o -".
 func ParsePlistXML(data []byte) (Plist, error) {
 	dec := xml.NewDecoder(strings.NewReader(string(data)))
 	for {
@@ -75,7 +65,7 @@ func parseValue(dec *xml.Decoder) (Value, error) {
 		}
 		switch t := tok.(type) {
 		case xml.CharData:
-			// Only whitespace may sit between the elements of a property list.
+
 			if strings.TrimSpace(string(t)) == "" {
 				continue
 			}
@@ -204,8 +194,6 @@ func readText(dec *xml.Decoder) (string, error) {
 	}
 }
 
-// Strings returns every string of a value that is a string or an array of
-// strings.
 func Strings(v Value) []string {
 	switch t := v.(type) {
 	case string:
@@ -220,7 +208,6 @@ func Strings(v Value) []string {
 	return nil
 }
 
-// String returns the first string of a value.
 func String(v Value) string {
 	if s := Strings(v); len(s) > 0 {
 		return s[0]

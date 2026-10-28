@@ -16,8 +16,6 @@ const (
 	sysModules     = "/sys/module"
 )
 
-// IOMMUGroups returns the number of IOMMU groups of the host. A host with
-// groups can pass a PCI device through to a guest.
 func IOMMUGroups() int {
 	entries, err := os.ReadDir(sysIOMMUGroups)
 	if err != nil {
@@ -26,12 +24,10 @@ func IOMMUGroups() int {
 	return len(entries)
 }
 
-// IOMMUEnabled reports whether the kernel exposes IOMMU groups.
 func IOMMUEnabled() bool {
 	return IOMMUGroups() > 0
 }
 
-// KernelCmdline returns the command line of the running kernel.
 func KernelCmdline() string {
 	raw, err := os.ReadFile("/proc/cmdline")
 	if err != nil {
@@ -40,7 +36,6 @@ func KernelCmdline() string {
 	return strings.TrimSpace(string(raw))
 }
 
-// IOMMURequested reports whether the kernel command line asks for an IOMMU.
 func IOMMURequested() bool {
 	cmdline := KernelCmdline()
 	for _, field := range strings.Fields(cmdline) {
@@ -54,8 +49,6 @@ func IOMMURequested() bool {
 	return false
 }
 
-// IOMMUFlags returns the kernel arguments that enable the IOMMU of the
-// processor of the host.
 func IOMMUFlags() string {
 	if strings.Contains(KernelCmdline(), "amd_iommu=") || hasAMDGPU() {
 		return "amd_iommu=on iommu=pt"
@@ -72,7 +65,6 @@ func hasAMDGPU() bool {
 	return false
 }
 
-// VFIOAvailable reports whether the kernel can bind a device to vfio-pci.
 func VFIOAvailable() bool {
 	if _, err := os.Stat(filepath.Join(sysModules, "vfio_pci")); err == nil {
 		return true
@@ -83,8 +75,6 @@ func VFIOAvailable() bool {
 	return false
 }
 
-// VFIOBound reports whether the device at the PCI address is bound to
-// vfio-pci.
 func VFIOBound(address string) bool {
 	link, err := os.Readlink(filepath.Join(sysPCIDevices, address, "driver"))
 	if err != nil {
@@ -93,8 +83,6 @@ func VFIOBound(address string) bool {
 	return filepath.Base(link) == "vfio-pci"
 }
 
-// DriverOf returns the kernel driver that owns the device at the PCI
-// address.
 func DriverOf(address string) string {
 	link, err := os.Readlink(filepath.Join(sysPCIDevices, address, "driver"))
 	if err != nil {
@@ -103,7 +91,6 @@ func DriverOf(address string) string {
 	return filepath.Base(link)
 }
 
-// PCIDevice describes one PCI device of the host.
 type PCIDevice struct {
 	Address string
 	Vendor  string
@@ -113,7 +100,6 @@ type PCIDevice struct {
 	Display bool
 }
 
-// PCIDevices reads the PCI devices of the host from the sysfs.
 func PCIDevices() []PCIDevice {
 	entries, err := os.ReadDir(sysPCIDevices)
 	if err != nil {
@@ -143,7 +129,6 @@ func readHex(path string) string {
 	return "0x" + strings.TrimSpace(strings.TrimPrefix(string(raw), "0x"))
 }
 
-// DisplayDevices returns the display controllers of the host.
 func DisplayDevices() []PCIDevice {
 	var out []PCIDevice
 	for _, device := range PCIDevices() {
@@ -154,8 +139,6 @@ func DisplayDevices() []PCIDevice {
 	return out
 }
 
-// LspciDisplayLines returns the display lines of lspci, when it is
-// installed.
 func LspciDisplayLines() []string {
 	out, err := exec.Command("lspci", "-nnk").Output()
 	if err != nil {
