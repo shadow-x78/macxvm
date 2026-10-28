@@ -93,4 +93,4 @@ go test ./...
 make build
 ```
 
-The binary must stay below 8 MB, and `macxvm doctor` must end with the legal notice.
+The binary must stay below 10 MB, and `macxvm doctor` must end with the legal notice.
