@@ -147,11 +147,9 @@ func Parse(text string) (normal, install [][]string, err error) {
 func Validate(lines [][]string) error {
 	for _, toks := range lines {
 		for _, tok := range toks {
-			for _, flag := range ForbiddenFlags {
-				if tok == flag || strings.HasPrefix(tok, flag+"=") {
-					return exitcode.New(exitcode.BadArgsFile,
-						"args file must not contain '%s' (MacXVM adds it itself)", flag)
-				}
+			if spelling, ok := forbiddenFlag(tok); ok {
+				return exitcode.New(exitcode.BadArgsFile,
+					"args file must not contain '%s' (MacXVM adds it itself)", spelling)
 			}
 		}
 	}
@@ -170,6 +168,24 @@ func Validate(lines [][]string) error {
 		}
 	}
 	return nil
+}
+
+func forbiddenFlag(tok string) (string, bool) {
+	for _, flag := range ForbiddenFlags {
+		for _, spelling := range flagSpellings(flag) {
+			if tok == spelling || strings.HasPrefix(tok, spelling+"=") {
+				return spelling, true
+			}
+		}
+	}
+	return "", false
+}
+
+func flagSpellings(flag string) []string {
+	if !strings.HasPrefix(flag, "-") {
+		return []string{flag}
+	}
+	return []string{flag, "-" + flag}
 }
 
 func CheckPlaceholders(lines [][]string) error {

@@ -105,7 +105,7 @@ macxvm: error: args file must contain {{DISK_IMG}} (see README: args file)
 <a id="forbidden-flags"></a>
 ## Forbidden Flags
 
-MacXVM injects the following flags itself, so the args file must not contain them:
+MacXVM injects the following flags itself, so the args file must not contain them. Both spellings are rejected, the one with one dash and the one with two dashes:
 
 | Flag | Why |
 |------|-----|
