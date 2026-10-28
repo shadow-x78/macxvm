@@ -113,6 +113,7 @@ func Run() []Check {
 	checks = append(checks, qemuCheck())
 	checks = append(checks, kvmAccelCheck())
 	checks = append(checks, kvmModuleCheck())
+	checks = append(checks, iommuCheck())
 	checks = append(checks, toolsCheck())
 	checks = append(checks, automationToolsCheck())
 	checks = append(checks, diskCheck())
@@ -171,6 +172,23 @@ func kvmModuleCheck() Check {
 	}
 	return Check{name, Warn,
 		"ignore_msrs is disabled; the guides of OSX-KVM and ultimate-macOS-KVM ask for it, check their README"}
+}
+
+// iommuCheck reports whether the host can pass a PCI device to a guest.
+// The check never fails: macOS runs fine without it, and only a device
+// passthrough needs the IOMMU.
+func iommuCheck() Check {
+	const name = "IOMMU"
+	groups := hostcheck.IOMMUGroups()
+	if groups > 0 {
+		return Check{name, OK, fmt.Sprintf("%d groups, a PCI device can be passed through", groups)}
+	}
+	if hostcheck.IOMMURequested() {
+		return Check{name, Warn,
+			"the kernel command line asks for an IOMMU but the host has no group; the firmware may not enable VT-d"}
+	}
+	return Check{name, Warn,
+		"no IOMMU group, so no PCI device can be passed through (run: macxvm gpu NAME --enable-iommu, then reboot)"}
 }
 
 func toolsCheck() Check {
