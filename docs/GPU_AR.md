@@ -32,14 +32,20 @@
 | `0x1234` | `0x1111` | `AppleBochVGAFB` |
 | `0x1013` | `0x0000` | `AppleCirrusGD5446FB` |
 
-ولا شيء غيرهما. ولا يوجد في macOS تعريف `virtio-gpu`: عائلات VirtIO الموجودة هي
-`AppleVirtIO` و`AppleVirtIOStorage` و`AppleVirtIOBiometrics`
-و`AppleVirtIONeuralEngineDevice` فقط. و`AppleParavirtIOSurface.kext` موجود لكنه
-يخص Virtualization.framework من Apple على مضيف macOS، فلا يفيد من QEMU على Linux.
+ولا شيء غيرهما. وليس في macOS تعريف لـ`virtio-gpu`: نوع كرت virtio `0x10`
+ليس من الأنواع العشرة التي يطالب بها `AppleVirtIO.kext`. أما
+`AppleParavirtGPU.kext` فحكاية أخرى: يربط هوية PCI `0x106b:0xeeee` مباشرة
+بـ`IOPCIDevice` ويوفّر `IOAccelerator` مع إضافة Metal
+`AppleParavirtGPUMetal`. ولا يوجد في QEMU جهاز بهذه الهوية، فلا يستطيع
+الضيف用它 بعد.
 
-لهذا فإن الافتراضي هو `-vga none` مع `bochs-display`: هو الجهاز الافتراضي الوحيد
-الذي يملك macOS له تعريف إطار حقيقي. أما `vmware-svga` فكان ينتج
+لذلك فإن الافتراضي هو `-vga none` مع `bochs-display`: هو الجهاز الافتراضي
+الوحيد الذي يملك macOS له تعريف إطار حقيقي. أما `vmware-svga` فكان ينتج
 `No Kext Loaded`، أي بلا تعريف إطلاقًا.
+
+خريطة تعريفات الضيف كاملة، مع المسرّعات الأصلية التي يشغّلها macOS والأثر
+المقاس من استخدامها، في [ACCELERATION_AR.md](ACCELERATION_AR.md). وشغّل
+`macxvm accel NAME --re` لقراءة خريطة ضيفك أنت.
 
 ## لماذا لا يوجد Metal ولا تسريع ثلاثي الأبعاد
 
@@ -61,12 +67,18 @@ IOMMU groups: 0
 1. **لا IOMMU.** لا توجد أي IOMMU groups، ولا `intel_iommu=on` أو `iommu=pt` في
    سطر أوامر النواة، والمعالج بلا كرت مدمج (لاحقة `F` تعني تعطيل الرسوميات).
    تمرير جهاز يحتاج تفعيل VT-d في البرنامج الثابت، و`intel_iommu=on iommu=pt` في
-   سطر أوامر النواة، وربط الكرت بـ`vfio-pci`.
-2. **لا تعريف في macOS.** حتى مع IOMMU، لا يملك macOS تعريفًا لـRTX 5060
-   (معمارية Blackwell). آخر تعريفات NVIDIA لماك تتوقف عند Kepler. الكرت الممرَّر
-   سيظهر كجهاز PCI مجهول بلا تسريع، وسيزيل جهاز العرض الوحيد العامل.
+   سطر أوامر النواة، وربط الكرت بـ`vfio-pci`. وMacXVM ينفّذ الخطوتين
+   الأخيرتين: `macxvm gpu NAME --enable-iommu` و
+   `macxvm gpu NAME --bind-vfio ADDRESS`.
+2. **لا تعريف في macOS.** حتى مع IOMMU، لا يملك macOS تعريفاً لأي كرت NVIDIA
+   GeForce: أنهت Apple الدعم في 2019، وآخر تعريفاتها تتوقف عند Kepler. الكرت
+   الممرَّر سيظهر كجهاز PCI مجهول بلا تسريع، وسيزيل جهاز العرض الوحيد العامل
+   على المضيف.
 
-لذلك التمرير ليس مسار أداء على هذا العتاد، وMacXVM لا يدّعي غير ذلك.
+فالمضيف يمكن تجهيزه للتمرير، وMacXVM يفعل ذلك عند الطلب، لكن كرت NVIDIA
+الممرَّر لا يصبح مسار أداء لـmacOS أبداً. وأهداف التسريع الوحيد التي يطالب
+بها macOS نفسه هو كرت Apple الافتراضي بهوية `0x106b:0xeeee`، وهو يحتاج جهاز
+جديد في QEMU.
 
 ## ما يجعل الضيف أسرع فعلًا
 
@@ -79,6 +91,7 @@ IOMMU groups: 0
 | من 8 إلى 12 GiB ذاكرة | لا swap داخل الضيف في الخمول؛ `vm_stat` يظهر صفر swapins |
 | `slim --level 1` | تقليل الحركة والشفافية وحركات النوافذ وDock |
 | من 1920x1080 إلى 1440x900 | استهلاك `WindowServer` في الخمول نزل من 7.5% إلى 2.5% |
+| من AHCI إلى NVMe لقرص النظام | الكتابة من 694 إلى 984 MiB/s، والقراءة من 6.6 إلى 10.1 GiB/s، مع TRIM |
 | `-cpu host` | **يفشل في الإقلاع** على هذا المضيف؛ لا تستخدمه |
 
 الافتراضي الآن 1440x900 لأن العارض البرمجي ينسخ كل بكسل على المعالج. القياس على
@@ -86,18 +99,28 @@ IOMMU groups: 0
 `macxvm optimize NAME --width 1920 --height 1080` إن فضّلت الدقة الأعلى؛ الإعداد
 يطبق على جهاز متوقف فقط.
 
+ويُنقل `macxvm accel NAME --apply` قرص النظام إلى NVMe ويكشف العشوائية
+والنفخ، لأن macOS يوزّع تعريفات للثلاثة. القياسات والخريطة التي بُني عليها
+القرار في [ACCELERATION_AR.md](ACCELERATION_AR.md).
+
 ## الأوامر
 
 ```bash
 macxvm gpu macos                     # IOMMU/GPU في المضيف وkext الفعلي في الضيف
+macxvm gpu macos --passthrough       # ما ينقص المضيف للتمرير
+macxvm gpu macos --enable-iommu      # تفعيل VT-d في سطر أوامر النواة
 macxvm optimize macos --check        # هل مسار Bochs مطبق أصلًا؟
 macxvm optimize macos                # جهاز متوقف، 1440x900
 macxvm optimize macos --width 1920 --height 1080
+macxvm accel macos --re              # خريطة الهندسة العكسية للضيف
+macxvm accel macos --apply           # جهاز متوقف: المسرّعات الأصلية
 ```
 
 ## خلاصة صريحة
 
 - macOS يتعرف على العرض: `AppleBochVGAFB` محمّل ويظهر في معلومات النظام.
 - وهو إطار ثنائي الأبعاد بلا Metal، بحكم تصميم التعريف.
-- تمرير NVIDIA ممنوع بعائقين: غياب IOMMU وغياب تعريف macOS.
-- المكاسب الحقيقية: عدد الأنوية والذاكرة وأعلام تعليمات المعالج وتقليل عمل الواجهة.
+- تمرير NVIDIA ممنوع بغياب تعريف macOS، وغياب IOMMU في المضيف قابل
+  للإصلاح بأمر واحد وإعادة تشغيل.
+- المكاسب الحقيقية: عدد الأنوية والذاكرة وأعلام تعليمات المعالج وNVMe
+  وتقليل عمل الواجهة.
