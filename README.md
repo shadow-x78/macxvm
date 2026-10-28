@@ -227,12 +227,32 @@ macxvm exec macos -- sh -c 'echo ready'
 
 ```bash
 macxvm gpu macos                                  # host GPU/IOMMU plus the real macOS kext
+macxvm gpu macos --passthrough                    # what the host still needs for a passthrough
+macxvm gpu macos --enable-iommu                   # turn VT-d on in the kernel command line
 macxvm optimize macos                             # stopped VM: -vga none + bochs-display 1440x900
 macxvm optimize macos --width 1920 --height 1080  # sharper mode, more CPU per frame
 ```
 
 The full reverse engineering, the measured numbers and the passthrough limits
 are in [docs/GPU.md](docs/GPU.md).
+
+### Native acceleration
+
+```bash
+macxvm accel macos --re                           # the reverse engineering map of the guest kexts
+macxvm accel macos                                # the map against the machine
+macxvm accel macos --apply                        # stopped VM: NVMe disk, entropy, balloon
+```
+
+`macxvm accel` reads the IOKit personalities of the guest itself, so the report
+is evidence and not guesswork. macOS ships a driver for NVMe
+(`IONVMeFamily` claims every NVMe controller) and for ten virtio device types.
+`--apply` moves the system disk to NVMe and exposes the entropy and the
+balloon. Measured on the reference host, the write of 512 MiB with `fsync`
+went from 694 MiB/s on AHCI to 984 MiB/s on NVMe, the read from 6.6 to
+10.1 GiB/s, and the guest reports `TRIM Support: Yes`. The map, the
+measurements and the open acceleration targets are in
+[docs/ACCELERATION.md](docs/ACCELERATION.md).
 
 Reverse engineering of the guest kexts shows that `AppleVirtualGraphics.kext` matches only Bochs VGA (`0x1234:0x1111`, class `AppleBochVGAFB`) and Cirrus (`0x1013:0x0000`). The default therefore uses Bochs VGA. macOS loads `AppleBochVGAFB`, the display is 1920x1080, and the guest reports a real framebuffer instead of “No Kext Loaded”. This is the fastest supported display path, but it is not Metal or 3D acceleration.
 
@@ -420,8 +440,9 @@ builds in a throwaway overlay that is removed afterwards. The full guide, includ
 | `macxvm open NAME [--restart]` | open loopback VNC without waiting for SSH |
 | `macxvm autoinstall NAME --yes [--accept-license]` | automate Recovery through the first Setup Assistant page |
 | `macxvm finish NAME [--password-stdin] [--apps] [--seal]` | post-Setup SSH/sudo/Dark/slim/Bochs/apps automation |
-| `macxvm gpu NAME [--json]` | report host IOMMU/GPU and the real macOS display kext |
+| `macxvm gpu NAME [--json] [--passthrough] [--enable-iommu] [--bind-vfio ADDR]` | report host IOMMU/GPU, the real macOS display kext, and the passthrough readiness |
 | `macxvm optimize NAME` | switch a stopped VM to the Bochs/AppleBochVGAFB display |
+| `macxvm accel NAME [--check] [--apply] [--re] [--json]` | compare the machine with the devices macOS drives natively, and switch to them |
 | `macxvm resize NAME [--cpus N] [--ram SIZE] [--disk GiB]` | resize stopped resources; disk grows only |
 | `macxvm stop NAME [--force] [--timeout SECONDS]` | stop via SSH, ACPI, QMP, then owned-process kill |
 | `macxvm delete NAME [--yes]` | delete a machine |
@@ -554,6 +575,7 @@ macxvm/
 | [ARGS_FILE.md](docs/ARGS_FILE.md) | The machine definition: format, placeholders, forbidden flags, upstream scripts |
 | [SLIM.md](docs/SLIM.md) | The slimming levels, the deny list, the restore, the measurement |
 | [GPU.md](docs/GPU.md) | The real guest kext, the reverse engineering, the passthrough limits, the measured gains |
+| [ACCELERATION.md](docs/ACCELERATION.md) | The map of the guest kexts, the native accelerators, the measured effect, the open targets |
 | [BUILDING.md](docs/BUILDING.md) | The build workflow, the project file, the sync, the ephemeral builds |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | The common problems of the host, the machine, the guest and the build |
 | [DECISIONS.md](docs/DECISIONS.md) | Every deviation from the specification and every ambiguity that was resolved |

@@ -263,11 +263,33 @@ macxvm exec macos -- sh -c 'echo ready'
 
 ```bash
 macxvm gpu macos                                  # GPU وIOMMU في المضيف وkext الفعلي داخل macOS
+macxvm gpu macos --passthrough                    # ما ينقص المضيف حتى يقبل التمرير
+macxvm gpu macos --enable-iommu                   # تفعيل VT-d في سطر أوامر النواة
 macxvm optimize macos                             # لجهاز متوقف: -vga none + bochs-display 1440x900
 macxvm optimize macos --width 1920 --height 1080  # دقة أعلى، معالج أكثر لكل إطار
 ```
 
 الهندسة العكسية الكاملة والأرقام المقاسة وحدود التمرير في [docs/GPU_AR.md](docs/GPU_AR.md).
+
+### التسريع الأصلي
+
+<div dir="ltr" align="left">
+
+```bash
+macxvm accel macos --re                           # خريطة الهندسة العكسية لتعريفات الضيف
+macxvm accel macos                                # الخريطة مقابل الجهاز
+macxvm accel macos --apply                        # لجهاز متوقف: قرص NVMe وعشوائية ونفخ
+```
+
+</div>
+
+يقرأ `macxvm accel` شخصيات IOKit من الضيف نفسه، فيكون التقرير دليلاً لا
+تخميناً. وmacOS يوزّع تعريفاً لـNVMe (`IONVMeFamily` يطالب كل متحكم NVMe)
+ولعشرة أنواع من أجهزة virtio. ويحوّل `--apply` قرص النظام إلى NVMe ويكشف
+العشوائية والنفخ. والقياس على المضيف المرجعي: كتابة 512 MiB مع `fsync`
+انتقلت من 694 MiB/s على AHCI إلى 984 MiB/s على NVMe، والقراءة من 6.6 إلى
+10.1 GiB/s، ويبلّغ الضيف `TRIM Support: Yes`. والخريطة والقياسات وأهداف
+التسريع المفتوحة في [docs/ACCELERATION_AR.md](docs/ACCELERATION_AR.md).
 
 </div>
 
@@ -457,6 +479,8 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 | `macxvm create NAME --base BASE` | استنساخ أساس مختوم مع NVRAM مستقل |
 | `macxvm list [--json]` / `macxvm status NAME [--json]` | عرض الموارد والنوع والحالة وVNC |
 | `macxvm start NAME [--install] [--vnc] [--no-open] [--wait] [--force]` | تشغيل QEMU؛ و`--vnc` يفتح العارض تلقائيًا إلا مع `--no-open` |
+| `macxvm gpu NAME [--json] [--passthrough] [--enable-iommu] [--bind-vfio ADDR]` | عرض IOMMU/GPU في المضيف وتعريف العرض الفعلي في macOS وجاهزية التمرير |
+| `macxvm accel NAME [--check] [--apply] [--re] [--json]` | مقارنة الجهاز بالأجهزة التي يشغّلها macOS أصلياً، والتحويل إليها |
 | `macxvm open NAME [--restart]` | فتح VNC المحلي دون انتظار SSH |
 | `macxvm resize NAME [--cpus N] [--ram SIZE] [--disk GiB]` | تعديل جهاز متوقف؛ القرص يتوسع فقط |
 | `macxvm stop NAME [--force] [--timeout SECONDS]` | إيقاف عبر SSH ثم ACPI ثم QMP ثم kill مملوك |
@@ -615,6 +639,7 @@ macxvm/
 | [ARGS_FILE_AR.md](docs/ARGS_FILE_AR.md) | تعريف الجهاز: الصيغة والعناصر النائبة والأعلام الممنوعة والسكربتات الجاهزة |
 | [SLIM_AR.md](docs/SLIM_AR.md) | مستويات التخفيف وقائمة المنع والاستعادة والقياس |
 | [GPU_AR.md](docs/GPU_AR.md) | تعريف الضيف الفعلي والهندسة العكسية وحدود التمرير والمكاسب المقاسة |
+| [ACCELERATION_AR.md](docs/ACCELERATION_AR.md) | خريطة تعريفات الضيف والمسرّعات الأصلية والأثر المقاس والأهداف المفتوحة |
 | [BUILDING_AR.md](docs/BUILDING_AR.md) | سير عمل البناء وملف المشروع والمزامنة والبناء المؤقت |
 | [TROUBLESHOOTING_AR.md](docs/TROUBLESHOOTING_AR.md) | مشكلات المضيف والجهاز والضيف والبناء الشائعة |
 | [DECISIONS.md](docs/DECISIONS.md) | كل انحراف عن المواصفة وكل غموض حل |

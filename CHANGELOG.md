@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `macxvm accel NAME [--check] [--apply] [--re] [--json]`: reads the IOKit
+  personalities of the running guest, compares them with the devices of the
+  machine, and reports what macOS drives natively and what it ignores. The
+  reverse engineering map is the evidence, not the names of the kexts.
+- `macxvm accel NAME --apply` moves the system disk to NVMe
+  (`IONVMeFamily` claims every NVMe controller), and exposes `virtio-rng` and
+  `virtio-balloon`, for which macOS ships `AppleVirtIOEntropy` and
+  `AppleVirtIOBalloon`. The boot loader disk stays on AHCI, and `args.txt` is
+  backed up before the write.
+- `macxvm gpu NAME --passthrough`, `--enable-iommu` and `--bind-vfio ADDRESS`:
+  the host side of a device passthrough. `--enable-iommu` adds
+  `intel_iommu=on iommu=pt` to every kernel entry and asks for a reboot;
+  `--bind-vfio` unloads the NVIDIA modules and binds the card to `vfio-pci`.
+  The tool refuses to bind the only display device of the host.
+- `macxvm doctor` reports the IOMMU state of the host and the command that
+  fixes it.
+- `docs/ACCELERATION.md` and `docs/ACCELERATION_AR.md`: the complete map of
+  the guest kexts, the native accelerators, the measured effect and the open
+  acceleration targets.
+
+### Measured
+- The system disk on NVMe instead of AHCI: a 512 MiB write with `fsync` went
+  from 694 MiB/s to 984 MiB/s (1.42x) and a 512 MiB read from 6.6 GiB/s to
+  10.1 GiB/s (1.55x). The guest reports `IONVMeFamily` loaded and
+  `TRIM Support: Yes`.
+
+### Changed
+- `docs/GPU.md` and `docs/GPU_AR.md` now state that macOS claims Apple's
+  paravirtual GPU at `0x106b:0xeeee` with an `IOAccelerator` and the Metal
+  plugin `AppleParavirtGPUMetal`, and that the absence of a virtio GPU driver
+  is proven by the missing virtio device type `0x10` in `AppleVirtIO.kext`.
+
 ## [v0.9.0] - 2026-10-27
 
 This release supersedes the unreleased v0.8.0 milestone and is the first tagged
