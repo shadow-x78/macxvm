@@ -58,8 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   credit banner of the project, as the decision A50 asks.
 - The dead `KindOther` constant and the dead `&& false` of the VFIO check are
   removed.
-- `resources/args-template.txt` carries the header block of the project, like
-  every other data file.
+- `resources/args-template.txt` and `scripts/screenshot.sh` carry the header
+  block of the project, like every other file of the repository.
 - The size gate of the CI moves from 8 MiB to 10 MiB, and the documented size
   of the binary follows it.
 
