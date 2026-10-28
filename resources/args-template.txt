@@ -1,5 +1,7 @@
+# ─────────────────────────────────────────────
 # MacXVM - Default QEMU Arguments Template (MIT)
 # https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
 
 qemu-system-x86_64 \
   -accel kvm \
