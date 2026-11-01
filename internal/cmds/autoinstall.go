@@ -14,6 +14,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/bootstrap"
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
+	"github.com/shadow-x78/macxvm/internal/qemu"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/store"
 )
@@ -111,7 +112,7 @@ func cmdAutoInstall(args []string) error {
 		if err := setSeedArgs(cfg); err != nil {
 			return err
 		}
-		if _, err := startVM(cfg, true, true, false); err != nil {
+		if _, err := startVM(cfg, qemu.StartOptions{Stage: config.StageInstall, VNC: true}); err != nil {
 			return err
 		}
 		if display, ok := runstate.VNC(cfg); ok {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
+	"github.com/shadow-x78/macxvm/internal/qemu"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/store"
 )
@@ -101,7 +102,7 @@ func cmdOpen(args []string) error {
 			return err
 		}
 	}
-	if _, err := startVM(cfg, false, true, false); err != nil {
+	if _, err := startVM(cfg, qemu.StartOptions{Stage: config.StageDaily, VNC: true}); err != nil {
 		return err
 	}
 	display, ok := runstate.VNC(cfg)

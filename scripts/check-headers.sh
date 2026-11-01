@@ -52,6 +52,30 @@ check_shell() {
     fi
 }
 
+check_c() {
+    local file="$1" head
+    head="$(head -n 4 "$file")"
+    if ! grep -q "^// MacXVM - " <<<"$head"; then
+        report "missing the credit banner: ${file#"$ROOT"/}"
+        return
+    fi
+    if ! grep -q "$GIT_URL" <<<"$head"; then
+        report "missing the project URL in the banner: ${file#"$ROOT"/}"
+    fi
+}
+
+check_cmake() {
+    local file="$1" head
+    head="$(head -n 4 "$file")"
+    if ! grep -q "^# MacXVM - " <<<"$head"; then
+        report "missing the credit banner: ${file#"$ROOT"/}"
+        return
+    fi
+    if ! grep -q "$GIT_URL" <<<"$head"; then
+        report "missing the project URL in the banner: ${file#"$ROOT"/}"
+    fi
+}
+
 while IFS= read -r file; do
     check_source "$file"
 done < <(find "$ROOT" -name '*.go' -not -path "$ROOT/.git/*" | sort)
@@ -64,7 +88,16 @@ while IFS= read -r file; do
     check_config "$file"
 done < <(find "$ROOT" -name '*.yml' -not -path "$ROOT/.git/*" | sort)
 
-for file in "$ROOT/.editorconfig" "$ROOT/.gitattributes" "$ROOT/.gitignore" "$ROOT/Makefile"; do
+while IFS= read -r file; do
+    check_c "$file"
+done < <(find "$ROOT/driver" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \
+    -o -name '*.m' -o -name '*.mm' -o -name '*.metal' \) -not -path "$ROOT/driver/third_party/*" | sort)
+
+while IFS= read -r file; do
+    check_cmake "$file"
+done < <(find "$ROOT/driver" -name 'CMakeLists.txt' -not -path "$ROOT/driver/third_party/*" | sort)
+
+for file in "$ROOT/.editorconfig" "$ROOT/.gitattributes" "$ROOT/.gitignore" "$ROOT/Makefile" "$ROOT/driver/Makefile"; do
     [ -f "$file" ] && check_config "$file"
 done
 

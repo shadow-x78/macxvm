@@ -71,10 +71,42 @@ func cmdStatus(args []string) error {
 	if display, ok := runstate.VNC(cfg); ok {
 		rows = append(rows, [2]string{"vnc", "127.0.0.1:" + strconv.Itoa(5900+display)})
 	}
+	if cfg.GPU.UsesGPU() {
+		rows = append(rows, gpuStatusRows(cfg)...)
+	}
 	state := stateOf(cfg)
 	fmt.Printf("%s%s%s  %s%s%s\n", ui.Bold, cfg.Name, ui.Reset, stateColour(cfg), state, ui.Reset)
 	for _, line := range ui.Lines(rows) {
 		fmt.Println(line)
 	}
 	return nil
+}
+
+func gpuStatusRows(cfg *config.VMConfig) [][2]string {
+	rows := [][2]string{
+		{"gpu backend", cfg.GPU.Backend},
+		{"gpu driver", cfg.GPU.Driver},
+		{"display stage", cfg.GPU.DisplayStage},
+	}
+	if cfg.GPU.DriverVersion != "" {
+		rows = append(rows, [2]string{"driver version", cfg.GPU.DriverVersion})
+	}
+	if cfg.GPU.FirmwareVersion != "" {
+		rows = append(rows, [2]string{"gsp firmware", cfg.GPU.FirmwareVersion})
+	}
+	rows = append(rows, [2]string{"heads", strconv.Itoa(cfg.GPU.MaxHeads)})
+	if runstate.GPUReady(cfg) {
+		rows = append(rows, [2]string{"gpu state", "ready"})
+	} else {
+		rows = append(rows, [2]string{"gpu state", "not probed"})
+	}
+	features := runstate.ProbeFeatures(cfg)
+	for _, name := range []string{"metal", "video", "display", "power", "migration"} {
+		value := features[name]
+		if value == "" {
+			value = "unknown"
+		}
+		rows = append(rows, [2]string{name, value})
+	}
+	return rows
 }

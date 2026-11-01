@@ -5,6 +5,7 @@ package runstate
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -120,6 +121,9 @@ func VNC(cfg *config.VMConfig) (int, bool) {
 
 func State(cfg *config.VMConfig) string {
 	if pid, ok := PID(cfg); ok && pid > 0 {
+		if cfg.Readiness == ReadinessGPUReady && !GPUReady(cfg) {
+			return ReadinessGPUProbing
+		}
 		if cfg.Readiness != "" {
 			return cfg.Readiness
 		}
@@ -128,10 +132,93 @@ func State(cfg *config.VMConfig) string {
 	if cfg.Sealed {
 		return "sealed"
 	}
-	if cfg.Readiness == "failed" || cfg.Readiness == "created" {
+	switch cfg.Readiness {
+	case ReadinessMigrationFailed, ReadinessRecovering, ReadinessFailed, ReadinessCreated:
 		return cfg.Readiness
 	}
 	return "stopped"
+}
+
+const (
+	ReadinessCreated          = "created"
+	ReadinessQMPReady         = "qmp-ready"
+	ReadinessBooting          = "booting"
+	ReadinessSSHReady         = "ssh-ready"
+	ReadinessManualSetup      = "manual-setup"
+	ReadinessDriverInstalling = "driver-installing"
+	ReadinessGPUProbing       = "gpu-probing"
+	ReadinessGPUReady         = "gpu-ready"
+	ReadinessRecovering       = "recovering"
+	ReadinessMigratingOut     = "migrating-out"
+	ReadinessMigratingIn      = "migrating-in"
+	ReadinessMigrationFailed  = "migration-failed"
+	ReadinessStopping         = "stopping"
+	ReadinessStopped          = "stopped"
+	ReadinessFailed           = "failed"
+)
+
+var readinessRank = map[string]int{
+	ReadinessCreated:          0,
+	ReadinessQMPReady:         1,
+	ReadinessBooting:          2,
+	ReadinessSSHReady:         3,
+	ReadinessManualSetup:      3,
+	ReadinessDriverInstalling: 4,
+	ReadinessGPUProbing:       5,
+	ReadinessGPUReady:         6,
+	ReadinessRecovering:       6,
+	ReadinessMigratingOut:     7,
+	ReadinessMigratingIn:      7,
+	ReadinessMigrationFailed:  8,
+	ReadinessStopping:         9,
+	ReadinessStopped:          10,
+	ReadinessFailed:           10,
+}
+
+func MergeReadiness(current, next string) string {
+	if current == "" {
+		return next
+	}
+	if next == "" {
+		return current
+	}
+	if readinessRank[next] >= readinessRank[current] {
+		return next
+	}
+	return current
+}
+
+type ProbeReport struct {
+	OK       bool              `json:"ok"`
+	Driver   string            `json:"driver,omitempty"`
+	Version  string            `json:"driverVersion,omitempty"`
+	Checks   []string          `json:"checks,omitempty"`
+	Features map[string]string `json:"features,omitempty"`
+}
+
+// ProbeFeatures returns the features that the driver of the guest reported.
+func ProbeFeatures(cfg *config.VMConfig) map[string]string {
+	raw, err := os.ReadFile(cfg.File("driver/probe-report.json"))
+	if err != nil {
+		return nil
+	}
+	var report ProbeReport
+	if err := json.Unmarshal(raw, &report); err != nil {
+		return nil
+	}
+	return report.Features
+}
+
+func GPUReady(cfg *config.VMConfig) bool {
+	raw, err := os.ReadFile(cfg.File("driver/probe-report.json"))
+	if err != nil {
+		return false
+	}
+	var report ProbeReport
+	if err := json.Unmarshal(raw, &report); err != nil {
+		return false
+	}
+	return report.OK
 }
 
 func PID(cfg *config.VMConfig) (int, bool) {

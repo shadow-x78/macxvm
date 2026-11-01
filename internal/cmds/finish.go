@@ -13,6 +13,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/guestapps"
+	"github.com/shadow-x78/macxvm/internal/qemu"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/slim"
 	"github.com/shadow-x78/macxvm/internal/sshx"
@@ -88,10 +89,12 @@ func cmdFinish(args []string) error {
 	if err := removeSeedArgs(cfg); err != nil {
 		return err
 	}
-	if err := setDisplayMode(cfg, "bochs"); err != nil {
+	if cfg.GPU.UsesGPU() {
+		fmt.Printf("the %s backend keeps the display of the passed through card; the Bochs path is skipped\n", cfg.GPU.Backend)
+	} else if err := setDisplayMode(cfg, "bochs"); err != nil {
 		return err
 	}
-	if _, err := startVM(cfg, false, true, false); err != nil {
+	if _, err := startVM(cfg, qemu.StartOptions{Stage: config.StageDaily, VNC: true}); err != nil {
 		return err
 	}
 	if display, ok := runstate.VNC(cfg); ok {
@@ -137,9 +140,10 @@ func cmdFinish(args []string) error {
 }
 
 func removeSeedArgs(cfg *config.VMConfig) error {
-	raw, err := os.ReadFile(cfg.File("args.txt"))
+	path := activeStageFile(cfg)
+	raw, err := os.ReadFile(path)
 	if err != nil {
-		return exitcode.New(exitcode.BadArgsFile, "cannot read args.txt: %v", err)
+		return exitcode.New(exitcode.BadArgsFile, "cannot read the args file: %v", err)
 	}
 	lines := strings.Split(string(raw), "\n")
 	out := make([]string, 0, len(lines))
@@ -149,8 +153,8 @@ func removeSeedArgs(cfg *config.VMConfig) error {
 		}
 		out = append(out, line)
 	}
-	if err := config.WriteFileAtomic(cfg.File("args.txt"), []byte(strings.Join(out, "\n")), 0o600); err != nil {
-		return exitcode.New(exitcode.Generic, "cannot write args.txt: %v", err)
+	if err := config.WriteFileAtomic(path, []byte(strings.Join(out, "\n")), 0o600); err != nil {
+		return exitcode.New(exitcode.Generic, "cannot write the args file: %v", err)
 	}
 	return nil
 }

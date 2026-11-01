@@ -1,0 +1,106 @@
+{
+  "schema": "mxgpu-third-party-v1",
+  "generatedAt": "2026-10-31",
+  "policy": {
+    "redistribution": "No binary, firmware, kext, header or Apple source file of the components below is copied into this repository. They are behavioural references only; every artifact that reaches a guest is provisioned by the firmware task and carries its own digest in the provenance bundle.",
+    "verification": "A component switches to the provenance \"provisioned\" only when its exact upstream revision and the SHA256 of the acquired artifact are written here. Until then the component stays a reference and the clean-room gate stays open."
+  },
+  "components": [
+    {
+      "id": "nvidia-open-gpu-kernel-modules",
+      "role": "Behavioural reference for the resource manager and the GSP firmware of the GB206 board",
+      "source": "https://github.com/NVIDIA/open-gpu-kernel-modules",
+      "revision": "unresolved-pinned-at-firmware-provisioning",
+      "license": "MIT",
+      "licenseFile": "https://github.com/NVIDIA/open-gpu-kernel-modules/blob/master/LICENSE",
+      "redistributed": false,
+      "provenance": "reference-only",
+      "sha256": null,
+      "note": "Only the public interface description is read. The matching RM release and GSP version are pinned and hashed by the firmware provenance bundle before they reach a guest."
+    },
+    {
+      "id": "mesa-nvk-nak",
+      "role": "Behavioural reference for the Vulkan and the AIR translation layers",
+      "source": "https://github.com/mesa3d/mesa",
+      "revision": "unresolved-pinned-at-firmware-provisioning",
+      "license": "MIT",
+      "licenseFile": "https://gitlab.freedesktop.org/mesa/mesa/-/blob/main/LICENSE",
+      "redistributed": false,
+      "provenance": "reference-only",
+      "sha256": null,
+      "note": "The AIR verifier and the lowering rules are reimplemented from the public format description; no Mesa source is copied."
+    },
+    {
+      "id": "llvm-project",
+      "role": "Toolchain reference for the SPIR-V target of the translator",
+      "source": "https://github.com/llvm/llvm-project",
+      "revision": "unresolved-pinned-at-firmware-provisioning",
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "licenseFile": "https://github.com/llvm/llvm-project/blob/main/LICENSE.TXT",
+      "redistributed": false,
+      "provenance": "reference-only",
+      "sha256": null,
+      "note": "The builder uses the toolchain of the macOS builder; the produced binaries never enter this repository."
+    },
+    {
+      "id": "apple-xnu",
+      "role": "Behavioural reference for the IOKit personalities, the IOSurface and the power contracts",
+      "source": "https://github.com/apple-oss-distributions/xnu",
+      "revision": "unresolved-pinned-at-load-probe",
+      "license": "APPLE-MIT",
+      "licenseFile": "https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/license.txt",
+      "redistributed": false,
+      "provenance": "reference-only",
+      "sha256": null,
+      "note": "The load probes record the class selectors, the structure layouts and the build identity of every supported macOS release instead of shipping any Apple header."
+    },
+    {
+      "id": "apple-ioaccelerator",
+      "role": "Behavioural reference for the IOAccelerator and the AGDC policy of the guest",
+      "source": "https://github.com/apple-oss-distributions/IOSurface",
+      "revision": "unresolved-pinned-at-load-probe",
+      "license": "APPLE-MIT",
+      "licenseFile": "https://github.com/apple-oss-distributions/IOSurface/blob/main/LICENSE",
+      "redistributed": false,
+      "provenance": "reference-only",
+      "sha256": null,
+      "note": "The identity of the GPU is derived from the measurements of the board; the PCI identities of a commercial card are never impersonated."
+    },
+    {
+      "id": "reims-vgpu",
+      "role": "Host side reference for the shared backend and its runtime contract",
+      "source": "https://github.com/steelbrain/reims-vgpu",
+      "revision": "unresolved-pinned-at-runtime-provisioning",
+      "license": "MIT",
+      "licenseFile": "https://github.com/steelbrain/reims-vgpu/blob/master/LICENSE",
+      "redistributed": false,
+      "provenance": "reference-only",
+      "sha256": null,
+      "note": "The runtime is installed on the host by the operator; macxvm only records its version and the hash of the binary it spawns."
+    },
+    {
+      "id": "opencore",
+      "role": "Boot loader used by the per virtual machine images",
+      "source": "https://github.com/acidanthera/OpenCorePkg",
+      "revision": "unresolved-pinned-at-image-provisioning",
+      "license": "BSD-3-Clause",
+      "licenseFile": "https://github.com/acidanthera/OpenCorePkg/blob/master/LICENSE",
+      "redistributed": false,
+      "provenance": "reference-only",
+      "sha256": null,
+      "note": "The images are built on the macOS builder and copied into the virtual machine; the shared assets of the repository stay read only."
+    },
+    {
+      "id": "linux-vfio",
+      "role": "Behavioural reference for the host ownership of the PCI function",
+      "source": "https://docs.kernel.org/driver-api/vfio.html",
+      "revision": "kernel-api-v6.12",
+      "license": "GPL-2.0",
+      "licenseFile": "https://www.kernel.org/doc/html/latest/LICENSE.txt",
+      "redistributed": false,
+      "provenance": "reference-only",
+      "sha256": null,
+      "note": "The kernel interface is used through its documentation; no kernel source is copied and no kernel change is made by macxvm."
+    }
+  ]
+}

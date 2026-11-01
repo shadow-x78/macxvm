@@ -119,7 +119,66 @@ func Run() []Check {
 	checks = append(checks, diskCheck())
 	checks = append(checks, memoryCheck())
 	checks = append(checks, vmCheck())
+	checks = append(checks, gpuChecks()...)
 	return checks
+}
+
+// gpuChecks reports the host state of the machines that use a GPU backend.
+func gpuChecks() []Check {
+	vms, err := store.List()
+	if err != nil {
+		return nil
+	}
+	var checks []Check
+	for _, vm := range vms {
+		if !vm.GPU.UsesGPU() {
+			continue
+		}
+		checks = append(checks, gpuCheck(vm))
+	}
+	return checks
+}
+
+func gpuCheck(vm *config.VMConfig) Check {
+	name := "gpu " + vm.Name
+	switch vm.GPU.Backend {
+	case config.BackendVFIO:
+		if hostcheck.IOMMUGroups() == 0 {
+			return Check{name, Fail, "the vfio backend needs an IOMMU, but the host has no group"}
+		}
+		if !hostcheck.VFIOAvailable() {
+			return Check{name, Warn, "the vfio-pci module is not loaded"}
+		}
+		if vm.GPU.PCI != "" {
+			if driver := hostcheck.DriverOf(vm.GPU.PCI); driver == "" {
+				return Check{name, Warn, "the card " + vm.GPU.PCI + " has no driver"}
+			}
+		}
+		if vm.GPU.SingleGPU {
+			return Check{name, Warn,
+				"the single-gpu mode moves the only card of the host into the guest; the console needs the rescue service"}
+		}
+		if !runstate.GPUReady(vm) {
+			return Check{name, Warn, "the driver of the guest is not probed yet"}
+		}
+		return Check{name, OK, "the card is passed through and the driver is probed"}
+	case config.BackendReims:
+		if vm.GPU.ReimsRuntime == "" {
+			return Check{name, Fail, "the reims runtime of the machine is not configured"}
+		}
+		if _, err := os.Stat(vm.GPU.ReimsRuntime); err != nil {
+			return Check{name, Fail, "the reims runtime " + vm.GPU.ReimsRuntime + " is not available"}
+		}
+		if _, err := os.Stat("/dev/udmabuf"); err != nil {
+			return Check{name, Fail, "the host has no /dev/udmabuf, which the reims backend needs"}
+		}
+		if !runstate.GPUReady(vm) {
+			return Check{name, Warn, "the driver of the guest is not probed yet"}
+		}
+		return Check{name, OK, "the reims runtime is ready and the driver is probed"}
+	default:
+		return Check{name, Warn, "the backend " + vm.GPU.Backend + " is unknown"}
+	}
 }
 
 func qemuCheck() Check {

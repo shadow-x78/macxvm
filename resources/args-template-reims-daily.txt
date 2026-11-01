@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────
+# MacXVM - Reims Daily Stage Template (MIT)
+# https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+
+qemu-system-x86_64 \
+  -accel kvm \
+  -machine q35 \
+  -cpu {{CPU_MODEL}} \
+  -smp {{CPUS}},cores={{CORES}},sockets=1 \
+  -m {{RAM_MIB}} \
+  -rtc base=utc,clock=host \
+  -global ICH9-LPC.acpi-pci-hotplug-with-bridge-support=off \
+  -global kvm-pit.lost_tick_policy=discard \
+  -device isa-applesmc,osk=ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc \
+  -smbios type=2 \
+  -drive if=pflash,format=raw,readonly=on,file={{ASSETS}}/OVMF_CODE_4M.fd \
+  -drive if=pflash,format=raw,file={{NVRAM}} \
+  -device ich9-intel-hda -device hda-duplex \
+  -device qemu-xhci,id=xhci \
+  -device usb-kbd,bus=xhci.0 \
+  -device usb-tablet,bus=xhci.0 \
+  -vga none \
+  -device ich9-ahci,id=sata \
+  -object memory-backend-memfd,id=vgpu,size=1G,share=on \
+  -numa node,memdev=vgpu \
+  -drive id=OpenCoreBoot,if=none,format=qcow2,file={{OPENCORE_IMG}} \
+  -device ide-hd,bus=sata.2,drive=OpenCoreBoot \
+  -drive id=MacHDD,if=none,file={{DISK_IMG}},format=qcow2 \
+  -device ide-hd,bus=sata.4,drive=MacHDD \
+  -netdev {{NETDEV}} \
+  -device virtio-net-pci,netdev=net0,mac={{MAC}} \
+#when REIMS_ROM -device apple-gfx-pci,romfile={{REIMS_ROM}},resolution={{REIMS_RESOLUTION}}
+#when USB1_VENDOR -device usb-host,vendorid=0x{{USB1_VENDOR}},productid=0x{{USB1_PRODUCT}}{{USB1_ADDR_OPT}},bus=xhci.0
+#when USB2_VENDOR -device usb-host,vendorid=0x{{USB2_VENDOR}},productid=0x{{USB2_PRODUCT}}{{USB2_ADDR_OPT}},bus=xhci.0
+#when USB3_VENDOR -device usb-host,vendorid=0x{{USB3_VENDOR}},productid=0x{{USB3_PRODUCT}}{{USB3_ADDR_OPT}},bus=xhci.0
+#when USB4_VENDOR -device usb-host,vendorid=0x{{USB4_VENDOR}},productid=0x{{USB4_PRODUCT}}{{USB4_ADDR_OPT}},bus=xhci.0

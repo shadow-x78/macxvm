@@ -1,0 +1,763 @@
+{
+  "schema": "mxgpu-execution-ledger-v1",
+  "updatedAt": "2026-11-01",
+  "repository": "https://github.com/shadow-x78/macxvm",
+  "plan": ".kilo/plans/1793364599068-reims-gpu-native-plan.md",
+  "statuses": {
+    "implemented": "the task is implemented in this repository and its tests pass",
+    "partial": "a part of the task exists, the rest needs a macOS builder, the physical board or a signed artifact",
+    "blocked": "the task cannot start before one of its dependencies passes",
+    "not-started": "no work has started"
+  },
+  "gates": {
+    "G0": {
+      "status": "open",
+      "reason": "the lock file and the research notes exist, but the digests of the provisioned artifacts are still missing"
+    },
+    "G1": {
+      "status": "open",
+      "reason": "the host tooling of the dedicated, the single-gpu and the Reims modes exists, but the twenty cycles on the board are missing"
+    },
+    "G2": {
+      "status": "open",
+      "reason": "the kernel extension of MXRM is not written yet"
+    },
+    "G3": {
+      "status": "open",
+      "reason": "the framebuffer of MXFB is not written yet"
+    },
+    "G4": {
+      "status": "open",
+      "reason": "no real Metal path exists yet"
+    },
+    "G5": {
+      "status": "open",
+      "reason": "the video components are not written yet"
+    },
+    "G6": {
+      "status": "open",
+      "reason": "the power path is not written yet"
+    },
+    "G7": {
+      "status": "open",
+      "reason": "the migration of the driver is not written yet"
+    },
+    "G8": {
+      "status": "open",
+      "reason": "no guest was installed yet"
+    },
+    "G9": {
+      "status": "open",
+      "reason": "the package is not signed and not installed in a guest"
+    },
+    "G10": {
+      "status": "open",
+      "reason": "the documentation and the final tests are not finished"
+    }
+  },
+  "tasks": [
+    {
+      "id": "T-A0",
+      "name": "baseline",
+      "dependsOn": [],
+      "status": "partial",
+      "evidence": [
+        "internal/config/config_test.go",
+        "internal/store/store_test.go"
+      ],
+      "failure": "the probe machines of Sonoma and of Tahoe need a host with sealed bases and a hardware KVM"
+    },
+    {
+      "id": "T-D0",
+      "name": "clean room and SBOM",
+      "dependsOn": [
+        "T-A0"
+      ],
+      "status": "partial",
+      "evidence": [
+        "driver/research/README.md",
+        "driver/third_party.lock.json",
+        "driver/NOTICE",
+        "internal/driver/lock.go",
+        "internal/driver/lock_test.go"
+      ],
+      "failure": "the components stay references until the firmware task pins their revision and their digest"
+    },
+    {
+      "id": "T-CI0",
+      "name": "early CI",
+      "dependsOn": [
+        "T-A0"
+      ],
+      "status": "implemented",
+      "evidence": [
+        ".github/workflows/ci.yml",
+        "scripts/check-headers.sh",
+        "driver/Makefile"
+      ]
+    },
+    {
+      "id": "T-A1",
+      "name": "schema and create pipeline",
+      "dependsOn": [
+        "T-D0",
+        "T-CI0"
+      ],
+      "status": "implemented",
+      "evidence": [
+        "internal/config/gpu.go",
+        "internal/config/gpu_test.go",
+        "internal/cmds/create.go",
+        "internal/stages/stages.go"
+      ]
+    },
+    {
+      "id": "T-A2",
+      "name": "args file, start and readiness",
+      "dependsOn": [
+        "T-A1"
+      ],
+      "status": "implemented",
+      "evidence": [
+        "internal/argsfile/argsfile.go",
+        "internal/argsfile/argsfile_test.go",
+        "internal/qemu/qemu.go",
+        "internal/runstate/runstate.go"
+      ]
+    },
+    {
+      "id": "T-B0",
+      "name": "discovery and threat model",
+      "dependsOn": [
+        "T-A2"
+      ],
+      "status": "implemented",
+      "evidence": [
+        "internal/vfio/sysfs.go",
+        "internal/vfio/plan.go",
+        "internal/vfio/vfio_test.go"
+      ]
+    },
+    {
+      "id": "T-B1",
+      "name": "host wide leases",
+      "dependsOn": [
+        "T-B0"
+      ],
+      "status": "implemented",
+      "evidence": [
+        "internal/vfio/lease.go",
+        "internal/vfio/vfio_test.go",
+        "internal/cmds/start.go"
+      ],
+      "failure": "the multi client test of the shared mode of Reims runs as a unit test only; the board test is still missing"
+    },
+    {
+      "id": "T-C0",
+      "name": "plist tooling",
+      "dependsOn": [
+        "T-A2"
+      ],
+      "status": "implemented",
+      "evidence": [
+        "internal/opencore/plist.go",
+        "internal/opencore/plist_test.go"
+      ]
+    },
+    {
+      "id": "T-C1",
+      "name": "identity and generation",
+      "dependsOn": [
+        "T-C0"
+      ],
+      "status": "implemented",
+      "evidence": [
+        "internal/opencore/identity.go",
+        "internal/opencore/image.go",
+        "internal/opencore/generate.go"
+      ]
+    },
+    {
+      "id": "T-D1",
+      "name": "measurements of GB206",
+      "dependsOn": [
+        "T-B1"
+      ],
+      "status": "blocked",
+      "evidence": [],
+      "failure": "the measurements need the physical board and a host with IOMMU"
+    },
+    {
+      "id": "T-C2a",
+      "name": "measured stage configurations",
+      "dependsOn": [
+        "T-A0",
+        "T-C1",
+        "T-D1"
+      ],
+      "status": "partial",
+      "evidence": [
+        "resources/args-template-vfio-daily.txt",
+        "resources/args-template-vfio-recovery.txt",
+        "resources/opencore-mxgpu/"
+      ],
+      "failure": "the aperture and the ReBAR values stay at the values of the template until the measurements of T-D1 exist"
+    },
+    {
+      "id": "T-B2",
+      "name": "dedicated mode",
+      "dependsOn": [
+        "T-B1",
+        "T-C1",
+        "T-C2a"
+      ],
+      "status": "partial",
+      "evidence": [
+        "internal/cmds/gpuhost.go"
+      ],
+      "failure": "the twenty cycles of the gate G1a need the board and a second card for the host"
+    },
+    {
+      "id": "T-B3",
+      "name": "single gpu mode",
+      "dependsOn": [
+        "T-B1",
+        "T-C1",
+        "T-C2a"
+      ],
+      "status": "partial",
+      "evidence": [
+        "internal/cmds/gpuhost.go"
+      ],
+      "failure": "the rescue service of the matrix of the gate G1b is not written yet"
+    },
+    {
+      "id": "T-B4",
+      "name": "shared mode of Reims",
+      "dependsOn": [
+        "T-B1",
+        "T-D0",
+        "T-C1",
+        "T-C2a"
+      ],
+      "status": "partial",
+      "evidence": [
+        "internal/cmds/gpuhost.go",
+        "internal/qemu/qemu.go"
+      ],
+      "failure": "the runtime of Reims and its hash are not provisioned yet"
+    },
+    {
+      "id": "T-D1a",
+      "name": "firmware provisioning and provenance",
+      "dependsOn": [
+        "T-D0",
+        "T-D1"
+      ],
+      "status": "blocked",
+      "evidence": [],
+      "failure": "the bundle of the firmware needs the network and the pinned release of the resource manager"
+    },
+    {
+      "id": "T-D2a",
+      "name": "probes of IOKit",
+      "dependsOn": [
+        "T-D0",
+        "T-A0"
+      ],
+      "status": "not-started",
+      "evidence": [
+        "driver/tests/load-probes/README.md"
+      ],
+      "failure": "the probes need a macOS builder and the two probe machines"
+    },
+    {
+      "id": "T-D2b",
+      "name": "probe of the Metal bundle",
+      "dependsOn": [
+        "T-D0",
+        "T-A0"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the probe needs a macOS builder and the two probe machines"
+    },
+    {
+      "id": "T-D2c",
+      "name": "probes of VideoToolbox",
+      "dependsOn": [
+        "T-D0",
+        "T-A0"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the probe needs a macOS builder and the two probe machines"
+    },
+    {
+      "id": "T-J-Dev",
+      "name": "development signing and load",
+      "dependsOn": [
+        "T-D2a",
+        "T-A0"
+      ],
+      "status": "partial",
+      "evidence": [
+        "driver/installer/load-dev.sh"
+      ],
+      "failure": "the matrix of the signing states needs a guest"
+    },
+    {
+      "id": "T-E0",
+      "name": "the skeleton of MXRM",
+      "dependsOn": [
+        "T-D2a",
+        "T-J-Dev"
+      ],
+      "status": "not-started",
+      "evidence": [
+        "driver/kexts/MXRM/README.md",
+        "driver/abi/mxrm_abi.h"
+      ],
+      "failure": "the sources of the kernel extension are not written yet"
+    },
+    {
+      "id": "T-E1",
+      "name": "the BARs, the interrupts and the DMA",
+      "dependsOn": [
+        "T-E0"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the sources of the kernel extension are not written yet"
+    },
+    {
+      "id": "T-E2",
+      "name": "the GSP",
+      "dependsOn": [
+        "T-E1",
+        "T-D1a"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the sources of the kernel extension are not written yet"
+    },
+    {
+      "id": "T-E2b",
+      "name": "MXKMS",
+      "dependsOn": [
+        "T-E2"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the sources of the kernel extension are not written yet"
+    },
+    {
+      "id": "T-C2b",
+      "name": "the hand over of the boot",
+      "dependsOn": [
+        "T-C2a",
+        "T-E2b"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the sources of the kernel extension are not written yet"
+    },
+    {
+      "id": "T-E3",
+      "name": "the memory and the channels",
+      "dependsOn": [
+        "T-E2b"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the sources of the kernel extension are not written yet"
+    },
+    {
+      "id": "T-E4",
+      "name": "the secure client",
+      "dependsOn": [
+        "T-E3"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the sources of the kernel extension are not written yet"
+    },
+    {
+      "id": "T-F0",
+      "name": "MXFB",
+      "dependsOn": [
+        "T-E2b"
+      ],
+      "status": "not-started",
+      "evidence": [
+        "driver/kexts/MXFB/README.md"
+      ],
+      "failure": "the sources of the kernel extension are not written yet"
+    },
+    {
+      "id": "T-F1",
+      "name": "MXAGDC",
+      "dependsOn": [
+        "T-F0"
+      ],
+      "status": "not-started",
+      "evidence": [
+        "driver/kexts/MXAGDC/README.md"
+      ],
+      "failure": "the sources of the kernel extension are not written yet"
+    },
+    {
+      "id": "T-F2",
+      "name": "the IOSurface",
+      "dependsOn": [
+        "T-F1"
+      ],
+      "status": "not-started",
+      "evidence": [
+        "driver/kexts/MXAccel/README.md"
+      ],
+      "failure": "the sources of the kernel extension are not written yet"
+    },
+    {
+      "id": "T-M1a",
+      "name": "the objects of Metal with a mock backend",
+      "dependsOn": [
+        "T-E4",
+        "T-F2"
+      ],
+      "status": "not-started",
+      "evidence": [
+        "driver/plugin/MXMTLDriver/README.md"
+      ],
+      "failure": "the sources of the plug-in are not written yet"
+    },
+    {
+      "id": "T-M3a",
+      "name": "the first path of NVK on XNU",
+      "dependsOn": [
+        "T-E4"
+      ],
+      "status": "not-started",
+      "evidence": [
+        "driver/nvk/xnu/README.md"
+      ],
+      "failure": "the sources of the translator are not written yet"
+    },
+    {
+      "id": "T-M4a",
+      "name": "the first AIR",
+      "dependsOn": [
+        "T-M1a",
+        "T-M3a"
+      ],
+      "status": "not-started",
+      "evidence": [
+        "driver/translator/MXAIR/README.md"
+      ],
+      "failure": "the sources of the translator are not written yet"
+    },
+    {
+      "id": "T-F3",
+      "name": "the IOSurface and the integration with NVK",
+      "dependsOn": [
+        "T-F2",
+        "T-M3a"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the sources of the kernel extension are not written yet"
+    },
+    {
+      "id": "T-M1b",
+      "name": "the first real Metal",
+      "dependsOn": [
+        "T-M4a",
+        "T-F3"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the sources of the plug-in are not written yet"
+    },
+    {
+      "id": "T-H0",
+      "name": "the decoder",
+      "dependsOn": [
+        "T-F3"
+      ],
+      "status": "not-started",
+      "evidence": [
+        "driver/video/MXVideo/README.md"
+      ],
+      "failure": "the sources of the video components are not written yet"
+    },
+    {
+      "id": "T-H1",
+      "name": "the encoder",
+      "dependsOn": [
+        "T-H0"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the sources of the video components are not written yet"
+    },
+    {
+      "id": "T-H2",
+      "name": "the HDR",
+      "dependsOn": [
+        "T-H1"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the sources of the video components are not written yet"
+    },
+    {
+      "id": "T-H3",
+      "name": "many displays and the variable refresh",
+      "dependsOn": [
+        "T-H2"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the sources of the video components are not written yet"
+    },
+    {
+      "id": "T-I0",
+      "name": "the sleep and the wake",
+      "dependsOn": [
+        "T-H3"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "the sources of the kernel extension are not written yet"
+    },
+    {
+      "id": "T-I1",
+      "name": "the plan of the migration",
+      "dependsOn": [
+        "T-I0"
+      ],
+      "status": "implemented",
+      "evidence": [
+        "internal/migration/plan.go",
+        "internal/migration/checkpoint_test.go"
+      ]
+    },
+    {
+      "id": "T-I2",
+      "name": "the format of the checkpoint",
+      "dependsOn": [
+        "T-I1"
+      ],
+      "status": "implemented",
+      "evidence": [
+        "internal/migration/checkpoint.go",
+        "internal/migration/checkpoint_test.go"
+      ]
+    },
+    {
+      "id": "T-I3",
+      "name": "the migration of VFIO",
+      "dependsOn": [
+        "T-I2"
+      ],
+      "status": "partial",
+      "evidence": [
+        "internal/cmds/migrate.go"
+      ],
+      "failure": "the state of the device of the guest is not written yet"
+    },
+    {
+      "id": "T-I4",
+      "name": "the cooperative migration",
+      "dependsOn": [
+        "T-I3"
+      ],
+      "status": "partial",
+      "evidence": [
+        "internal/cmds/migrate.go",
+        "internal/migration/plan.go"
+      ],
+      "failure": "the state of the device of the guest is not written yet"
+    },
+    {
+      "id": "T-I5",
+      "name": "the migration of Reims",
+      "dependsOn": [
+        "T-I4"
+      ],
+      "status": "partial",
+      "evidence": [
+        "internal/cmds/migrate.go"
+      ],
+      "failure": "the runtime of Reims does not offer the save and the load yet"
+    },
+    {
+      "id": "T-J-Release",
+      "name": "the production signing of the release",
+      "dependsOn": [
+        "G4"
+      ],
+      "status": "partial",
+      "evidence": [
+        "resources/mxgpu-release-public-key.txt",
+        "driver/installer/sign-release.sh"
+      ],
+      "failure": "the private key of the release lives outside the repository and is not available here"
+    },
+    {
+      "id": "T-J0",
+      "name": "the package and its signature",
+      "dependsOn": [
+        "T-J-Release"
+      ],
+      "status": "partial",
+      "evidence": [
+        "internal/driver/manifest.go",
+        "internal/driver/verify.go",
+        "internal/driver/driver_test.go",
+        "driver/installer/package.sh",
+        "driver/installer/sign-release.sh"
+      ],
+      "failure": "the release key is not signed by its owner yet and no package was built"
+    },
+    {
+      "id": "T-J1",
+      "name": "the verification and the transaction of the installation",
+      "dependsOn": [
+        "T-J0"
+      ],
+      "status": "partial",
+      "evidence": [
+        "internal/cmds/driverinstall.go",
+        "internal/backup/backup.go",
+        "driver/installer/install.sh"
+      ],
+      "failure": "the transaction was never run inside a guest"
+    },
+    {
+      "id": "T-J2",
+      "name": "the removal",
+      "dependsOn": [
+        "T-J1"
+      ],
+      "status": "partial",
+      "evidence": [
+        "internal/cmds/gpudevice.go",
+        "driver/installer/uninstall.sh"
+      ],
+      "failure": "the removal was never run inside a guest"
+    },
+    {
+      "id": "T-K0",
+      "name": "Sonoma",
+      "dependsOn": [
+        "T-J1"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "no guest was installed yet"
+    },
+    {
+      "id": "T-K1",
+      "name": "the upgrade from Sonoma to Tahoe",
+      "dependsOn": [
+        "T-K0"
+      ],
+      "status": "not-started",
+      "evidence": [],
+      "failure": "no guest was installed yet"
+    },
+    {
+      "id": "T-K2",
+      "name": "the seal of the base",
+      "dependsOn": [
+        "T-K1"
+      ],
+      "status": "partial",
+      "evidence": [
+        "internal/store/store.go"
+      ],
+      "failure": "the seal was never checked on a sealed base of a guest"
+    },
+    {
+      "id": "T-L0",
+      "name": "the clone",
+      "dependsOn": [
+        "T-C1",
+        "T-K2"
+      ],
+      "status": "implemented",
+      "evidence": [
+        "internal/store/store.go",
+        "internal/store/store_test.go"
+      ]
+    },
+    {
+      "id": "T-L1",
+      "name": "the deletion and the recovery",
+      "dependsOn": [
+        "T-B1",
+        "T-J2"
+      ],
+      "status": "implemented",
+      "evidence": [
+        "internal/store/store.go",
+        "internal/store/store_test.go"
+      ]
+    },
+    {
+      "id": "T-L2",
+      "name": "the status and the doctor",
+      "dependsOn": [
+        "G4",
+        "T-J1"
+      ],
+      "status": "implemented",
+      "evidence": [
+        "internal/cmds/status.go",
+        "internal/doctor/doctor.go"
+      ]
+    },
+    {
+      "id": "T-L3",
+      "name": "the guards of the acceleration and of the display",
+      "dependsOn": [
+        "T-A2"
+      ],
+      "status": "implemented",
+      "evidence": [
+        "internal/cmds/accel.go",
+        "internal/cmds/gpu.go",
+        "internal/cmds/guards_test.go"
+      ]
+    },
+    {
+      "id": "T-CI1",
+      "name": "the workflow of the driver",
+      "dependsOn": [
+        "the first build of the driver"
+      ],
+      "status": "partial",
+      "evidence": [
+        ".github/workflows/driver.yml"
+      ],
+      "failure": "the job of the builder waits for the sources of the kernel extension"
+    },
+    {
+      "id": "T-CI2",
+      "name": "the workflow of the hardware",
+      "dependsOn": [
+        "G1"
+      ],
+      "status": "partial",
+      "evidence": [
+        "scripts/integration-mxgpu.sh"
+      ],
+      "failure": "the workflow needs a runner with the board and the second card"
+    }
+  ],
+  "notes": [
+    "The tasks that need the physical board, a macOS builder or a guest stay open; no gate is declared before its evidence exists.",
+    "The tests of this repository are the evidence of the parts of the plan that live in the host tooling; the hardware evidence lives in artifacts/mxgpu/<gate>."
+  ]
+}

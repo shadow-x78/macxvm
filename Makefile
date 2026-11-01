@@ -9,6 +9,12 @@ build:
 test:
 	go vet ./... && go test ./...
 
+test-host:
+	go test ./internal/driver/... && ./scripts/check-headers.sh
+
+driver-package:
+	$(MAKE) -C driver package
+
 install: build
 	mkdir -p $(HOME)/.local/bin
 	install -m 0755 bin/macxvm $(HOME)/.local/bin/macxvm

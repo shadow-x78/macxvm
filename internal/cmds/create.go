@@ -18,6 +18,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/paths"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/sizeparse"
+	"github.com/shadow-x78/macxvm/internal/stages"
 	"github.com/shadow-x78/macxvm/internal/store"
 )
 
@@ -25,7 +26,7 @@ func init() {
 	register(Command{
 		Name:    "create",
 		Group:   "Machines",
-		Usage:   "macxvm create NAME (--base BASE | --args-file FILE) [--assets DIR] [--nvram-template FILE] [--profile cli|xcode] [--cpus N] [--ram SIZE] [--disk GiB] [--user NAME] [--qemu BIN] [--macos-version V] [--replace] [--force]",
+		Usage:   "macxvm create NAME (--base BASE | --args-file FILE) [--assets DIR] [--nvram-template FILE] [--profile cli|xcode] [--cpus N] [--ram SIZE] [--disk GiB] [--user NAME] [--qemu BIN] [--macos-version V] [--cpu MODEL] [--gpu-backend none|vfio|reims] [--gpu BDF] [--audio BDF] [--host-gpu BDF] [--single-gpu] [--rom FILE] [--reims-runtime PATH] [--reims-resolution WxH] [--replace] [--force]",
 		Summary: "register a virtual machine",
 		Run:     cmdCreate,
 	})
@@ -49,6 +50,15 @@ func cmdCreate(args []string) error {
 	user := fs.String("user", "admin", "name of the user in the guest")
 	qemuBin := fs.String("qemu", config.DefaultQemuBinary, "QEMU binary")
 	macOSVersion := fs.String("macos-version", "", "macOS version of the guest, informational")
+	cpuModel := fs.String("cpu", "", "processor model of the guest: host or skylake")
+	gpuBackend := fs.String("gpu-backend", config.BackendNone, "GPU backend: none, vfio or reims")
+	gpuPCI := fs.String("gpu", "", "PCI address of the graphics card, for example 0000:01:00.0")
+	gpuAudio := fs.String("audio", "", "PCI address of the audio function of the graphics card")
+	hostGPU := fs.String("host-gpu", "", "PCI address of the graphics card that drives the host")
+	singleGPU := fs.Bool("single-gpu", false, "move the only graphics card of the host into the guest")
+	romFile := fs.String("rom", "", "ROM file of the graphics card")
+	reimsRuntime := fs.String("reims-runtime", "", "directory of the reims runtime")
+	reimsResolution := fs.String("reims-resolution", "", "resolution of the reims virtual card, for example 1920x1080")
 	replace := fs.Bool("replace", false, "replace an existing stopped virtual machine")
 	force := fs.Bool("force", false, "override resource limits only")
 
@@ -64,7 +74,7 @@ func cmdCreate(args []string) error {
 		return exitcode.New(exitcode.Usage, "invalid SSH user %q; use a macOS account name of letters, digits, '_' or '-' (max 31 chars)", *user)
 	}
 	if *base != "" {
-		for _, forbidden := range []string{"profile", "cpus", "ram", "disk", "user", "qemu", "force", "replace", "args-file", "assets", "nvram-template", "macos-version"} {
+		for _, forbidden := range []string{"profile", "cpus", "ram", "disk", "user", "qemu", "force", "replace", "args-file", "assets", "nvram-template", "macos-version", "cpu", "gpu-backend", "gpu", "audio", "host-gpu", "single-gpu", "rom", "reims-runtime", "reims-resolution"} {
 			if flagWasSet(fs, forbidden) {
 				return exitcode.New(exitcode.Usage, "--base cannot be combined with --%s; the base's verified resources and identity are inherited", forbidden)
 			}
@@ -78,7 +88,16 @@ func cmdCreate(args []string) error {
 		}
 		return createFromBase(name, *base)
 	}
-	if *argsFile == "" {
+	gpu, err := resolveGPUConfig(fs, *gpuBackend, *gpuPCI, *gpuAudio, *hostGPU, *singleGPU, *romFile, *reimsRuntime, *reimsResolution)
+	if err != nil {
+		return err
+	}
+	if gpu.UsesGPU() && *argsFile == "" {
+		if *assets == "" {
+			return exitcode.New(exitcode.Usage,
+				"--assets DIR is required for a machine with the %s backend; the stage files need the boot assets", gpu.Backend)
+		}
+	} else if *argsFile == "" {
 		return exitcode.New(exitcode.Usage,
 			"--args-file is required (for a macOS guest, run: macxvm image prepare %s, which writes one)", name)
 	}
@@ -107,12 +126,16 @@ func cmdCreate(args []string) error {
 		}
 	}
 
-	argsPath, err := filepath.Abs(*argsFile)
-	if err != nil {
-		return exitcode.New(exitcode.Usage, "invalid args file '%s'", *argsFile)
-	}
-	if _, err := os.Stat(argsPath); err != nil {
-		return exitcode.New(exitcode.Usage, "the args file '%s' does not exist", *argsFile)
+	argsPath := ""
+	text := ""
+	if *argsFile != "" {
+		argsPath, err = filepath.Abs(*argsFile)
+		if err != nil {
+			return exitcode.New(exitcode.Usage, "invalid args file '%s'", *argsFile)
+		}
+		if _, err := os.Stat(argsPath); err != nil {
+			return exitcode.New(exitcode.Usage, "the args file '%s' does not exist", *argsFile)
+		}
 	}
 	assetsPath := ""
 	if *assets != "" {
@@ -143,6 +166,14 @@ func cmdCreate(args []string) error {
 		}
 	}
 
+	if *cpuModel == "" {
+		*cpuModel = "host"
+	}
+	resolvedCPU, err := image.LookupCPU(*cpuModel)
+	if err != nil {
+		return err
+	}
+
 	cfg.Name = name
 	cfg.ID = config.NewID()
 	cfg.MAC = config.NewMAC()
@@ -150,25 +181,30 @@ func cmdCreate(args []string) error {
 	cfg.SSHUser = *user
 	cfg.Assets = assetsPath
 	cfg.MacOSVersion = *macOSVersion
+	cfg.CPUModel = resolvedCPU
+	cfg.GPU = gpu
 	cfg.Readiness = "created"
 	cfg.CreatedAt = time.Now()
 
-	text, err := os.ReadFile(argsPath)
-	if err != nil {
-		return exitcode.New(exitcode.Generic, "cannot read the args file: %v", err)
-	}
-	normal, install, err := argsfile.Parse(string(text))
-	if err != nil {
-		return exitcode.New(exitcode.BadArgsFile, "args file: %v (see README: args file)", err)
-	}
-	all := make([][]string, 0, len(normal)+len(install))
-	all = append(all, normal...)
-	all = append(all, install...)
-	if err := argsfile.Validate(all); err != nil {
-		return err
-	}
-	if err := argsfile.CheckPlaceholders(all); err != nil {
-		return err
+	if text != "" || argsPath != "" {
+		raw, err := os.ReadFile(argsPath)
+		if err != nil {
+			return exitcode.New(exitcode.Generic, "cannot read the args file: %v", err)
+		}
+		text = string(raw)
+		normal, install, err := argsfile.Parse(text)
+		if err != nil {
+			return exitcode.New(exitcode.BadArgsFile, "args file: %v (see README: args file)", err)
+		}
+		all := make([][]string, 0, len(normal)+len(install))
+		all = append(all, normal...)
+		all = append(all, install...)
+		if err := argsfile.Validate(all); err != nil {
+			return err
+		}
+		if err := argsfile.CheckPlaceholders(all); err != nil {
+			return err
+		}
 	}
 
 	port, err := store.FreePort()
@@ -196,8 +232,17 @@ func cmdCreate(args []string) error {
 	if err := image.CreateDisk(diskPath, cfg.DiskGiB, runner); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filepath.Join(staging, "args.txt"), text, 0o600); err != nil {
-		return exitcode.New(exitcode.Generic, "cannot copy the args file: %v", err)
+	if gpu.UsesGPU() {
+		if err := stages.WriteArgs(staging, gpu.Backend, resolvedCPU); err != nil {
+			return err
+		}
+		if err := writeOpenCoreStaging(staging, gpu.Backend, assetsPath); err != nil {
+			return err
+		}
+	} else {
+		if err := os.WriteFile(filepath.Join(staging, "args.txt"), []byte(text), 0o600); err != nil {
+			return exitcode.New(exitcode.Generic, "cannot copy the args file: %v", err)
+		}
 	}
 	if nvramPath != "" {
 		b, err := os.ReadFile(nvramPath)
@@ -208,7 +253,11 @@ func cmdCreate(args []string) error {
 			return exitcode.New(exitcode.Generic, "cannot copy the NVRAM file: %v", err)
 		}
 	}
-	if err := argsfile.ValidateExpansionAt(&cfg, string(text), diskPath, filepath.Join(staging, "nvram.fd")); err != nil {
+	if gpu.UsesGPU() {
+		if err := validateStageExpansion(&cfg, staging); err != nil {
+			return err
+		}
+	} else if err := argsfile.ValidateExpansionAt(&cfg, text, diskPath, filepath.Join(staging, "nvram.fd")); err != nil {
 		return exitcode.New(exitcode.BadArgsFile, "the generated QEMU arguments cannot be expanded: %v", err)
 	}
 	if err := config.Save(staging, &cfg); err != nil {

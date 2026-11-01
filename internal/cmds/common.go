@@ -14,6 +14,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/names"
+	"github.com/shadow-x78/macxvm/internal/qemu"
 	"github.com/shadow-x78/macxvm/internal/runstate"
 	"github.com/shadow-x78/macxvm/internal/sshx"
 	"github.com/shadow-x78/macxvm/internal/store"
@@ -23,6 +24,20 @@ type vmResourcesJSON struct {
 	CPUs    int `json:"cpus"`
 	RAMMiB  int `json:"ramMiB"`
 	DiskGiB int `json:"diskGiB"`
+}
+
+type vmGPUJSON struct {
+	Backend       string            `json:"backend"`
+	Driver        string            `json:"driver"`
+	DriverVersion string            `json:"driverVersion,omitempty"`
+	DisplayStage  string            `json:"displayStage,omitempty"`
+	Firmware      string            `json:"firmwareVersion,omitempty"`
+	MaxHeads      int               `json:"maxHeads,omitempty"`
+	HDR           bool              `json:"hdr,omitempty"`
+	ReBAR         bool              `json:"rebar,omitempty"`
+	SingleGPU     bool              `json:"singleGpu,omitempty"`
+	Ready         bool              `json:"ready"`
+	Features      map[string]string `json:"features,omitempty"`
 }
 
 type vmJSON struct {
@@ -38,6 +53,7 @@ type vmJSON struct {
 	SSHPort  int             `json:"sshPort"`
 	VNC      string          `json:"vnc,omitempty"`
 	MacOS    string          `json:"macos"`
+	GPU      *vmGPUJSON      `json:"gpu,omitempty"`
 }
 
 func toJSON(cfg *config.VMConfig) vmJSON {
@@ -52,12 +68,28 @@ func toJSON(cfg *config.VMConfig) vmJSON {
 	if display, ok := runstate.VNC(cfg); ok {
 		vnc = "127.0.0.1:" + strconv.Itoa(5900+display)
 	}
-	return vmJSON{
+	out := vmJSON{
 		Name: cfg.Name, Profile: cfg.Profile, State: runstate.State(cfg), Kind: kind, Base: cfg.BackingOf,
 		CPUs: cfg.CPUs, RAMMiB: cfg.MemoryMiB, DiskGiB: cfg.DiskGiB,
 		Defaults: vmResourcesJSON{CPUs: defaults.CPUs, RAMMiB: defaults.MemoryMiB, DiskGiB: defaults.DiskGiB},
 		SSHPort:  cfg.SSHPort, VNC: vnc, MacOS: cfg.MacOSVersion,
 	}
+	if cfg.GPU.UsesGPU() {
+		out.GPU = &vmGPUJSON{
+			Backend:       cfg.GPU.Backend,
+			Driver:        cfg.GPU.Driver,
+			DriverVersion: cfg.GPU.DriverVersion,
+			DisplayStage:  cfg.GPU.DisplayStage,
+			Firmware:      cfg.GPU.FirmwareVersion,
+			MaxHeads:      cfg.GPU.MaxHeads,
+			HDR:           cfg.GPU.HDR,
+			ReBAR:         cfg.GPU.ReBAREnabled(),
+			SingleGPU:     cfg.GPU.SingleGPU,
+			Ready:         runstate.GPUReady(cfg),
+			Features:      runstate.ProbeFeatures(cfg),
+		}
+	}
+	return out
 }
 
 func stateOf(cfg *config.VMConfig) string {
@@ -117,7 +149,7 @@ func ensureRunning(cfg *config.VMConfig) (bool, error) {
 		}
 		return false, nil
 	}
-	started, err := startVM(cfg, false, false, false)
+	started, err := startVM(cfg, qemu.StartOptions{Stage: config.StageDaily})
 	if err != nil {
 		return started, err
 	}

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -25,11 +26,33 @@ type Context struct {
 	SSHPort    int
 	DiskOpts   string
 	QemuBinary string
+	CPUModel   string
+
+	OpenCoreImage    string
+	GPUPCI           string
+	GPUAudioPCI      string
+	GPURomOpt        string
+	USBControllerPCI string
+	USBDevices       []USBDevice
+	ReimsROM         string
+	ReimsResolution  string
+}
+
+type USBDevice struct {
+	VendorID  string
+	ProductID string
+	AddrOpt   string
+}
+
+type Line struct {
+	Tokens  []string
+	Install bool
+	When    []string
 }
 
 var ForbiddenFlags = []string{
 	"-name", "-pidfile", "-qmp", "-monitor", "-display",
-	"-vnc", "-daemonize", "-serial", "-nographic",
+	"-vnc", "-daemonize", "-serial", "-nographic", "-incoming",
 }
 
 var RequiredPlaceholders = []string{"DISK_IMG", "NETDEV", "MAC", "RAM_MIB", "CPUS"}
@@ -37,9 +60,28 @@ var RequiredPlaceholders = []string{"DISK_IMG", "NETDEV", "MAC", "RAM_MIB", "CPU
 var knownPlaceholders = map[string]bool{
 	"CPUS": true, "CORES": true, "RAM_MIB": true, "DISK_IMG": true,
 	"DISK_OPTS": true, "NVRAM": true, "ASSETS": true, "MAC": true, "NETDEV": true,
+	"OPENCORE_IMG": true, "GPU_PCI": true, "GPU_AUDIO_PCI": true, "GPU_ROM_OPT": true,
+	"USB_CONTROLLER_PCI": true,
+	"USB1_VENDOR":        true, "USB1_PRODUCT": true, "USB1_ADDR_OPT": true,
+	"USB2_VENDOR": true, "USB2_PRODUCT": true, "USB2_ADDR_OPT": true,
+	"USB3_VENDOR": true, "USB3_PRODUCT": true, "USB3_ADDR_OPT": true,
+	"USB4_VENDOR": true, "USB4_PRODUCT": true, "USB4_ADDR_OPT": true,
+	"REIMS_ROM": true, "REIMS_RESOLUTION": true,
+	"CPU_MODEL": true,
 }
 
-var placeholderPattern = regexp.MustCompile(`\{\{[A-Z_]+\}\}`)
+var runtimePlaceholders = func() map[string]bool {
+	out := make(map[string]bool, len(knownPlaceholders))
+	for name, ok := range knownPlaceholders {
+		if name == "CPU_MODEL" {
+			continue
+		}
+		out[name] = ok
+	}
+	return out
+}()
+
+var placeholderPattern = regexp.MustCompile(`\{\{[A-Z_0-9]+\}\}`)
 
 func Tokenize(line string) ([]string, error) {
 	var tokens []string
@@ -113,38 +155,62 @@ loop:
 	return tokens, nil
 }
 
-func Parse(text string) (normal, install [][]string, err error) {
-	for _, line := range strings.Split(text, "\n") {
-		trimmed := strings.TrimSpace(line)
+func ParseLines(text string) ([]Line, error) {
+	var out []Line
+	for _, raw := range strings.Split(text, "\n") {
+		trimmed := strings.TrimSpace(raw)
 		if trimmed == "" {
 			continue
 		}
+		install := false
 		if strings.HasPrefix(trimmed, "#install ") {
-			toks, err := Tokenize(strings.TrimSpace(strings.TrimPrefix(trimmed, "#install ")))
-			if err != nil {
-				return nil, nil, err
-			}
-			if len(toks) > 0 {
-				install = append(install, toks)
-			}
+			install = true
+			trimmed = strings.TrimSpace(strings.TrimPrefix(trimmed, "#install"))
+		} else if trimmed == "#install" {
 			continue
 		}
-		if strings.HasPrefix(trimmed, "#") {
+		var when []string
+		for strings.HasPrefix(trimmed, "#when ") {
+			rest := strings.TrimSpace(strings.TrimPrefix(trimmed, "#when"))
+			fields := strings.Fields(rest)
+			if len(fields) == 0 {
+				return nil, errors.New("a #when line needs the name of a placeholder")
+			}
+			name := strings.TrimSuffix(strings.TrimPrefix(fields[0], "{{"), "}}")
+			when = append(when, name)
+			trimmed = strings.TrimSpace(strings.TrimPrefix(rest, fields[0]))
+		}
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
 			continue
 		}
 		toks, err := Tokenize(trimmed)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		if len(toks) == 0 {
 			continue
 		}
-		normal = append(normal, toks)
+		out = append(out, Line{Tokens: toks, Install: install, When: when})
+	}
+	return out, nil
+}
+
+func Parse(text string) (normal, install [][]string, err error) {
+	lines, err := ParseLines(text)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, line := range lines {
+		if line.Install {
+			install = append(install, line.Tokens)
+			continue
+		}
+		normal = append(normal, line.Tokens)
 	}
 	return normal, install, nil
 }
 
-func Validate(lines [][]string) error {
+func ValidateFlags(lines [][]string) error {
 	for _, toks := range lines {
 		for _, tok := range toks {
 			if spelling, ok := forbiddenFlag(tok); ok {
@@ -161,6 +227,17 @@ func Validate(lines [][]string) error {
 			}
 		}
 	}
+	return nil
+}
+
+func Validate(lines [][]string) error {
+	if err := ValidateFlags(lines); err != nil {
+		return err
+	}
+	return validateRequired(lines)
+}
+
+func validateRequired(lines [][]string) error {
 	for _, name := range RequiredPlaceholders {
 		if !containsPlaceholder(lines, name) {
 			return exitcode.New(exitcode.BadArgsFile,
@@ -189,11 +266,15 @@ func flagSpellings(flag string) []string {
 }
 
 func CheckPlaceholders(lines [][]string) error {
+	return checkPlaceholders(lines, knownPlaceholders)
+}
+
+func checkPlaceholders(lines [][]string, allowed map[string]bool) error {
 	for _, toks := range lines {
 		for _, tok := range toks {
 			for _, m := range placeholderPattern.FindAllString(tok, -1) {
 				name := strings.TrimSuffix(strings.TrimPrefix(m, "{{"), "}}")
-				if !knownPlaceholders[name] {
+				if !allowed[name] {
 					return exitcode.New(exitcode.BadArgsFile,
 						"args file: unknown placeholder '{{%s}}' (see README: args file)", name)
 				}
@@ -231,24 +312,88 @@ func Expand(lines [][]string, ctx Context) ([]string, error) {
 }
 
 func Build(text string, ctx Context, install bool) ([]string, error) {
-	normal, inst, err := Parse(text)
+	stage := config.StageDaily
+	if install {
+		stage = config.StageInstall
+	}
+	return BuildStage(text, ctx, stage)
+}
+
+func BuildStage(text string, ctx Context, stage string) ([]string, error) {
+	switch stage {
+	case config.StageInstall, config.StageDaily, config.StageRecovery:
+	default:
+		return nil, exitcode.New(exitcode.BadArgsFile,
+			"args file: unknown stage %q (use install, daily or recovery)", stage)
+	}
+	lines, err := ParseLines(text)
 	if err != nil {
 		return nil, exitcode.New(exitcode.BadArgsFile, "args file: %v (see README: args file)", err)
 	}
-	all := make([][]string, 0, len(normal)+len(inst))
-	all = append(all, normal...)
-	all = append(all, inst...)
-	if err := Validate(all); err != nil {
+	all := make([][]string, 0, len(lines))
+	for _, line := range lines {
+		all = append(all, line.Tokens)
+	}
+	if err := ValidateFlags(all); err != nil {
 		return nil, err
 	}
-	lines := normal
-	if install {
-		lines = make([][]string, 0, len(normal)+len(inst))
-		lines = append(lines, normal...)
-		lines = append(lines, inst...)
+	if err := checkPlaceholders(all, runtimePlaceholders); err != nil {
+		return nil, err
 	}
-	lines = DropBinary(lines, ctx.QemuBinary)
-	return Expand(lines, ctx)
+	for _, line := range lines {
+		for _, cond := range line.When {
+			if !knownPlaceholders[cond] {
+				return nil, exitcode.New(exitcode.BadArgsFile,
+					"args file: unknown placeholder %q in a #when condition", cond)
+			}
+		}
+	}
+	var active [][]string
+	for _, line := range lines {
+		if stage != config.StageInstall && line.Install {
+			continue
+		}
+		keep := true
+		for _, cond := range line.When {
+			value, err := placeholderValue(cond, ctx)
+			if err != nil {
+				return nil, err
+			}
+			if value == "" {
+				keep = false
+				break
+			}
+		}
+		if !keep {
+			continue
+		}
+		active = append(active, line.Tokens)
+	}
+	if err := validateRequired(active); err != nil {
+		return nil, err
+	}
+	expanded, err := Expand(active, ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, tok := range expanded {
+		if tok == "" {
+			return nil, exitcode.New(exitcode.BadArgsFile,
+				"args file: a line expands to an empty argument")
+		}
+	}
+	return DropFirstBinary(expanded, ctx.QemuBinary), nil
+}
+
+func DropFirstBinary(tokens []string, qemuBinary string) []string {
+	if len(tokens) == 0 {
+		return tokens
+	}
+	first := tokens[0]
+	if first == config.DefaultQemuBinary || (qemuBinary != "" && first == qemuBinary) {
+		return tokens[1:]
+	}
+	return tokens
 }
 
 func DiskOptValue(cfg *config.VMConfig) (string, error) {
@@ -273,7 +418,7 @@ func ValidateExpansionAt(cfg *config.VMConfig, text, diskPath, nvramPath string)
 	all := make([][]string, 0, len(normal)+len(install))
 	all = append(all, normal...)
 	all = append(all, install...)
-	if err := Validate(all); err != nil {
+	if err := ValidateFlags(all); err != nil {
 		return err
 	}
 	if err := CheckPlaceholders(all); err != nil {
@@ -318,11 +463,75 @@ func ContextFor(cfg *config.VMConfig) (Context, error) {
 		SSHPort:    cfg.SSHPort,
 		DiskOpts:   opts,
 		QemuBinary: cfg.QemuBinary,
+		CPUModel:   cfg.CPUModel,
 	}
 	if _, err := os.Stat(cfg.File("nvram.fd")); err == nil {
 		ctx.NVRAMPath = cfg.File("nvram.fd")
 	}
 	return ctx, nil
+}
+
+func GPUContext(cfg *config.VMConfig, vmDir, stage string) (Context, error) {
+	ctx, err := ContextFor(cfg)
+	if err != nil {
+		return Context{}, err
+	}
+	gpu := cfg.GPU
+	ctx.OpenCoreImage = filepath.Join(vmDir, "opencore", stage+".qcow2")
+	ctx.GPUPCI = gpu.PCI
+	ctx.GPUAudioPCI = gpu.AudioPCI
+	ctx.USBControllerPCI = gpu.USBControllerPCI
+	if gpu.ROMFile != "" {
+		ctx.GPURomOpt = ",romfile=" + EscapeOptionValue(gpu.ROMFile)
+	}
+	for i, dev := range gpu.USBDevices {
+		if i >= config.MaxUSBHostDevices {
+			break
+		}
+		ctx.USBDevices = append(ctx.USBDevices, USBDevice{
+			VendorID:  dev.VendorID,
+			ProductID: dev.ProductID,
+			AddrOpt:   USBAddrOption(dev),
+		})
+	}
+	if gpu.Backend == config.BackendReims {
+		ctx.ReimsROM = ReimsROMPath(gpu.ReimsRuntime)
+		ctx.ReimsResolution = gpu.ReimsResolution
+	}
+	return ctx, nil
+}
+
+func USBAddrOption(dev config.USBHostDevice) string {
+	if dev.Bus == nil || dev.Address == nil {
+		return ""
+	}
+	return fmt.Sprintf(",hostbus=%d,hostaddr=%d", *dev.Bus, *dev.Address)
+}
+
+func EscapeOptionValue(value string) string {
+	return strings.ReplaceAll(value, ",", ",,")
+}
+
+func ReimsROMPath(runtime string) string {
+	if runtime == "" {
+		return ""
+	}
+	return strings.TrimRight(runtime, "/") + "/share/reims.rom"
+}
+
+func ReimsROM(runtime string) (string, error) {
+	path := ReimsROMPath(runtime)
+	if path == "" {
+		return "", errors.New("the reims runtime is not configured")
+	}
+	st, err := os.Stat(path)
+	if err != nil {
+		return "", fmt.Errorf("the reims ROM %s is not available: %w", path, err)
+	}
+	if !st.Mode().IsRegular() || st.Size() == 0 {
+		return "", fmt.Errorf("the reims ROM %s is not a nonempty regular file", path)
+	}
+	return path, nil
 }
 
 func expandToken(tok string, ctx Context) (string, error) {
@@ -376,9 +585,54 @@ func placeholderValue(name string, ctx Context) (string, error) {
 		return ctx.MAC, nil
 	case "NETDEV":
 		return fmt.Sprintf("user,id=net0,hostfwd=tcp:127.0.0.1:%d-:22", ctx.SSHPort), nil
+	case "CPU_MODEL":
+		if ctx.CPUModel == "" {
+			return "", exitcode.New(exitcode.BadArgsFile,
+				"args file: {{CPU_MODEL}} needs the processor model of the machine")
+		}
+		return ctx.CPUModel, nil
+	case "OPENCORE_IMG":
+		return ctx.OpenCoreImage, nil
+	case "GPU_PCI":
+		return ctx.GPUPCI, nil
+	case "GPU_AUDIO_PCI":
+		return ctx.GPUAudioPCI, nil
+	case "GPU_ROM_OPT":
+		return ctx.GPURomOpt, nil
+	case "USB_CONTROLLER_PCI":
+		return ctx.USBControllerPCI, nil
+	case "REIMS_ROM":
+		return ctx.ReimsROM, nil
+	case "REIMS_RESOLUTION":
+		return ctx.ReimsResolution, nil
+	}
+	if value, ok := usbPlaceholder(name, ctx); ok {
+		return value, nil
 	}
 	return "", exitcode.New(exitcode.BadArgsFile,
 		"args file: unknown placeholder '{{%s}}' (see README: args file)", name)
+}
+
+func usbPlaceholder(name string, ctx Context) (string, bool) {
+	for i := 1; i <= config.MaxUSBHostDevices; i++ {
+		prefix := "USB" + strconv.Itoa(i) + "_"
+		if !strings.HasPrefix(name, prefix) {
+			continue
+		}
+		if i > len(ctx.USBDevices) {
+			return "", true
+		}
+		dev := ctx.USBDevices[i-1]
+		switch strings.TrimPrefix(name, prefix) {
+		case "VENDOR":
+			return dev.VendorID, true
+		case "PRODUCT":
+			return dev.ProductID, true
+		case "ADDR_OPT":
+			return dev.AddrOpt, true
+		}
+	}
+	return "", false
 }
 
 func containsPlaceholder(lines [][]string, name string) bool {

@@ -8,6 +8,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- The schema of a machine grew a `gpu` section (schema 2) with the backend
+  (`none`, `vfio`, `reims`), the driver, the addresses of the card, of its
+  audio function and of the host card, the ROM file, the USB controller and
+  its devices, the display stage, the number of heads, the HDR, the ReBAR,
+  the single GPU mode and the runtime of the shared backend. A missing
+  section stays `none`, so the old machines keep their behaviour.
+- `macxvm create NAME --gpu-backend vfio|reims --gpu BDF [--audio BDF]
+  [--host-gpu BDF] [--single-gpu] [--rom FILE] [--reims-runtime PATH]
+  [--reims-resolution WxH] [--cpu MODEL]`: a machine that owns a passed
+  through card writes three stage files and three private OpenCore images,
+  one per stage, with its own identity.
+- `macxvm start NAME --display install|daily|recovery`: the stage of the
+  machine. The install and the recovery stages use `bochs-display` over VNC,
+  the daily stage of a passed through card has no virtual display at all.
+- `macxvm gpu --prepare-vfio`, `--prepare-single-gpu`, `--unbind-vfio` and
+  `--prepare-reims`: the host side of the ownership of a card. The tool
+  refuses a group that holds a device the host still needs, and it prints
+  the conflicting devices.
+- `macxvm gpu NAME --install-driver PACKAGE --accept-driver-changes`,
+  `--remove-driver` and `--recover`: the installation of the MXGPU package
+  in the guest as a transaction, with a signed backup manifest and a
+  rollback that restores exactly what the transaction found.
+- `macxvm driver verify PACKAGE`, `info PACKAGE [--json]` and
+  `build --builder USER@HOST`: the verification of a package against the
+  release key, and the remote build on a macOS builder with a check of the
+  hash of the archive on both sides.
+- `macxvm migrate NAME --to USER@HOST [--check|--live|--cancel]`: the
+  compatibility report, the live migration and the cancel of a session, with
+  the states of the plan and the rules of the rollback.
+- The host wide leases of the cards: a lock on every address and on every
+  IOMMU group of a machine, handed to QEMU so that it lives as long as the
+  machine runs. Two machines can never own the same card, and the stale
+  lease of a dead process is taken over.
+- `driver/`: the tree of the driver with its lock file of the third party
+  components, the notes of the research, the interface of the kernel
+  extension, the scripts of the installer and the matrix of the tests.
+- `docs/DRIVER.md`, `docs/DRIVER_AR.md`, `docs/MIGRATION.md` and
+  `docs/MIGRATION_AR.md`: the package of the driver and the migration, with
+  the state of the work and the evidence that is still missing.
+- `artifacts/mxgpu/execution-ledger.json`: the state of every task of the
+  plan with its dependencies, its evidence and the reason of its failure.
+
+### Changed
+- The `accel`, `optimize` and `finish` commands refuse a machine that owns
+  a passed through card, and they write the stage file of the current stage
+  instead of the old `args.txt`. The virtio balloon is never added to a
+  machine that owns a card.
+- The CI checks the credit banner of the sources of the driver, the syntax of
+  every tracked shell script, and the lock file of the third party components
+  through `make -C driver test-host`.
+
+### Fixed
+- The addresses of the PCI devices of the host are read with their real form
+  `0000:01:00.0`, so the discovery of the cards finds them again.
 - `macxvm accel NAME [--check] [--apply] [--re] [--json]`: reads the IOKit
   personalities of the running guest, compares them with the devices of the
   machine, and reports what macOS drives natively and what it ignores. The

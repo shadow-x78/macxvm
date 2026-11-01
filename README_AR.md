@@ -480,6 +480,13 @@ macxvm build --ephemeral --from base-xcode --project . --scheme App
 | `macxvm list [--json]` / `macxvm status NAME [--json]` | عرض الموارد والنوع والحالة وVNC |
 | `macxvm start NAME [--install] [--vnc] [--no-open] [--wait] [--force]` | تشغيل QEMU؛ و`--vnc` يفتح العارض تلقائيًا إلا مع `--no-open` |
 | `macxvm gpu NAME [--json] [--passthrough] [--enable-iommu] [--bind-vfio ADDR]` | عرض IOMMU/GPU في المضيف وتعريف العرض الفعلي في macOS وجاهزية التمرير |
+| `macxvm create NAME --gpu-backend vfio|reims --gpu BDF [--audio BDF] [--host-gpu BDF]` | تسجيل آلة يملك كرتًا ممرّرًا (تجريبي) |
+| `macxvm gpu --prepare-vfio --gpu BDF --audio BDF --host-gpu BDF --accept-host-changes` | ربط كرت الضيف بـ`vfio-pci` بعد نسخة احتياطية من المضيف |
+| `macxvm gpu --unbind-vfio --gpu BDF --restore-host` | إعادة الكرت إلى المضيف |
+| `macxvm gpu NAME --install-driver PACKAGE --accept-driver-changes` | تثبيت حزمة MXGPU في الضيف كمعاملة واحدة |
+| `macxvm driver verify PACKAGE` / `info PACKAGE [--json]` | التحقق من توقيع الحزمة وبصماتها |
+| `macxvm driver build --builder USER@HOST` | بناء التعريف على باني macOS وجلب الحزمة الموقّعة |
+| `macxvm migrate NAME --to USER@HOST [--check\|--live\|--cancel]` | فحص أو تنفيذ أو إلغاء ترحيل الآلة (تجريبي) |
 | `macxvm accel NAME [--check] [--apply] [--re] [--json]` | مقارنة الجهاز بالأجهزة التي يشغّلها macOS أصلياً، والتحويل إليها |
 | `macxvm open NAME [--restart]` | فتح VNC المحلي دون انتظار SSH |
 | `macxvm resize NAME [--cpus N] [--ram SIZE] [--disk GiB]` | تعديل جهاز متوقف؛ القرص يتوسع فقط |
@@ -642,6 +649,8 @@ macxvm/
 | [ACCELERATION_AR.md](docs/ACCELERATION_AR.md) | خريطة تعريفات الضيف والمسرّعات الأصلية والأثر المقاس والأهداف المفتوحة |
 | [BUILDING_AR.md](docs/BUILDING_AR.md) | سير عمل البناء وملف المشروع والمزامنة والبناء المؤقت |
 | [TROUBLESHOOTING_AR.md](docs/TROUBLESHOOTING_AR.md) | مشكلات المضيف والجهاز والضيف والبناء الشائعة |
+| [DRIVER_AR.md](docs/DRIVER_AR.md) | حزمة MXGPU: الغرفة النظيفة والصيغة وجذور الثقة والبناء والتثبيت |
+| [MIGRATION_AR.md](docs/MIGRATION_AR.md) | ترحيل الآلة: فحص التوافق وحالة الجلسة والتراجع |
 | [DECISIONS.md](docs/DECISIONS.md) | كل انحراف عن المواصفة وكل غموض حل |
 
 </div>

@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	SchemaVersion = 1
+	SchemaVersion = 2
 	MinRAMMiB     = 4096
 	MinDiskGiB    = 64
 )
@@ -51,27 +51,34 @@ func ValidateIdentity(c *VMConfig) error {
 }
 
 type VMConfig struct {
-	SchemaVersion int       `json:"schemaVersion"`
-	Name          string    `json:"name"`
-	ID            string    `json:"id"`
-	Profile       string    `json:"profile,omitempty"`
-	CPUs          int       `json:"cpus"`
-	MemoryMiB     int       `json:"memoryMiB"`
-	DiskGiB       int       `json:"diskGiB"`
-	MAC           string    `json:"mac"`
-	SSHUser       string    `json:"sshUser"`
-	SSHPort       int       `json:"sshPort"`
-	Assets        string    `json:"assets"`
-	QemuBinary    string    `json:"qemuBinary"`
-	DiskOpts      string    `json:"diskOpts,omitempty"`
-	Sealed        bool      `json:"sealed,omitempty"`
-	Ephemeral     bool      `json:"ephemeral,omitempty"`
-	BackingOf     string    `json:"backingOf,omitempty"`
-	MacOSVersion  string    `json:"macosVersion,omitempty"`
-	VNCDisplay    int       `json:"vncDisplay,omitempty"`
-	Readiness     string    `json:"readiness,omitempty"`
-	Shares        []Share   `json:"shares,omitempty"`
-	CreatedAt     time.Time `json:"createdAt"`
+	SchemaVersion        int       `json:"schemaVersion"`
+	Name                 string    `json:"name"`
+	ID                   string    `json:"id"`
+	Profile              string    `json:"profile,omitempty"`
+	CPUs                 int       `json:"cpus"`
+	MemoryMiB            int       `json:"memoryMiB"`
+	DiskGiB              int       `json:"diskGiB"`
+	MAC                  string    `json:"mac"`
+	SSHUser              string    `json:"sshUser"`
+	SSHPort              int       `json:"sshPort"`
+	Assets               string    `json:"assets"`
+	QemuBinary           string    `json:"qemuBinary"`
+	DiskOpts             string    `json:"diskOpts,omitempty"`
+	Sealed               bool      `json:"sealed,omitempty"`
+	Ephemeral            bool      `json:"ephemeral,omitempty"`
+	BackingOf            string    `json:"backingOf,omitempty"`
+	MacOSVersion         string    `json:"macosVersion,omitempty"`
+	VNCDisplay           int       `json:"vncDisplay,omitempty"`
+	Readiness            string    `json:"readiness,omitempty"`
+	Shares               []Share   `json:"shares,omitempty"`
+	GPU                  GPUConfig `json:"gpu"`
+	CPUModel             string    `json:"cpuModel,omitempty"`
+	SSHReady             bool      `json:"sshReady,omitempty"`
+	BackupKeyFingerprint string    `json:"backupKeyFingerprint,omitempty"`
+	CreatedAt            time.Time `json:"createdAt"`
+
+	gpuPresent  bool
+	upgradeFrom int
 }
 
 type Share struct {
@@ -87,6 +94,7 @@ func Defaults(profile string) VMConfig {
 		Profile:       profile,
 		SSHUser:       "admin",
 		QemuBinary:    DefaultQemuBinary,
+		GPU:           GPUConfig{Backend: BackendNone, Driver: DriverNone},
 	}
 	if profile == ProfileCLI {
 		c.CPUs, c.MemoryMiB, c.DiskGiB = 6, 12288, 64
@@ -96,11 +104,11 @@ func Defaults(profile string) VMConfig {
 	return c
 }
 
-func (c *VMConfig) Normalize() {
+func (c *VMConfig) Normalize() error {
 	if c.Profile == "" {
 		c.Profile = ProfileXcode
 	}
-	if c.SchemaVersion == 0 {
+	if c.SchemaVersion == 0 || c.SchemaVersion < SchemaVersion {
 		c.SchemaVersion = SchemaVersion
 	}
 	if c.QemuBinary == "" {
@@ -109,6 +117,52 @@ func (c *VMConfig) Normalize() {
 	if c.SSHUser == "" {
 		c.SSHUser = "admin"
 	}
+	return c.GPU.normalize(c.gpuConfigured())
+}
+
+func (c *VMConfig) gpuConfigured() bool {
+	if c.gpuPresent || c.upgradeFrom == 0 {
+		return true
+	}
+	return c.GPU.Backend != "" || c.GPU.Driver != ""
+}
+
+func (c *VMConfig) NeedsUpgrade() bool {
+	return c.upgradeFrom > 0 && c.upgradeFrom < SchemaVersion
+}
+
+func (c *VMConfig) UpgradedFrom() int {
+	return c.upgradeFrom
+}
+
+func (c *VMConfig) UnmarshalJSON(data []byte) error {
+	type alias VMConfig
+	var a alias
+	if err := json.Unmarshal(data, &a); err != nil {
+		return err
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	*c = VMConfig(a)
+	_, c.gpuPresent = raw["gpu"]
+	return nil
+}
+
+func (c VMConfig) MarshalJSON() ([]byte, error) {
+	type alias VMConfig
+	out := struct {
+		alias
+		GPU *GPUConfig `json:"gpu,omitempty"`
+	}{
+		alias: alias(c),
+	}
+	if !c.GPU.IsNone() {
+		gpu := c.GPU
+		out.GPU = &gpu
+	}
+	return json.Marshal(out)
 }
 
 func (c *VMConfig) Dir() string {
@@ -134,7 +188,10 @@ func Load(dir string) (*VMConfig, error) {
 	if c.SchemaVersion > SchemaVersion {
 		return nil, fmt.Errorf("config was created by a newer macxvm")
 	}
-	c.Normalize()
+	c.upgradeFrom = c.SchemaVersion
+	if err := c.Normalize(); err != nil {
+		return nil, fmt.Errorf("config.json of '%s': %w", dir, err)
+	}
 	if err := ValidateIdentity(&c); err != nil {
 		return nil, fmt.Errorf("config.json of '%s': %w", dir, err)
 	}
@@ -142,7 +199,9 @@ func Load(dir string) (*VMConfig, error) {
 }
 
 func Save(dir string, c *VMConfig) error {
-	c.Normalize()
+	if err := c.Normalize(); err != nil {
+		return err
+	}
 	if err := ValidateIdentity(c); err != nil {
 		return err
 	}

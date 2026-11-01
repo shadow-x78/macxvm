@@ -23,13 +23,14 @@ import (
 	"github.com/shadow-x78/macxvm/internal/sshx"
 	"github.com/shadow-x78/macxvm/internal/store"
 	"github.com/shadow-x78/macxvm/internal/ui"
+	"github.com/shadow-x78/macxvm/internal/vfio"
 )
 
 func init() {
 	register(Command{
 		Name:    "start",
 		Group:   "Machines",
-		Usage:   "macxvm start NAME [--install] [--vnc] [--wait] [--force]",
+		Usage:   "macxvm start NAME [--display install|daily|recovery] [--vnc] [--wait] [--force]",
 		Summary: "start a virtual machine",
 		Run:     cmdStart,
 	})
@@ -39,7 +40,8 @@ const startTimeout = 20 * time.Second
 
 func cmdStart(args []string) error {
 	fs := newFlagSet("start")
-	install := fs.Bool("install", false, "include the installation lines of the args file")
+	install := fs.Bool("install", false, "start the installation stage (the old name of --display install)")
+	display := fs.String("display", "", "stage of the machine: install, daily or recovery")
 	vnc := fs.Bool("vnc", false, "add a VNC display on the loopback interface")
 	noOpen := fs.Bool("no-open", false, "do not open the VNC viewer automatically")
 	wait := fs.Bool("wait", false, "wait until key-only SSH is ready")
@@ -53,11 +55,16 @@ func cmdStart(args []string) error {
 	if err != nil {
 		return err
 	}
+	stage, err := resolveStage(*display, *install, flagWasSet(fs, "display"), flagWasSet(fs, "install"))
+	if err != nil {
+		return err
+	}
 	cfg, err := store.Load(name)
 	if err != nil {
 		return err
 	}
-	started, err := startVM(cfg, *install, *vnc, *force)
+	opts := qemu.StartOptions{Stage: stage, VNC: *vnc, Force: *force}
+	started, err := startVM(cfg, opts)
 	if err != nil {
 		return err
 	}
@@ -70,7 +77,7 @@ func cmdStart(args []string) error {
 			}
 			lastVNCDisplay = display
 		}
-		if *install {
+		if stage == config.StageInstall {
 			return exitcode.New(exitcode.Usage,
 				"'%s' is already running; stop it before starting with installation media again", name)
 		}
@@ -92,10 +99,30 @@ func cmdStart(args []string) error {
 			openViewerBestEffort(cfg, lastVNCDisplay, *noOpen)
 		}
 	}
-	if *install {
+	if stage == config.StageInstall {
 		InstallChecklist(os.Stdout, *vnc)
 	}
 	return nil
+}
+
+func resolveStage(display string, install bool, displaySet, installSet bool) (string, error) {
+	if displaySet && installSet {
+		return "", exitcode.New(exitcode.Usage,
+			"--display and --install cannot be used together; --install is the old name of --display install")
+	}
+	if installSet {
+		return config.StageInstall, nil
+	}
+	if !displaySet || display == "" {
+		return config.StageDaily, nil
+	}
+	switch display {
+	case config.StageInstall, config.StageDaily, config.StageRecovery:
+		return display, nil
+	default:
+		return "", exitcode.New(exitcode.Usage,
+			"unknown display stage %q (use install, daily or recovery)", display)
+	}
 }
 
 func InstallChecklist(w io.Writer, vnc bool) {
@@ -118,8 +145,13 @@ func InstallChecklist(w io.Writer, vnc bool) {
 
 var lastVNCDisplay int
 
-func startVM(cfg *config.VMConfig, install, vnc, force bool) (bool, error) {
+func startOptionsFor(stage string, vnc bool) qemu.StartOptions {
+	return qemu.StartOptions{Stage: stage, VNC: vnc}
+}
+
+func startVM(cfg *config.VMConfig, opts qemu.StartOptions) (bool, error) {
 	name := cfg.Name
+	stage := opts.StageOrDefault()
 	lock, err := runstate.LockOp(cfg.File("op.lock"))
 	if err != nil {
 		return false, exitcode.New(exitcode.Generic, "another macxvm operation is running on '%s'", name)
@@ -144,7 +176,7 @@ func startVM(cfg *config.VMConfig, install, vnc, force bool) (bool, error) {
 		return false, exitcode.New(exitcode.Usage,
 			"'%s' is a sealed base image; clone it first (macxvm clone %s NEW)", name, name)
 	}
-	if err := hostcheck.Protect(cfg.MemoryMiB, cfg.CPUs, force); err != nil {
+	if err := hostcheck.Protect(cfg.MemoryMiB, cfg.CPUs, opts.Force); err != nil {
 		return false, err
 	}
 	exists, readable, writable := hostcheck.KVMStatus()
@@ -152,7 +184,7 @@ func startVM(cfg *config.VMConfig, install, vnc, force bool) (bool, error) {
 		return false, exitcode.New(exitcode.UnsupportedHost,
 			"cannot use /dev/kvm (add your user to the 'kvm' group and log in again)")
 	}
-	if err := qemu.Preflight(cfg.QemuBinary); err != nil {
+	if err := qemu.Preflight(qemu.BinaryFor(cfg)); err != nil {
 		return false, err
 	}
 	if cfg.Assets != "" {
@@ -183,22 +215,23 @@ func startVM(cfg *config.VMConfig, install, vnc, force bool) (bool, error) {
 	}
 	os.Remove(sock)
 
-	text, err := os.ReadFile(cfg.File("args.txt"))
-	if err != nil {
-		return false, exitcode.New(exitcode.Generic, "cannot read the args file: %v", err)
-	}
-	ctx, err := argsfile.ContextFor(cfg)
+	displayMode, err := qemu.DisplayFor(cfg, opts)
 	if err != nil {
 		return false, err
 	}
-	userArgs, err := argsfile.Build(string(text), ctx, install)
+	userArgs, err := buildStageArgs(cfg, stage, opts)
 	if err != nil {
 		return false, err
 	}
 	display := 0
 	closeVNCListener := func() {}
 	releaseVNCLock := func() {}
-	if vnc {
+	if displayMode.VNCRequired {
+		display, closeVNCListener, releaseVNCLock, err = qemu.ReserveVNCDisplay()
+		if err != nil {
+			return false, exitcode.New(exitcode.Generic, "%v", err)
+		}
+	} else if opts.VNC {
 		display, closeVNCListener, releaseVNCLock, err = qemu.ReserveVNCDisplay()
 		if err != nil {
 			return false, exitcode.New(exitcode.Generic, "%v", err)
@@ -207,15 +240,29 @@ func startVM(cfg *config.VMConfig, install, vnc, force bool) (bool, error) {
 	defer releaseVNCLock()
 	lastVNCDisplay = display
 	cfg.VNCDisplay = display
-	cfg.Readiness = "created"
+	cfg.Readiness = runstate.ReadinessCreated
 	if err := store.Save(cfg); err != nil {
 		return false, err
 	}
 	argv := qemu.BuildArgv(cfg, userArgs, sock, display)
+	if opts.Incoming != "" {
+		argv = append(argv, "-incoming", opts.Incoming)
+	}
+
+	leases, err := acquireLeases(cfg)
+	if err != nil {
+		return false, err
+	}
+	defer leases.Close()
+
+	env, err := spawnEnvironment(cfg, opts)
+	if err != nil {
+		return false, err
+	}
 
 	logPath := cfg.File("console.log")
 	closeVNCListener()
-	pid, err := qemu.Spawn(cfg, argv, logPath)
+	pid, err := qemu.SpawnWithEnv(cfg, argv, logPath, env, leases.Files())
 	if err != nil {
 		if pid > 0 {
 			_ = qemu.KillOwned(cfg, pid)
@@ -223,6 +270,12 @@ func startVM(cfg *config.VMConfig, install, vnc, force bool) (bool, error) {
 		cleanup(cfg, sock)
 		markStartFailed(cfg)
 		return false, exitcode.New(exitcode.Generic, "cannot start QEMU: %v", err)
+	}
+	if err := leases.SetOwnerPID(pid); err != nil {
+		_ = qemu.KillOwned(cfg, pid)
+		cleanup(cfg, sock)
+		markStartFailed(cfg)
+		return false, exitcode.New(exitcode.Generic, "cannot record the owner of the GPU leases: %v", err)
 	}
 	if err := qemu.WaitReady(runstate.ProcRoot(), cfg, pid, sock, startTimeout); err != nil {
 		if errors.Is(err, qemu.ErrEarlyExit) {
@@ -256,14 +309,14 @@ func startVM(cfg *config.VMConfig, install, vnc, force bool) (bool, error) {
 		return false, exitcode.New(exitcode.Generic, "cannot talk to QEMU over QMP: %v", err)
 	}
 	client.Close()
-	cfg.Readiness = "qmp-ready"
+	cfg.Readiness = runstate.ReadinessQMPReady
 	if err := store.Save(cfg); err != nil {
 		_ = qemu.KillOwned(cfg, pid)
 		cleanup(cfg, sock)
 		markStartFailed(cfg)
 		return false, err
 	}
-	cfg.Readiness = "booting"
+	cfg.Readiness = runstate.ReadinessBooting
 	if err := store.Save(cfg); err != nil {
 		_ = qemu.KillOwned(cfg, pid)
 		cleanup(cfg, sock)
@@ -273,8 +326,95 @@ func startVM(cfg *config.VMConfig, install, vnc, force bool) (bool, error) {
 	return true, nil
 }
 
+func buildStageArgs(cfg *config.VMConfig, stage string, opts qemu.StartOptions) ([]string, error) {
+	if !cfg.GPU.UsesGPU() {
+		raw, err := os.ReadFile(cfg.File("args.txt"))
+		if err != nil {
+			return nil, exitcode.New(exitcode.Generic, "cannot read the args file: %v", err)
+		}
+		ctx, err := argsfile.ContextFor(cfg)
+		if err != nil {
+			return nil, err
+		}
+		return argsfile.BuildStage(string(raw), ctx, stage)
+	}
+	path, err := stageFileFor(cfg, stage)
+	if err != nil {
+		return nil, err
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, exitcode.New(exitcode.Generic, "cannot read the stage file: %v", err)
+	}
+	ctx, err := argsfile.GPUContext(cfg, cfg.Dir(), stage)
+	if err != nil {
+		return nil, err
+	}
+	return argsfile.BuildStage(string(raw), ctx, stage)
+}
+
+func acquireLeases(cfg *config.VMConfig) (*vfio.LeaseSet, error) {
+	if !cfg.GPU.UsesGPU() {
+		return &vfio.LeaseSet{}, nil
+	}
+	addresses := []string{}
+	if cfg.GPU.PCI != "" {
+		addresses = append(addresses, cfg.GPU.PCI)
+	}
+	if cfg.GPU.AudioPCI != "" {
+		addresses = append(addresses, cfg.GPU.AudioPCI)
+	}
+	if cfg.GPU.HostGPU != "" {
+		addresses = append(addresses, cfg.GPU.HostGPU)
+	}
+	if cfg.GPU.USBControllerPCI != "" {
+		addresses = append(addresses, cfg.GPU.USBControllerPCI)
+	}
+	groups := []int{}
+	for _, address := range addresses {
+		fs := vfio.NewFS(vfio.DefaultSysfs)
+		found, err := fs.GroupsOf(address)
+		if err != nil {
+			return nil, err
+		}
+		groups = append(groups, found...)
+	}
+	controllers := []string{}
+	if cfg.GPU.USBControllerPCI != "" {
+		controllers = append(controllers, cfg.GPU.USBControllerPCI)
+	}
+	keys := vfio.LeaseKeysFor(addresses, groups, controllers)
+	mode := vfio.LeaseExclusive
+	if cfg.GPU.Backend == config.BackendReims {
+		mode = vfio.LeaseShared
+	}
+	owner := vfio.CurrentOwner(vfio.LeaseOwner{
+		VMName:    cfg.Name,
+		VMID:      cfg.ID,
+		Backend:   cfg.GPU.Backend,
+		Addresses: addresses,
+	})
+	leases, err := vfio.Acquire(owner, keys, mode)
+	if err != nil {
+		return nil, exitcode.New(exitcode.Generic, "%v", err)
+	}
+	return leases, nil
+}
+
+func spawnEnvironment(cfg *config.VMConfig, opts qemu.StartOptions) ([]string, error) {
+	if !cfg.GPU.UsesGPU() && len(opts.Env) == 0 {
+		return nil, nil
+	}
+	additions, err := qemu.EnvironmentFor(cfg, opts)
+	if err != nil {
+		return nil, err
+	}
+	additions = append(additions, opts.Env...)
+	return qemu.BuildEnv(additions)
+}
+
 func markStartFailed(cfg *config.VMConfig) {
-	cfg.Readiness = "failed"
+	cfg.Readiness = runstate.ReadinessFailed
 	cfg.VNCDisplay = 0
 	_ = store.Save(cfg)
 }
@@ -287,7 +427,8 @@ func waitForSSHReady(cfg *config.VMConfig, timeout time.Duration) error {
 		return &sshx.Error{Kind: sshx.BootTimeout, VM: cfg.Name, Err: fmt.Errorf("QEMU exited before readiness was recorded")}
 	}
 	updated, err := store.Update(cfg.Name, func(current *config.VMConfig) error {
-		current.Readiness = "ssh-ready"
+		current.SSHReady = true
+		current.Readiness = runstate.MergeReadiness(current.Readiness, runstate.ReadinessSSHReady)
 		return nil
 	})
 	if err != nil {

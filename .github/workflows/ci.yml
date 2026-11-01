@@ -26,9 +26,11 @@ jobs:
       - name: Check the file headers
         run: ./scripts/check-headers.sh
       - name: Check shell syntax
-        run: bash -n scripts/bench.sh scripts/integration.sh scripts/install.sh scripts/screenshot.sh
+        run: bash -n $(git ls-files '*.sh')
       - name: Vet, test and build
         run: go vet ./... && go test ./... && make build
+      - name: Check the lock file of the driver
+        run: make -C driver test-host
       - name: Check the size of the binary
         run: |
           size=$(stat -c %s bin/macxvm)

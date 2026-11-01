@@ -18,8 +18,11 @@ import (
 	"github.com/shadow-x78/macxvm/internal/hostcheck"
 	"github.com/shadow-x78/macxvm/internal/image"
 	"github.com/shadow-x78/macxvm/internal/names"
+	"github.com/shadow-x78/macxvm/internal/opencore"
 	"github.com/shadow-x78/macxvm/internal/paths"
 	"github.com/shadow-x78/macxvm/internal/runstate"
+	"github.com/shadow-x78/macxvm/internal/stages"
+	"github.com/shadow-x78/macxvm/internal/vfio"
 )
 
 var isRunning = runstate.IsRunning
@@ -87,7 +90,23 @@ func Load(name string) (*config.VMConfig, error) {
 		return nil, exitcode.New(exitcode.Generic,
 			"configuration of '%s' names '%s'; refusing to use another VM's identity", name, cfg.Name)
 	}
+	if cfg.NeedsUpgrade() {
+		upgradeOnDisk(cfg)
+	}
 	return cfg, nil
+}
+
+func upgradeOnDisk(cfg *config.VMConfig) {
+	lock, err := runstate.LockOp(cfg.File("op.lock"))
+	if err != nil {
+		return
+	}
+	defer lock.Close()
+	current, err := config.Load(cfg.Dir())
+	if err != nil || !current.NeedsUpgrade() {
+		return
+	}
+	_ = config.Save(cfg.Dir(), current)
 }
 
 func Save(cfg *config.VMConfig) error {
@@ -220,7 +239,29 @@ func deleteVM(cfg *config.VMConfig, overlays []string) error {
 		return exitcode.New(exitcode.Generic, "'%s' is the base of other VMs (%s); delete them first",
 			name, strings.Join(overlays, ", "))
 	}
+	if err := verifyGPUReleased(cfg); err != nil {
+		return err
+	}
 	return os.RemoveAll(Dir(name))
+}
+
+// verifyGPUReleased refuses the deletion of a machine whose devices are still
+// held by a running virtual machine.
+func verifyGPUReleased(cfg *config.VMConfig) error {
+	if !cfg.GPU.UsesGPU() {
+		return nil
+	}
+	addresses := []string{cfg.GPU.PCI, cfg.GPU.AudioPCI, cfg.GPU.HostGPU, cfg.GPU.USBControllerPCI}
+	keys := vfio.LeaseKeysFor(addresses, nil, nil)
+	for _, owner := range vfio.Holders(keys) {
+		if owner.VMID == cfg.ID {
+			continue
+		}
+		return exitcode.New(exitcode.Generic,
+			"the GPU of '%s' is still held by '%s' (process %d); stop it before deleting '%s'",
+			cfg.Name, owner.VMName, owner.PID, cfg.Name)
+	}
+	return nil
 }
 
 func SelectPrunable(vms []*config.VMConfig, isRunning func(*config.VMConfig) bool) []string {
@@ -307,11 +348,33 @@ func Clone(src *config.VMConfig, dst string, full bool, r hostcheck.Runner) (*co
 	if st, err := os.Stat(dstDisk); err != nil || !st.Mode().IsRegular() || st.Size() == 0 {
 		return nil, exitcode.New(exitcode.Generic, "the clone disk was not created successfully")
 	}
-	if err := copyFile(src.File("args.txt"), filepath.Join(staging, "args.txt"), 0o600); err != nil {
+	if src.GPU.UsesGPU() {
+		if err := stages.CopyArgs(src.Dir(), staging); err != nil {
+			return nil, err
+		}
+		if err := cloneOpenCore(src, staging); err != nil {
+			return nil, err
+		}
+		for _, name := range []string{"driver/installed-manifest.json", "driver/probe-report.json"} {
+			if _, err := os.Stat(src.File(name)); err != nil {
+				continue
+			}
+			if err := copyFile(src.File(name), filepath.Join(staging, filepath.FromSlash(name)), 0o600); err != nil {
+				return nil, err
+			}
+		}
+	} else if err := copyFile(src.File("args.txt"), filepath.Join(staging, "args.txt"), 0o600); err != nil {
 		return nil, err
 	}
-	if _, err := os.Stat(src.File("nvram.fd")); err == nil {
-		if err := copyFile(src.File("nvram.fd"), filepath.Join(staging, "nvram.fd"), 0o600); err != nil {
+	nvramSource := src.File("nvram.fd")
+	if src.GPU.UsesGPU() && src.Assets != "" {
+		template := filepath.Join(src.Assets, image.VarsName)
+		if _, err := os.Stat(template); err == nil {
+			nvramSource = template
+		}
+	}
+	if _, err := os.Stat(nvramSource); err == nil {
+		if err := copyFile(nvramSource, filepath.Join(staging, "nvram.fd"), 0o600); err != nil {
 			return nil, err
 		}
 	} else if !os.IsNotExist(err) {
@@ -338,6 +401,9 @@ func Clone(src *config.VMConfig, dst string, full bool, r hostcheck.Runner) (*co
 	}
 	cfg.CreatedAt = time.Now()
 	text, err := os.ReadFile(src.File("args.txt"))
+	if err != nil && src.GPU.UsesGPU() {
+		text, err = os.ReadFile(stages.ArgsPath(src.Dir(), config.StageDaily))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -381,4 +447,42 @@ func copyFile(src, dst string, perm os.FileMode) error {
 		return err
 	}
 	return os.WriteFile(dst, b, perm)
+}
+
+// cloneOpenCore copies the configurations of the source, gives the clone its
+// own identity and builds private OpenCore images for it.
+func cloneOpenCore(src *config.VMConfig, staging string) error {
+	configs := map[string]*opencore.Dict{}
+	for _, stage := range stages.Names {
+		raw, err := os.ReadFile(opencore.StagePath(src.Dir(), stage))
+		if err != nil {
+			return exitcode.New(exitcode.Generic,
+				"the OpenCore configuration of the stage %s is missing: %v", stage, err)
+		}
+		dict, err := opencore.ParseDict(raw)
+		if err != nil {
+			return exitcode.New(exitcode.Generic,
+				"the OpenCore configuration of the stage %s is not valid: %v", stage, err)
+		}
+		configs[stage] = dict
+	}
+	identity, err := opencore.NewIdentity()
+	if err != nil {
+		return exitcode.New(exitcode.Generic, "cannot generate the identity of the clone: %v", err)
+	}
+	if _, err := opencore.WriteStages(staging, identity, configs); err != nil {
+		return exitcode.New(exitcode.Generic, "cannot write the OpenCore stages of the clone: %v", err)
+	}
+	builder := opencore.ImageBuilder{AssetsDir: src.Assets}
+	for _, stage := range stages.Names {
+		plist, err := os.ReadFile(opencore.StagePath(staging, stage))
+		if err != nil {
+			return exitcode.New(exitcode.Generic, "cannot read the OpenCore configuration: %v", err)
+		}
+		if err := builder.BuildStageImage(staging, stage, plist); err != nil {
+			return exitcode.New(exitcode.Generic,
+				"cannot build the OpenCore image of the stage %s: %v", stage, err)
+		}
+	}
+	return nil
 }

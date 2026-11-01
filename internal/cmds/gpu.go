@@ -4,7 +4,7 @@
 package cmds
 
 import (
-	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -61,7 +61,7 @@ func init() {
 	register(Command{
 		Name:    "gpu",
 		Group:   "Machines",
-		Usage:   "macxvm gpu NAME [--json] [--passthrough] [--enable-iommu] [--bind-vfio ADDR]",
+		Usage:   "macxvm gpu [NAME] [--status] [--json] [--prepare-vfio --gpu BDF --audio BDF --host-gpu BDF --accept-host-changes] [--prepare-single-gpu --gpu BDF --accept-host-changes] [--unbind-vfio --gpu BDF --restore-host] [--prepare-reims --runtime PATH] [--install-driver PACKAGE --accept-driver-changes] [--remove-driver] [--recover] [--benchmark] [--report --sanitize]",
 		Summary: "report host and guest display support, including the real macOS kext",
 		Run:     cmdGPU,
 	})
@@ -77,12 +77,49 @@ func init() {
 func cmdGPU(args []string) error {
 	fs := newFlagSet("gpu")
 	asJSON := fs.Bool("json", false, "print JSON")
+	status := fs.Bool("status", false, "report the state of the GPU")
 	passthrough := fs.Bool("passthrough", false, "report whether a display device can be passed through")
 	enableIOMMU := fs.Bool("enable-iommu", false, "enable VT-d in the kernel command line (needs sudo and a reboot)")
 	bindVFIO := fs.String("bind-vfio", "", "bind a PCI address to vfio-pci (needs sudo)")
+	prepareVFIO := fs.Bool("prepare-vfio", false, "prepare the host for the vfio backend")
+	prepareSingle := fs.Bool("prepare-single-gpu", false, "prepare the host for the single-gpu mode")
+	unbindVFIO := fs.Bool("unbind-vfio", false, "give a card back to its driver")
+	prepareReims := fs.Bool("prepare-reims", false, "prepare a reims runtime")
+	gpuPCI := fs.String("gpu", "", "PCI address of the graphics card")
+	audioPCI := fs.String("audio", "", "PCI address of the audio function")
+	hostGPU := fs.String("host-gpu", "", "PCI address of the graphics card that drives the host")
+	runtime := fs.String("runtime", "", "directory of the reims runtime")
+	acceptHost := fs.Bool("accept-host-changes", false, "apply the changes to the host")
+	restoreHost := fs.Bool("restore-host", false, "give the card back to the driver of the host")
+	installDriver := fs.String("install-driver", "", "path of a signed MXGPU package")
+	acceptDriver := fs.Bool("accept-driver-changes", false, "apply the changes to the guest")
+	removeDriver := fs.Bool("remove-driver", false, "remove the MXGPU driver from the guest")
+	recover := fs.Bool("recover", false, "start the machine in the recovery stage")
+	benchmark := fs.Bool("benchmark", false, "run the benchmark of the guest")
+	report := fs.Bool("report", false, "write a report of the machine")
+	sanitize := fs.Bool("sanitize", false, "hide the serials and the paths of the report")
 	positional, flagArgs := SplitArgs(fs, args)
 	if err := parseFlags("gpu", fs, flagArgs); err != nil {
 		return err
+	}
+	if len(positional) == 0 {
+		return cmdGPUHost(fs, gpuCLIOptions{
+			asJSON:        *asJSON,
+			status:        *status,
+			passthrough:   *passthrough,
+			enableIOMMU:   *enableIOMMU,
+			bindVFIO:      *bindVFIO,
+			prepareVFIO:   *prepareVFIO,
+			prepareSingle: *prepareSingle,
+			unbindVFIO:    *unbindVFIO,
+			prepareReims:  *prepareReims,
+			gpuPCI:        *gpuPCI,
+			audioPCI:      *audioPCI,
+			hostGPU:       *hostGPU,
+			runtime:       *runtime,
+			acceptHost:    *acceptHost,
+			restoreHost:   *restoreHost,
+		})
 	}
 	name, err := requireName(positional)
 	if err != nil {
@@ -92,59 +129,64 @@ func cmdGPU(args []string) error {
 	if err != nil {
 		return err
 	}
-	if *enableIOMMU {
+	return cmdGPUDevice(cfg, gpuCLIOptions{
+		asJSON:        *asJSON,
+		status:        *status,
+		passthrough:   *passthrough,
+		installDriver: *installDriver,
+		acceptDriver:  *acceptDriver,
+		removeDriver:  *removeDriver,
+		recover:       *recover,
+		benchmark:     *benchmark,
+		report:        *report,
+		sanitize:      *sanitize,
+	})
+}
+
+type gpuCLIOptions struct {
+	asJSON        bool
+	status        bool
+	passthrough   bool
+	enableIOMMU   bool
+	bindVFIO      string
+	prepareVFIO   bool
+	prepareSingle bool
+	unbindVFIO    bool
+	prepareReims  bool
+	gpuPCI        string
+	audioPCI      string
+	hostGPU       string
+	runtime       string
+	acceptHost    bool
+	restoreHost   bool
+	installDriver string
+	acceptDriver  bool
+	removeDriver  bool
+	recover       bool
+	benchmark     bool
+	report        bool
+	sanitize      bool
+}
+
+func cmdGPUHost(fs *flag.FlagSet, opts gpuCLIOptions) error {
+	switch {
+	case opts.enableIOMMU:
 		return enableIOMMUOnHost()
+	case opts.bindVFIO != "":
+		return bindDeviceToVFIO(opts.bindVFIO)
+	case opts.prepareVFIO:
+		return cmdPrepareVFIO(opts.gpuPCI, opts.audioPCI, opts.hostGPU, false, opts.acceptHost)
+	case opts.prepareSingle:
+		return cmdPrepareVFIO(opts.gpuPCI, opts.audioPCI, "", true, opts.acceptHost)
+	case opts.unbindVFIO:
+		return cmdUnbindVFIO(opts.gpuPCI, opts.restoreHost)
+	case opts.prepareReims:
+		return cmdPrepareReims(opts.runtime, opts.acceptHost)
 	}
-	if *bindVFIO != "" {
-		return bindDeviceToVFIO(*bindVFIO)
+	if opts.status || opts.asJSON || !opts.passthrough {
+		return hostGPUStatus(opts.asJSON)
 	}
-	report := inspectGPU(cfg)
-	if *passthrough {
-		report.Passthrough = passthroughReport(report.Host)
-	}
-	if *asJSON {
-		raw, err := json.MarshalIndent(report, "", "  ")
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(raw))
-		return nil
-	}
-	fmt.Println("HOST DISPLAY")
-	for _, line := range report.Host.PCI {
-		fmt.Printf("  %s\n", line)
-	}
-	fmt.Printf("  IOMMU groups: %d\n", report.Host.IOMMUGroups)
-	if report.Host.IOMMUCommand != "" {
-		fmt.Printf("  IOMMU kernel command line: %s\n", report.Host.IOMMUCommand)
-	}
-	fmt.Printf("  NVIDIA driver loaded: %v\n", report.Host.NvidiaLoaded)
-	fmt.Printf("  vfio-pci available: %v\n", report.Host.VFIOLoaded)
-	for _, line := range report.Host.Display {
-		fmt.Printf("  %s\n", line)
-	}
-	fmt.Println("\nGUEST DISPLAY")
-	if !report.Guest.Running {
-		fmt.Println("  guest is not running; start it to inspect macOS kexts")
-	} else {
-		fmt.Printf("  display: %s\n", report.Guest.Display)
-		fmt.Printf("  vendor/device: %s/%s\n", report.Guest.VendorID, report.Guest.DeviceID)
-		fmt.Printf("  VRAM: %s\n", report.Guest.VRAM)
-		fmt.Printf("  resolution: %s\n", report.Guest.Resolution)
-		fmt.Printf("  kext: %s\n", report.Guest.Kext)
-		fmt.Printf("  acceleration: %s\n", report.Guest.Acceleration)
-		if report.Guest.CPUs > 0 {
-			fmt.Printf("  vCPUs: %d\n", report.Guest.CPUs)
-		}
-	}
-	if report.Passthrough != nil {
-		fmt.Println("\nPASSTHROUGH")
-		for _, line := range report.Passthrough.Lines {
-			fmt.Printf("  %s\n", line)
-		}
-	}
-	fmt.Printf("\n%s\n", report.Recommendation)
-	return nil
+	return hostGPUStatus(opts.asJSON)
 }
 
 func inspectGPU(cfg *config.VMConfig) gpuReport {
@@ -406,12 +448,17 @@ func cmdOptimize(args []string) error {
 	if runstate.IsRunning(cfg) {
 		return exitcode.New(exitcode.AlreadyRunning, "stop '%s' before changing its display", name)
 	}
+	if cfg.GPU.UsesGPU() {
+		return exitcode.New(exitcode.Usage,
+			"'%s' uses the %s backend; the passed through card drives the display and the Bochs path would break it",
+			name, cfg.GPU.Backend)
+	}
 	if *width < 1024 || *height < 640 || *width > 3840 || *height > 2160 {
 		return exitcode.New(exitcode.Usage, "resolution must be between 1024x640 and 3840x2160")
 	}
-	raw, err := os.ReadFile(cfg.File("args.txt"))
+	raw, err := os.ReadFile(activeStageFile(cfg))
 	if err != nil {
-		return exitcode.New(exitcode.BadArgsFile, "cannot read args.txt: %v", err)
+		return exitcode.New(exitcode.BadArgsFile, "cannot read the args file: %v", err)
 	}
 	updated, changed := bochsArgsAt(string(raw), *width, *height)
 	if *check {
@@ -426,15 +473,15 @@ func cmdOptimize(args []string) error {
 		fmt.Printf("'%s' already uses the Bochs display path\n", name)
 		return nil
 	}
-	backup := cfg.File("args.txt.bak-gpu-" + time.Now().UTC().Format("20060102T150405Z"))
+	backup := cfg.File("args.bak-gpu-" + time.Now().UTC().Format("20060102T150405Z"))
 	if err := os.WriteFile(backup, raw, 0o600); err != nil {
-		return exitcode.New(exitcode.Generic, "cannot back up args.txt: %v", err)
+		return exitcode.New(exitcode.Generic, "cannot back up the args file: %v", err)
 	}
 	if err := argsfile.ValidateExpansion(cfg, updated); err != nil {
 		return exitcode.New(exitcode.BadArgsFile, "the optimized args do not expand: %v", err)
 	}
-	if err := config.WriteFileAtomic(cfg.File("args.txt"), []byte(updated), 0o600); err != nil {
-		return exitcode.New(exitcode.Generic, "cannot write args.txt: %v", err)
+	if err := config.WriteFileAtomic(activeStageFile(cfg), []byte(updated), 0o600); err != nil {
+		return exitcode.New(exitcode.Generic, "cannot write the args file: %v", err)
 	}
 	fmt.Printf("optimized '%s': -vga none + bochs-display (AppleBochVGAFB), %dx%d, 256 MB aperture\n", name, *width, *height)
 	fmt.Printf("backup: %s\n", backup)
@@ -442,16 +489,22 @@ func cmdOptimize(args []string) error {
 }
 
 func setDisplayMode(cfg *config.VMConfig, mode string) error {
-	raw, err := os.ReadFile(cfg.File("args.txt"))
+	if cfg.GPU.UsesGPU() {
+		return exitcode.New(exitcode.Usage,
+			"'%s' uses the %s backend; the display of a passed through card is not changed by macxvm",
+			cfg.Name, cfg.GPU.Backend)
+	}
+	path := activeStageFile(cfg)
+	raw, err := os.ReadFile(path)
 	if err != nil {
-		return exitcode.New(exitcode.BadArgsFile, "cannot read args.txt: %v", err)
+		return exitcode.New(exitcode.BadArgsFile, "cannot read the args file: %v", err)
 	}
 	updated := rewriteDisplayArgs(string(raw), mode)
 	if err := argsfile.ValidateExpansion(cfg, updated); err != nil {
 		return exitcode.New(exitcode.BadArgsFile, "the display args do not expand: %v", err)
 	}
-	if err := config.WriteFileAtomic(cfg.File("args.txt"), []byte(updated), 0o600); err != nil {
-		return exitcode.New(exitcode.Generic, "cannot write args.txt: %v", err)
+	if err := config.WriteFileAtomic(path, []byte(updated), 0o600); err != nil {
+		return exitcode.New(exitcode.Generic, "cannot write the args file: %v", err)
 	}
 	return nil
 }

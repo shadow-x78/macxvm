@@ -60,9 +60,9 @@ func cmdAccel(args []string) error {
 		return printReverseEngineering(guestMap, source, *asJSON)
 	}
 
-	raw, err := os.ReadFile(cfg.File("args.txt"))
+	raw, err := os.ReadFile(activeStageFile(cfg))
 	if err != nil {
-		return exitcode.New(exitcode.BadArgsFile, "cannot read args.txt: %v", err)
+		return exitcode.New(exitcode.BadArgsFile, "cannot read the args file: %v", err)
 	}
 	report := accel.Analyze(string(raw), guestMap)
 
@@ -70,7 +70,8 @@ func cmdAccel(args []string) error {
 		if runstate.IsRunning(cfg) {
 			return exitcode.New(exitcode.AlreadyRunning, "stop '%s' before changing its devices", name)
 		}
-		updated, changed, err := accel.Apply(string(raw), accel.DefaultOptions())
+		options := accelOptionsFor(cfg)
+		updated, changed, err := accel.Apply(string(raw), options)
 		if err != nil {
 			return exitcode.New(exitcode.BadArgsFile, "%v", err)
 		}
@@ -78,17 +79,21 @@ func cmdAccel(args []string) error {
 			fmt.Printf("'%s' already uses the native accelerators\n", name)
 			return nil
 		}
-		backup := cfg.File("args.txt.bak-accel-" + time.Now().UTC().Format("20060102T150405Z"))
+		backup := cfg.File("args.bak-accel-" + time.Now().UTC().Format("20060102T150405Z"))
 		if err := os.WriteFile(backup, raw, 0o600); err != nil {
-			return exitcode.New(exitcode.Generic, "cannot back up args.txt: %v", err)
+			return exitcode.New(exitcode.Generic, "cannot back up the args file: %v", err)
 		}
 		if err := argsfile.ValidateExpansion(cfg, updated); err != nil {
 			return exitcode.New(exitcode.BadArgsFile, "the accelerated args do not expand: %v", err)
 		}
-		if err := config.WriteFileAtomic(cfg.File("args.txt"), []byte(updated), 0o600); err != nil {
-			return exitcode.New(exitcode.Generic, "cannot write args.txt: %v", err)
+		if err := config.WriteFileAtomic(activeStageFile(cfg), []byte(updated), 0o600); err != nil {
+			return exitcode.New(exitcode.Generic, "cannot write the args file: %v", err)
 		}
-		fmt.Printf("accelerated '%s': NVMe system disk, virtio entropy, virtio balloon\n", name)
+		fmt.Printf("accelerated '%s': NVMe system disk, virtio entropy", name)
+		if options.Balloon {
+			fmt.Printf(", virtio balloon")
+		}
+		fmt.Println()
 		fmt.Printf("backup: %s\n", backup)
 		fmt.Println("start the machine with 'macxvm start " + name + " --wait' and run 'macxvm accel " + name + "' to verify the guest")
 		return nil
@@ -113,6 +118,14 @@ func cmdAccel(args []string) error {
 		}
 	}
 	return nil
+}
+
+func accelOptionsFor(cfg *config.VMConfig) accel.Options {
+	options := accel.DefaultOptions()
+	if cfg.GPU.UsesGPU() {
+		options.Balloon = false
+	}
+	return options
 }
 
 func loadGuestMap(cfg *config.VMConfig) (kextmap.Map, string) {

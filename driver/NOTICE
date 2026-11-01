@@ -1,0 +1,14 @@
+MXGPU (MacXVM)
+Copyright (c) the MacXVM project
+
+This package contains the MXGPU kernel extension, the Metal plug-in, the AIR
+translator and the video components that were built from the sources of this
+repository on a macOS builder.
+
+The package embeds no Apple source file, no NVIDIA firmware, no Apple SDK and
+no NullMoth code. The components that were consulted while writing MXGPU are
+listed in third_party.lock.json with their license; none of them is
+redistributed inside this package.
+
+The release key of the packages is named in the manifest and its fingerprint
+lives in resources/mxgpu-release-public-key.txt of the MacXVM repository.

@@ -80,7 +80,7 @@ func TestLoadWithoutOptionalKeys(t *testing.T) {
 
 func TestLoadNewerSchema(t *testing.T) {
 	dir := t.TempDir()
-	raw := `{"schemaVersion":2,"name":"demo"}`
+	raw := `{"schemaVersion":3,"name":"demo"}`
 	if err := os.WriteFile(filepath.Join(dir, "config.json"), []byte(raw), 0o600); err != nil {
 		t.Fatal(err)
 	}

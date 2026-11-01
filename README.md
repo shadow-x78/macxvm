@@ -441,6 +441,13 @@ builds in a throwaway overlay that is removed afterwards. The full guide, includ
 | `macxvm autoinstall NAME --yes [--accept-license]` | automate Recovery through the first Setup Assistant page |
 | `macxvm finish NAME [--password-stdin] [--apps] [--seal]` | post-Setup SSH/sudo/Dark/slim/Bochs/apps automation |
 | `macxvm gpu NAME [--json] [--passthrough] [--enable-iommu] [--bind-vfio ADDR]` | report host IOMMU/GPU, the real macOS display kext, and the passthrough readiness |
+| `macxvm create NAME --gpu-backend vfio|reims --gpu BDF [--audio BDF] [--host-gpu BDF]` | register a machine that owns a passed through card (experimental) |
+| `macxvm gpu --prepare-vfio --gpu BDF --audio BDF --host-gpu BDF --accept-host-changes` | bind the card of the guest to `vfio-pci` and back the host up first |
+| `macxvm gpu --unbind-vfio --gpu BDF --restore-host` | give the card back to the host |
+| `macxvm gpu NAME --install-driver PACKAGE --accept-driver-changes` | install the MXGPU package in the guest as a transaction |
+| `macxvm driver verify PACKAGE` / `info PACKAGE [--json]` | check the signature and the hashes of a package |
+| `macxvm driver build --builder USER@HOST` | build the driver on a macOS builder and fetch the signed package |
+| `macxvm migrate NAME --to USER@HOST [--check\|--live\|--cancel]` | check, run or cancel the migration of a machine (experimental) |
 | `macxvm optimize NAME` | switch a stopped VM to the Bochs/AppleBochVGAFB display |
 | `macxvm accel NAME [--check] [--apply] [--re] [--json]` | compare the machine with the devices macOS drives natively, and switch to them |
 | `macxvm resize NAME [--cpus N] [--ram SIZE] [--disk GiB]` | resize stopped resources; disk grows only |
@@ -578,6 +585,8 @@ macxvm/
 | [ACCELERATION.md](docs/ACCELERATION.md) | The map of the guest kexts, the native accelerators, the measured effect, the open targets |
 | [BUILDING.md](docs/BUILDING.md) | The build workflow, the project file, the sync, the ephemeral builds |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | The common problems of the host, the machine, the guest and the build |
+| [DRIVER.md](docs/DRIVER.md) | The MXGPU package: the clean room, the format, the trust roots, the build, the installation |
+| [MIGRATION.md](docs/MIGRATION.md) | The migration of a machine: the compatibility check, the session, the rollback |
 | [DECISIONS.md](docs/DECISIONS.md) | Every deviation from the specification and every ambiguity that was resolved |
 
 Every document exists in English and in Arabic.

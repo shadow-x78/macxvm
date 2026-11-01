@@ -84,6 +84,49 @@ a passed through NVIDIA card never becomes a performance path for macOS. The
 only acceleration target that macOS itself claims is Apple's paravirtual GPU
 at `0x106b:0xeeee`, which needs a new QEMU device.
 
+## The MXGPU modes (experimental)
+
+MacOS has no driver for the card, so MacXVM does not pretend that a passed
+through NVIDIA card is accelerated today. The project is building its own
+driver, MXGPU, and the host tooling of that work is in place:
+
+| Mode | Who owns the card | What the guest gets |
+|---|---|---|
+| `none` | the host | the Bochs display, no acceleration |
+| `vfio` | the guest | the real card, driven by MXGPU once the driver exists |
+| `reims` | the host | a shared virtual card, with a native window on the host |
+
+```bash
+macxvm create NAME --gpu-backend vfio --gpu 0000:01:00.0 \
+  --audio 0000:01:00.1 --host-gpu 0000:02:00.0 --cpu host
+
+macxvm gpu --prepare-vfio --gpu 0000:01:00.0 --audio 0000:01:00.1 \
+  --host-gpu 0000:02:00.0 --accept-host-changes
+
+macxvm start NAME --display daily
+macxvm start NAME --display recovery
+```
+
+The rules of the host tooling:
+
+- A card can only be in one place. MacXVM takes a host wide lock on the
+  address of the card and on its IOMMU groups before it starts a machine, and
+  the lock lives as long as QEMU runs.
+- A group that holds a device that the host still needs is refused, and the
+  conflicting devices are printed.
+- The dedicated mode needs a second card for the first display of the host,
+  and the single GPU mode refuses that card because it takes the display of
+  the host away.
+- The daily stage of a passed through card has no virtual display at all;
+  the install and the recovery stages use `bochs-display` over VNC.
+- The recovery stage boots with `-mxoff`, so the driver does not touch the
+  board when it fails.
+
+The state of this work, with the evidence of every part, is in
+[artifacts/mxgpu/execution-ledger.json](../artifacts/mxgpu/execution-ledger.json).
+The driver itself is described in [DRIVER.md](DRIVER.md) and the migration of
+a machine in [MIGRATION.md](MIGRATION.md).
+
 ## What actually makes the guest faster
 
 Measured on the reference host with the guest running the same workload:

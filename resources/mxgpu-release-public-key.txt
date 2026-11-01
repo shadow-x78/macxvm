@@ -1,0 +1,24 @@
+# ─────────────────────────────────────────────
+# MacXVM - MXGPU Release Trust Root (MIT)
+# https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+#
+# The public key that signs the MXGPU driver packages.
+#
+# The matching private key never lives in this repository. It is stored
+# root only outside of Git on the release host, and it is rotated by a
+# signed revocation entry that names the old and the new key id.
+#
+# key id: mxgpu-release-2026
+# algorithm: ed25519
+#
+# Replace the placeholder below only with the hex of a real public key
+# that you generated yourself, for example with:
+#
+#   ssh-keygen -t ed25519 -N '' -C mxgpu-release-2026 -f ./mxgpu-release
+#   ssh-keygen -e -m PKCS8 -f ./mxgpu-release.pub
+#
+# The fingerprint of the key and the rotation procedure are documented
+# in docs/SECURITY.md.
+
+0000000000000000000000000000000000000000000000000000000000000000

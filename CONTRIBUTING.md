@@ -46,6 +46,9 @@ Contributions to MacXVM are welcome. Please note that this project is released w
 5. **Every subprocess is an argument vector.** `os/exec` never receives a shell command, and every value that comes from the user is quoted for the remote shell.
 6. **Every deviation goes into the decisions.** Every deviation from the specification and every ambiguity that had to be resolved goes into [docs/DECISIONS.md](docs/DECISIONS.md).
 7. **The documentation is bilingual.** A new guide exists in English and in Arabic, and the README and the doc tables list both.
+8. **The driver tree follows the clean room.** No Apple source, no NVIDIA firmware and no code of another driver enters `driver/`. Every note in `driver/research` names the source of its statement, and every component that was consulted is listed in `driver/third_party.lock.json` with its license, its role and its provenance. A component stays a reference until its exact revision and its digest are written in it.
+9. **The ledger holds the truth.** Every task of the MXGPU plan is recorded in `artifacts/mxgpu/execution-ledger.json` with its dependencies, its status, its evidence and the reason of its failure. A gate is never declared before the evidence that belongs to it exists, and a failing test is never replaced by a document.
+10. **The driver is built on macOS.** The kexts are built with `make -C driver build` on a macOS builder only; `make -C driver test-host` is the part that runs on Linux and in the CI.
 
 ## Manual QA
 
@@ -90,6 +93,8 @@ gofmt -l .
 go vet ./...
 go test ./...
 ./scripts/check-headers.sh
+bash -n $(git ls-files '*.sh')
+make -C driver test-host
 make build
 ```
 
