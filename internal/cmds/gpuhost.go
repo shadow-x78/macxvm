@@ -166,6 +166,19 @@ func cmdUnbindVFIO(gpu string, restore bool) error {
 		fmt.Printf("%s is not bound to vfio-pci (it uses %s)\n", gpu, dev.Driver)
 		return nil
 	}
+	target := ""
+	if restore {
+		for _, step := range state.Steps {
+			if step.Address == gpu {
+				target = step.FromDriver
+				break
+			}
+		}
+		if target == "" {
+			return exitcode.New(exitcode.Generic,
+				"the state of the host does not name the driver of %s; the card stays bound to vfio-pci", gpu)
+		}
+	}
 	if err := runRoot("sh", "-c", "echo "+gpu+" > /sys/bus/pci/drivers/vfio-pci/unbind"); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot unbind %s from vfio-pci: %v", gpu, err)
 	}
@@ -173,16 +186,6 @@ func cmdUnbindVFIO(gpu string, restore bool) error {
 	if !restore {
 		fmt.Println("run the command again with --restore-host to give the card back to its driver")
 		return nil
-	}
-	target := ""
-	for _, step := range state.Steps {
-		if step.Address == gpu {
-			target = step.FromDriver
-			break
-		}
-	}
-	if target == "" {
-		target = "nvidia"
 	}
 	if err := runRoot("modprobe", target); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot load the driver %s: %v", target, err)

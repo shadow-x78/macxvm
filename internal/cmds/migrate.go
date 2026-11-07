@@ -17,6 +17,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 	"github.com/shadow-x78/macxvm/internal/migration"
+	"github.com/shadow-x78/macxvm/internal/names"
 	"github.com/shadow-x78/macxvm/internal/opencore"
 	"github.com/shadow-x78/macxvm/internal/paths"
 	"github.com/shadow-x78/macxvm/internal/qemu"
@@ -96,6 +97,11 @@ func cmdMigrate(args []string) error {
 	positional, flagArgs := SplitArgs(fs, args)
 	if err := parseFlags("migrate", fs, flagArgs); err != nil {
 		return err
+	}
+	if *dest != "" {
+		if err := names.Validate(*dest); err != nil {
+			return err
+		}
 	}
 	name, err := requireName(positional)
 	if err != nil {
