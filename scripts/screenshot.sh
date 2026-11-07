@@ -33,7 +33,7 @@ sock, out = sys.argv[1], sys.argv[2]
 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 s.connect(sock)
 f = s.makefile("rwb")
-f.readline()  # the greeting of QMP
+f.readline()
 f.write(json.dumps({"execute": "qmp_capabilities"}).encode() + b"\n")
 f.flush()
 f.readline()

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -154,7 +155,64 @@ func installDriverPackage(cfg *config.VMConfig, packagePath string, accept bool)
 		return exitcode.New(exitcode.Generic, "the installation in the guest failed: %v", err)
 	}
 	fmt.Println("the driver was installed in the guest")
+	if err := collectInstalledManifest(cfg); err != nil {
+		fmt.Printf("the version of the installed driver was not recorded: %v\n", err)
+	} else {
+		fmt.Printf("the version of the installed driver is %s\n", cfg.GPU.DriverVersion)
+	}
 	fmt.Println("restart the machine and run 'macxvm gpu " + cfg.Name + " --status' to verify the probes")
+	return nil
+}
+
+const guestInstalledManifest = "/Library/Extensions/macxvm-installed-manifest.json"
+
+type installedDriverManifest struct {
+	DriverVersion   string `json:"driverVersion,omitempty"`
+	FirmwareVersion string `json:"firmwareVersion,omitempty"`
+	Package         string `json:"package,omitempty"`
+	InstalledAt     string `json:"installedAt,omitempty"`
+}
+
+func parseInstalledManifest(raw []byte) (installedDriverManifest, error) {
+	var installed installedDriverManifest
+	if err := json.Unmarshal(raw, &installed); err != nil {
+		return installed, fmt.Errorf("the manifest of the installed driver is not valid JSON: %w", err)
+	}
+	if installed.DriverVersion == "" {
+		return installed, fmt.Errorf("the manifest of the installed driver holds no version")
+	}
+	return installed, nil
+}
+
+func collectInstalledManifest(cfg *config.VMConfig) error {
+	out, err := sshx.Output(cfg, "cat "+guestInstalledManifest+" 2>/dev/null")
+	if err != nil {
+		return err
+	}
+	installed, err := parseInstalledManifest([]byte(strings.TrimSpace(out)))
+	if err != nil {
+		return err
+	}
+	installed.FirmwareVersion = cfg.GPU.FirmwareVersion
+	raw, err := json.MarshalIndent(installed, "", "  ")
+	if err != nil {
+		return err
+	}
+	path := cfg.File("driver/installed-manifest.json")
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, append(raw, '\n'), 0o600); err != nil {
+		return err
+	}
+	updated, err := store.Update(cfg.Name, func(current *config.VMConfig) error {
+		current.GPU.DriverVersion = installed.DriverVersion
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	*cfg = *updated
 	return nil
 }
 

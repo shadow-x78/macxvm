@@ -12,7 +12,9 @@ cleanup() {
   "$BIN" stop "$N" >/dev/null 2>&1 || true
   "$BIN" delete "$N" --yes >/dev/null 2>&1 || true
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
 run_timed() {
   local label=$1
   shift

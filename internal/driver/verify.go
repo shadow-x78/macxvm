@@ -80,11 +80,17 @@ func VerifyDirectory(root string, opts VerifyOptions) (*Result, error) {
 	if err := jsonUnmarshalStrict(raw, &manifest); err != nil {
 		return nil, fmt.Errorf("the manifest of the package is not valid: %w", err)
 	}
+	if manifest.FormatVersion != PackageFormatVersion {
+		return nil, fmt.Errorf("the package format %d is not supported", manifest.FormatVersion)
+	}
+	if manifest.KeyID == "" {
+		return nil, fmt.Errorf("the manifest holds no key identity")
+	}
 	signature, err := os.ReadFile(filepath.Join(root, SignatureName))
 	if err != nil {
 		return nil, fmt.Errorf("the package holds no signature: %w", err)
 	}
-	if err := VerifyManifest(&manifest, signature, opts.PublicKey); err != nil {
+	if err := VerifyManifest(raw, signature, opts.PublicKey); err != nil {
 		return nil, err
 	}
 	if opts.ExpectedKeyID != "" && manifest.KeyID != opts.ExpectedKeyID {
@@ -263,7 +269,15 @@ func normalizeForComparison(path string) string {
 }
 
 func ParsePublicKey(text string) (ed25519.PublicKey, error) {
-	raw, err := hex.DecodeString(strings.TrimSpace(text))
+	var value strings.Builder
+	for _, line := range strings.Split(text, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		value.WriteString(trimmed)
+	}
+	raw, err := hex.DecodeString(value.String())
 	if err != nil {
 		return nil, fmt.Errorf("the public key is not hexadecimal: %w", err)
 	}

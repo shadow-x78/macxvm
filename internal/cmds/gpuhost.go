@@ -13,6 +13,7 @@ import (
 
 	"github.com/shadow-x78/macxvm/internal/config"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
+	"github.com/shadow-x78/macxvm/internal/hostcheck"
 	"github.com/shadow-x78/macxvm/internal/paths"
 	"github.com/shadow-x78/macxvm/internal/vfio"
 )
@@ -136,11 +137,11 @@ func applyBindPlan(plan *vfio.Plan) error {
 	}
 	for _, step := range plan.Bind {
 		if step.FromDriver != "" {
-			if err := runRoot("sh", "-c", "echo "+step.Address+" > /sys/bus/pci/drivers/"+step.FromDriver+"/unbind"); err != nil {
+			if err := writeRootFile("/sys/bus/pci/drivers/"+step.FromDriver+"/unbind", step.Address); err != nil {
 				return exitcode.New(exitcode.Generic, "cannot unbind %s from %s: %v", step.Address, step.FromDriver, err)
 			}
 		}
-		if err := runRoot("sh", "-c", "echo "+step.Address+" > /sys/bus/pci/drivers/vfio-pci/bind"); err != nil {
+		if err := writeRootFile("/sys/bus/pci/drivers/vfio-pci/bind", step.Address); err != nil {
 			return exitcode.New(exitcode.Generic, "cannot bind %s to vfio-pci: %v", step.Address, err)
 		}
 		fmt.Printf("%s is bound to vfio-pci\n", step.Address)
@@ -178,7 +179,7 @@ func cmdUnbindVFIO(gpu string, restore bool) error {
 				"the state of the host does not name the driver of %s; the card stays bound to vfio-pci", gpu)
 		}
 	}
-	if err := runRoot("sh", "-c", "echo "+gpu+" > /sys/bus/pci/drivers/vfio-pci/unbind"); err != nil {
+	if err := writeRootFile("/sys/bus/pci/drivers/vfio-pci/unbind", gpu); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot unbind %s from vfio-pci: %v", gpu, err)
 	}
 	fmt.Printf("%s is unbound from vfio-pci\n", gpu)
@@ -189,7 +190,7 @@ func cmdUnbindVFIO(gpu string, restore bool) error {
 	if err := runRoot("modprobe", target); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot load the driver %s: %v", target, err)
 	}
-	if err := runRoot("sh", "-c", "echo "+gpu+" > /sys/bus/pci/drivers/"+target+"/bind"); err != nil {
+	if err := writeRootFile("/sys/bus/pci/drivers/"+target+"/bind", gpu); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot bind %s to %s: %v", gpu, target, err)
 	}
 	state.Restored = true
@@ -243,7 +244,7 @@ func cmdPrepareReims(runtime string, accept bool) error {
 	return nil
 }
 
-func hostGPUStatus(asJSON bool) error {
+func hostGPUStatus(asJSON, passthrough bool) error {
 	state, stateErr := readHostGPUState()
 	fs := vfio.NewFS(vfio.DefaultSysfs)
 	devices, err := fs.Devices()
@@ -255,6 +256,11 @@ func hostGPUStatus(asJSON bool) error {
 		"iommuGroups": len(groups),
 		"devices":     devices,
 		"planPath":    hostGPUPlanPath(),
+	}
+	var info *passthroughInfo
+	if passthrough {
+		info = passthroughReport(hostPassthroughFacts(groups, devices))
+		report["passthrough"] = info
 	}
 	if stateErr == nil {
 		report["backend"] = state.Backend
@@ -293,5 +299,33 @@ func hostGPUStatus(asJSON bool) error {
 	} else {
 		fmt.Println("no GPU backend is prepared on the host")
 	}
+	if info != nil {
+		fmt.Println("PASSTHROUGH")
+		for _, line := range info.Lines {
+			fmt.Printf("  %s\n", line)
+		}
+		for _, reason := range info.Reasons {
+			fmt.Printf("  - %s\n", reason)
+		}
+	}
 	return nil
+}
+
+func hostPassthroughFacts(groups map[int][]string, devices []vfio.Device) hostGPU {
+	facts := hostGPU{IOMMUGroups: len(groups), VFIOLoaded: hostcheck.VFIOAvailable()}
+	for _, dev := range devices {
+		if !dev.IsGPU() {
+			continue
+		}
+		driver := dev.Driver
+		if driver == "" {
+			driver = "no driver"
+		}
+		line := fmt.Sprintf("%s %s:%s driver=%s", dev.Address, dev.VendorID(), dev.DeviceID(), driver)
+		if hostcheck.VFIOBound(dev.Address) {
+			line += " (bound to vfio-pci)"
+		}
+		facts.Display = append(facts.Display, line)
+	}
+	return facts
 }

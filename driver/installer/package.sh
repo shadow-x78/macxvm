@@ -49,13 +49,22 @@ fi
 
 mkdir -p "$DIST"
 STAGING="$DIST/mxgpu-staging"
-rm -rf "$STAGING"
-mkdir -p "$STAGING"
+ARCHIVE="$DIST/mxgpu-$KEY_ID.tar.gz"
 
-cp -R "$BUILD/." "$STAGING/"
-cp "$SBOM" "$STAGING/SBOM.json"
-cp "$DRIVER/NOTICE" "$STAGING/NOTICE"
-cp "$DRIVER/third_party.lock.json" "$STAGING/third_party.lock.json"
+if [ ! -f "$STAGING/manifest.sig" ]; then
+    if [ ! -d "$BUILD" ]; then
+        echo "the driver is not built; run 'make -C driver build' on the builder" >&2
+        exit 1
+    fi
+    rm -rf "$STAGING"
+    mkdir -p "$STAGING"
+
+    cp -R "$BUILD/." "$STAGING/"
+    cp "$SBOM" "$STAGING/SBOM.json"
+    cp "$DRIVER/NOTICE" "$STAGING/NOTICE"
+    cp "$DRIVER/third_party.lock.json" "$STAGING/third_party.lock.json"
+    cp "$DRIVER/installer/install.sh" "$DRIVER/installer/verify.sh" "$DRIVER/installer/uninstall.sh" "$STAGING/"
+fi
 
 (
     cd "$STAGING"
@@ -64,5 +73,11 @@ cp "$DRIVER/third_party.lock.json" "$STAGING/third_party.lock.json"
         xargs -0 shasum -a 256 >SHA256SUMS
 )
 
-echo "the staging directory of the package is at $STAGING"
-echo "run 'driver/installer/sign-release.sh' to sign it and 'driver/installer/package.sh' again to archive it"
+tar -czf "$ARCHIVE" -C "$STAGING" .
+
+if [ -f "$STAGING/manifest.sig" ]; then
+    echo "the signed package is at $ARCHIVE"
+else
+    echo "the staging directory of the package is at $STAGING"
+    echo "run 'driver/installer/sign-release.sh' to sign it and 'driver/installer/package.sh' again to archive it"
+fi

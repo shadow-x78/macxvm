@@ -11,7 +11,6 @@ DRIVER="$ROOT/driver"
 BUILD="$DRIVER/build"
 SDKROOT="${SDKROOT:-macosx}"
 ARCHS="${ARCHS:-x86_64}"
-MODE="build"
 SBOM_ONLY=0
 RUN_TESTS=0
 
@@ -69,12 +68,18 @@ for kext in MXRM MXFB MXAccel MXAGDC; do
 done
 
 if [ "$RUN_TESTS" -eq 1 ]; then
+    ran=0
     for test_dir in "$DRIVER"/tests/*/; do
         if [ -f "$test_dir/Makefile" ]; then
             echo "running the tests of $(basename "$test_dir")"
             make -C "$test_dir" BUILD_DIR="$BUILD/$(basename "$test_dir")"
+            ran=$((ran + 1))
         fi
     done
+    if [ "$ran" -eq 0 ]; then
+        echo "no driver test was executed; the tests of the driver are not in the repository yet" >&2
+        exit 1
+    fi
 fi
 
 echo "the build of the driver finished"

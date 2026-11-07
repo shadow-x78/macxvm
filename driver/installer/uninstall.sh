@@ -6,12 +6,24 @@
 
 set -euo pipefail
 
-TARGET="${1:-/Library/Extensions}"
-BACKUP="${2:-}"
+STAGING="${1:-}"
+TARGET="${2:-/Library/Extensions}"
+BACKUP="${3:-}"
+BACKUP_ROOT="/var/root/macxvm-backups"
 
 if [ "$(uname -s)" != "Darwin" ]; then
     echo "the driver is removed from a macOS guest" >&2
     exit 1
+fi
+
+if [ -z "$BACKUP" ] && [ -d "$BACKUP_ROOT" ]; then
+    LATEST=""
+    for candidate in "$BACKUP_ROOT"/*; do
+        if [ -d "$candidate" ] && { [ -z "$LATEST" ] || [ "$candidate" -nt "$LATEST" ]; }; then
+            LATEST="$candidate"
+        fi
+    done
+    BACKUP="$LATEST"
 fi
 
 for item in MXRM.kext MXFB.kext MXAccel.kext MXAGDC.kext MXMTLDriver.bundle; do
@@ -32,6 +44,7 @@ if [ -n "$BACKUP" ] && [ -d "$BACKUP" ]; then
             echo "restored $item"
         fi
     done
+    rm -rf "$BACKUP"
 fi
 
 echo "the driver is removed"

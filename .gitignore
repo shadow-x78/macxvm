@@ -6,6 +6,9 @@
 # ── Build Output ──
 bin/
 /macxvm
+driver/build/
+driver/dist/
+artifacts/mxgpu/package/
 
 # ── Local Files ──
 *.tmp

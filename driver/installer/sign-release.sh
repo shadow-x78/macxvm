@@ -78,17 +78,26 @@ PY
 CANONICAL="$DIST/manifest.canonical.json"
 python3 - "$MANIFEST" "$CANONICAL" <<'PY'
 import json, sys
-with open(sys.argv[1]) as handle:
+with open(sys.argv[1], encoding="utf-8") as handle:
     manifest = json.load(handle)
-manifest["files"] = sorted(manifest["files"], key=lambda item: item["path"])
-raw = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
+raw = json.dumps(manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 with open(sys.argv[2], "wb") as handle:
     handle.write(raw)
 PY
 
+SEPARATED="$DIST/manifest.separated"
+python3 - "$CANONICAL" "$SEPARATED" <<'PY'
+import sys
+with open(sys.argv[1], "rb") as handle:
+    canonical = handle.read()
+with open(sys.argv[2], "wb") as handle:
+    handle.write(b"MXGPU-PACKAGE-v1\x00")
+    handle.write(canonical)
+PY
+
 SIGNATURE="$STAGING/manifest.sig"
-openssl pkeyutl -sign -inkey "$KEY_FILE" -rawin -in "$CANONICAL" -out "$SIGNATURE"
-rm -f "$CANONICAL"
+openssl pkeyutl -sign -inkey "$KEY_FILE" -rawin -in "$SEPARATED" -out "$SIGNATURE"
+rm -f "$SEPARATED" "$CANONICAL"
 
 (
     cd "$STAGING"

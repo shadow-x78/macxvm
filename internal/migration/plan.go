@@ -105,16 +105,23 @@ func (p *Plan) Digest() string {
 	return hex.EncodeToString(sum[:])
 }
 
-func WritePlan(vmDir string, plan *Plan) error {
+func EncodePlan(plan *Plan) ([]byte, error) {
 	plan.Version = PlanVersion
 	if plan.GeneratedAt.IsZero() {
 		plan.GeneratedAt = time.Now().UTC()
 	}
 	raw, err := json.MarshalIndent(plan, "", "  ")
 	if err != nil {
+		return nil, err
+	}
+	return append(raw, '\n'), nil
+}
+
+func WritePlan(vmDir string, plan *Plan) error {
+	raw, err := EncodePlan(plan)
+	if err != nil {
 		return err
 	}
-	raw = append(raw, '\n')
 	dir := filepath.Join(vmDir, "migration")
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
@@ -123,7 +130,11 @@ func WritePlan(vmDir string, plan *Plan) error {
 }
 
 func ReadPlan(vmDir string) (*Plan, error) {
-	raw, err := os.ReadFile(PlanPath(vmDir))
+	return ReadPlanFile(PlanPath(vmDir))
+}
+
+func ReadPlanFile(path string) (*Plan, error) {
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

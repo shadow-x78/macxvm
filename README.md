@@ -66,7 +66,7 @@ Run slim macOS guests with Xcode on a Linux host.
 
 MacXVM turns a Linux machine into a build farm for macOS. It registers macOS guests, starts them under QEMU/KVM, trims them down so that they idle quietly, installs Xcode inside them and builds your projects from Linux with `rsync` and `ssh`.
 
-The tool is a single static binary of about 7.8 MB with no daemon. QEMU itself is the only long-lived process, so an idle host carries nothing at all.
+The tool is a single static binary of about 8.55 MB with no daemon. QEMU itself is the only long-lived process, so an idle host carries nothing at all.
 
 ```
 macxvm image prepare macos --profile cli
@@ -90,7 +90,7 @@ Read this before you install anything:
 1. **Apple's macOS license permits macOS in a virtual machine only on Apple-branded hardware.** Running macOS under QEMU/KVM on a PC violates that license, and Apple has enforced it in court. MacXVM is a *launcher*: it ships no Apple software, firmware, keys or boot loaders and only starts what you provide. **You are responsible for compliance.** The compliant alternatives are a Mac (use the Apple-hardware specification) or a rented Mac in the cloud.
 2. **x86_64 only.** The guest is an x86_64 macOS. Apple supports Intel Macs up to macOS 26, so the guest is limited to macOS ≤ 26 and therefore to the Xcode versions that run on it. Pick the macOS version and the Xcode version together, using the release notes of Xcode. This project never hardcodes version pairs.
 3. **Host.** Linux x86_64 with hardware virtualisation (Intel VT-x or AMD-V), a `/dev/kvm` that your user may use, and QEMU 6.0 or newer. ARM Linux hosts are not supported.
-4. **No Metal or 3D acceleration.** The supported path is a Bochs framebuffer (`AppleBochVGAFB`) at 1920x1080 (QEMU reserves a 256 MB device aperture; macOS reports 7 MB VRAM). It is a real macOS display driver, but it is 2D only: the iOS Simulator and Metal apps stay slow. NVIDIA RTX passthrough is not a macOS-supported path and is unavailable on this host (no IOMMU groups, and macOS has no RTX 5060 driver).
+4. **No Metal or 3D acceleration.** The supported path is a Bochs framebuffer (`AppleBochVGAFB`) at 1440x900 (QEMU reserves a 256 MB device aperture; macOS reports 7 MB VRAM). It is a real macOS display driver, but it is 2D only: the iOS Simulator and Metal apps stay slow. NVIDIA RTX passthrough is not a macOS-supported path and is unavailable on this host (no IOMMU groups, and macOS has no RTX 5060 driver).
 5. **Fragility.** A macOS system update inside such a virtual machine can break booting. The slim level 1 switches the automatic updates off, and you should not run system updates in the guest.
 6. **The boot assets are your job.** The machine definition, the bootloader, the firmware files and the macOS installer image come from you, for example by following the documentation of the open-source projects listed in the [credits](#credits). MacXVM copies none of their content.
 7. **No Apple software is ever stored in this repository or in a release of it.** `macxvm image link` prints the addresses of the boot assets, and `macxvm image prepare` fetches them into the state directory of MacXVM on your own machine, when you ask for it. The installer of Apple comes from the recovery service of Apple and is checked against the signature of Apple before it is used. Nothing of Apple is committed, tagged or uploaded, so the repository holds no content of Apple and cannot be taken down for it.
@@ -142,7 +142,7 @@ make build
 make install          # installs ~/.local/bin/macxvm
 ```
 
-The binary is about 7.8 MB, static and built for `linux/amd64`. It needs no daemon and no service.
+The binary is about 8.55 MB, static and built for `linux/amd64`. It needs no daemon and no service.
 The full guide, including the state directory and the removal, is in [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 <a id="features"></a>
@@ -157,7 +157,7 @@ The full guide, including the state directory and the removal, is in [docs/INSTA
 - `xcodebuild` and `swift build` on a remote guest, with the derived data kept between the builds
 - A project file that holds the defaults of a build, a machine and a base image
 - Headless by default, a VNC display on the loopback interface when you need to see the screen
-- One static binary of about 7.8 MB, the Go standard library only, no third-party modules, no daemon, no background process
+- One static binary of about 8.55 MB, the Go standard library only, no third-party modules, no daemon, no background process
 
 <a id="args-file"></a>
 ## The Args File
@@ -254,7 +254,7 @@ went from 694 MiB/s on AHCI to 984 MiB/s on NVMe, the read from 6.6 to
 measurements and the open acceleration targets are in
 [docs/ACCELERATION.md](docs/ACCELERATION.md).
 
-Reverse engineering of the guest kexts shows that `AppleVirtualGraphics.kext` matches only Bochs VGA (`0x1234:0x1111`, class `AppleBochVGAFB`) and Cirrus (`0x1013:0x0000`). The default therefore uses Bochs VGA. macOS loads `AppleBochVGAFB`, the display is 1920x1080, and the guest reports a real framebuffer instead of “No Kext Loaded”. This is the fastest supported display path, but it is not Metal or 3D acceleration.
+Reverse engineering of the guest kexts shows that `AppleVirtualGraphics.kext` matches only Bochs VGA (`0x1234:0x1111`, class `AppleBochVGAFB`) and Cirrus (`0x1013:0x0000`). The default therefore uses Bochs VGA. macOS loads `AppleBochVGAFB`, the display is 1440x900, and the guest reports a real framebuffer instead of “No Kext Loaded”. This is the fastest supported display path, but it is not Metal or 3D acceleration.
 
 During `autoinstall` the VM temporarily uses `vmware-svga` because Recovery accepts reliable absolute pointer input with it; `finish` switches to Bochs after the manual Setup Assistant. A running VM cannot change display devices; stop it first.
 
@@ -509,7 +509,7 @@ Exit codes: `0` success, `1` error, `2` usage, `3` not found, `4` already runnin
 | Operation | Target | Measured on the reference host |
 |-----------|--------|--------------------------------|
 | `list`, `status` | < 100 ms | 3 ms |
-| Release binary | < 10 MB | 8,196,256 bytes, static `linux/amd64`, the v0.10.0 cycle |
+| Release binary | < 10 MB | 8,966,304 bytes, static `linux/amd64`, the v0.10.0 cycle |
 | Overlay clone of a sealed base | < 1 s | < 1 s, a few hundred KiB on disk |
 | Idle cost on the host | none | no process of MacXVM stays alive |
 

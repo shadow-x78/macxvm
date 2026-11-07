@@ -30,19 +30,34 @@ if ! ls "$BUILD"/*.kext >/dev/null 2>&1; then
     exit 1
 fi
 
+if [ ! -f "/Library/Extensions/$DEVELOPMENT.plist" ]; then
+    echo "the development override $DEVELOPMENT is missing; the production package does not inherit it" >&2
+    exit 1
+fi
+
+declare -a loaded=()
+unload() {
+    for kext in ${loaded[@]+"${loaded[@]}"}; do
+        kextunload -b "$kext" >/dev/null 2>&1 || true
+    done
+}
+trap unload EXIT
+
 for kext in "$BUILD"/*.kext; do
     name="$(basename "$kext" .kext)"
+    if ! plutil -p "$kext/Contents/Info.plist" 2>/dev/null | grep -q "$IDENTITY"; then
+        echo "the kext $name does not carry the identity $IDENTITY" >&2
+        exit 1
+    fi
     echo "loading $name"
     if ! kextload -C "$(id -u)" "$kext"; then
         echo "the load of $name failed; the recovery display stays available" >&2
         exit 1
     fi
+    loaded+=("$kext")
 done
 
-if [ ! -f "/Library/Extensions/$IDENTITY.plist" ]; then
-    echo "the development identity of the driver is missing; the production package does not inherit it" >&2
-    exit 1
-fi
+trap - EXIT
 
 echo "the development kexts are loaded"
 echo "the auxiliary kernel collection is a separate path and is not touched here"

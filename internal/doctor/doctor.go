@@ -55,7 +55,7 @@ a Mac (use the Apple-hardware specification) or a rented Mac in the cloud.
 The guest is an x86_64 macOS. Apple supports Intel Macs up to macOS 26, so the
 macOS version and the Xcode version must be chosen together from the Xcode
 release notes. The supported display is a Bochs framebuffer with the macOS
-AppleBochVGAFB driver at 1920x1080; it is 2D only, so the iOS Simulator and
+AppleBochVGAFB driver at 1440x900; it is 2D only, so the iOS Simulator and
 Metal apps remain software rendered. RTX passthrough is not supported by macOS. macOS system updates inside such a virtual
 machine can break booting, so MacXVM disables automatic updates and you should
 not run system updates in the guest.

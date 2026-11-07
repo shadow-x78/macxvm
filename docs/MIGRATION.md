@@ -54,6 +54,14 @@ The plan lives in `<vmdir>/migration/migration-plan.json` and holds:
 The digest of the plan does not depend on the time of its generation, so it
 stays the same after any recheck.
 
+`--live` sends the plan to the destination next to the checkpoint of the
+guest, in the directory of the migration of the destination:
+`${MACXVM_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/macxvm}/vms/NAME/migration`.
+The expression follows the environment of the destination, so the destination
+reads the plan in the same place where it keeps its own plan. The destination
+reads the plan from the path of `--plan` and refuses a plan that does not
+match the session of the migration.
+
 ## The state of the session
 
 | State | Meaning |

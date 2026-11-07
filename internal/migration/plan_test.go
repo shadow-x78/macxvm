@@ -4,6 +4,8 @@
 package migration
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -139,5 +141,42 @@ func TestTheDigestOfThePlanIgnoresItsTime(t *testing.T) {
 	plan.GPUModel = "GB207"
 	if third := plan.Digest(); third == first {
 		t.Fatal("the digest of the plan does not change with its content")
+	}
+}
+
+func TestReadPlanFileReadsThePlanOfAnotherHost(t *testing.T) {
+	dir := t.TempDir()
+	plan := &Plan{
+		Version:     PlanVersion,
+		SourceVM:    "source",
+		Destination: "destination",
+		Devices:     []DeviceMapping{{Kind: "gpu", GuestSlot: "0"}},
+	}
+	raw, err := EncodePlan(plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "migration-plan.json")
+	if err := os.WriteFile(path, raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	read, err := ReadPlanFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if read.SourceVM != "source" || read.Destination != "destination" {
+		t.Fatalf("the plan of the file is %+v", read)
+	}
+	if len(read.Devices) != 1 || read.Devices[0].Kind != "gpu" {
+		t.Fatalf("the devices of the plan are %+v", read.Devices)
+	}
+	if read.Digest() != plan.Digest() {
+		t.Fatal("the digest of the transferred plan differs from the digest of the source")
+	}
+}
+
+func TestReadPlanFileReportsAMissingFile(t *testing.T) {
+	if _, err := ReadPlanFile(filepath.Join(t.TempDir(), "missing.json")); err == nil {
+		t.Fatal("a missing plan was accepted")
 	}
 }

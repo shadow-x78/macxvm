@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/shadow-x78/macxvm/internal/config"
+	"github.com/shadow-x78/macxvm/resources"
 )
 
 type fakeGuest struct {
@@ -395,6 +396,49 @@ func TestGeneratedPolicyHasNoBulkDestructivePaths(t *testing.T) {
 	} {
 		if strings.Contains(script, forbidden) {
 			t.Fatalf("generated script contains destructive path %q", forbidden)
+		}
+	}
+}
+
+func TestThePolicyFileMatchesTheAllowlist(t *testing.T) {
+	type entry struct {
+		name   string
+		bundle string
+		dock   bool
+	}
+	var want []entry
+	for _, line := range strings.Split(resources.AppsDefault, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		last := strings.LastIndex(line, " ")
+		if last < 0 {
+			t.Fatalf("invalid policy line %q", line)
+		}
+		bundle := line[last+1:]
+		rest := line[:last]
+		first := strings.Index(rest, " ")
+		if first < 0 {
+			t.Fatalf("invalid policy line %q", line)
+		}
+		mode := rest[:first]
+		name := rest[first+1:]
+		switch mode {
+		case "remove":
+		case "dock-only":
+		default:
+			t.Fatalf("unknown policy mode %q", mode)
+		}
+		want = append(want, entry{name: name, bundle: bundle, dock: mode == "dock-only"})
+	}
+	if len(allowlist) != len(want) {
+		t.Fatalf("the allowlist has %d entries, the file has %d", len(allowlist), len(want))
+	}
+	for i := range want {
+		if allowlist[i].Name != want[i].name || allowlist[i].Bundle != want[i].bundle ||
+			allowlist[i].DockOnly != want[i].dock {
+			t.Fatalf("entry %d: code=%+v file=%+v", i, allowlist[i], want[i])
 		}
 	}
 }

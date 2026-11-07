@@ -268,24 +268,24 @@ func TestCheckPlaceholders(t *testing.T) {
 	}
 }
 
-func TestDropBinary(t *testing.T) {
-	lines := [][]string{{"qemu-system-x86_64", "-m", "4096"}}
-	got := DropBinary(lines, config.DefaultQemuBinary)
-	if len(got[0]) != 2 || got[0][0] != "-m" {
-		t.Fatalf("DropBinary() = %v", got)
+func TestDropFirstBinary(t *testing.T) {
+	tokens := []string{"qemu-system-x86_64", "-m", "4096"}
+	got := DropFirstBinary(tokens, config.DefaultQemuBinary)
+	if len(got) != 2 || got[0] != "-m" {
+		t.Fatalf("DropFirstBinary() = %v", got)
 	}
-	if len(lines[0]) != 3 {
-		t.Fatal("DropBinary() changed its input")
+	if len(tokens) != 3 {
+		t.Fatal("DropFirstBinary() changed its input")
 	}
-	custom := [][]string{{"my-qemu", "-m", "4096"}}
-	got = DropBinary(custom, "my-qemu")
-	if len(got[0]) != 2 {
-		t.Fatalf("DropBinary() = %v", got)
+	custom := []string{"my-qemu", "-m", "4096"}
+	got = DropFirstBinary(custom, "my-qemu")
+	if len(got) != 2 {
+		t.Fatalf("DropFirstBinary() = %v", got)
 	}
-	other := [][]string{{"qemu-system-x86_64", "-m", "4096"}}
-	got = DropBinary(other, "other-qemu")
-	if len(got[0]) != 2 {
-		t.Fatalf("DropBinary() = %v", got)
+	other := []string{"qemu-system-x86_64", "-m", "4096"}
+	got = DropFirstBinary(other, "other-qemu")
+	if len(got) != 2 {
+		t.Fatalf("DropFirstBinary() = %v", got)
 	}
 }
 

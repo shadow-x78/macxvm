@@ -69,11 +69,19 @@ func TestSignAndVerifyManifest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := VerifyManifest(manifest, signature, public); err != nil {
+	raw, err := json.Marshal(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := VerifyManifest(raw, signature, public); err != nil {
 		t.Fatal(err)
 	}
 	manifest.Files[0].Size = 99
-	if err := VerifyManifest(manifest, signature, public); err == nil {
+	raw, err = json.Marshal(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := VerifyManifest(raw, signature, public); err == nil {
 		t.Fatal("VerifyManifest() = nil error, want a signature error")
 	}
 }
@@ -232,11 +240,11 @@ func TestVerifyPackageAcceptsASignedPackage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	signature, err := SignManifest(manifest, private)
+	raw, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
 		t.Fatal(err)
 	}
-	raw, err := json.MarshalIndent(manifest, "", "  ")
+	signature, err := SignManifestBytes(raw, private)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -342,5 +350,83 @@ func TestParsePublicKey(t *testing.T) {
 	}
 	if _, err := ParsePublicKey("00"); err == nil {
 		t.Fatal("ParsePublicKey() = nil error, want a length error")
+	}
+}
+
+func TestTheSignatureNeedsTheDomainSeparator(t *testing.T) {
+	public, private, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	manifest := &Manifest{
+		FormatVersion: PackageFormatVersion,
+		KeyID:         "test",
+		CreatedAt:     "2026-01-01T00:00:00Z",
+		Target:        Target{OS: "macos", Arch: "x86_64"},
+		Files:         []File{{Path: "a.txt", Size: 1, SHA256: "ab"}},
+	}
+	raw, err := json.Marshal(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	canonical, err := Canonicalize(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	without := ed25519.Sign(private, canonical)
+	if err := VerifyManifest(raw, without, public); err == nil {
+		t.Fatal("a signature without the domain separator was accepted")
+	}
+	with := ed25519.Sign(private, append([]byte(DomainSeparator), canonical...))
+	if err := VerifyManifest(raw, with, public); err != nil {
+		t.Fatalf("the signature with the domain separator was refused: %v", err)
+	}
+}
+
+func TestTheCanonicalFormKeepsTheTextRaw(t *testing.T) {
+	manifest := &Manifest{
+		FormatVersion: PackageFormatVersion,
+		KeyID:         "test",
+		CreatedAt:     "2026-01-01T00:00:00Z",
+		Target:        Target{OS: "macos", Arch: "x86_64"},
+		Files:         []File{{Path: "MXRM.kext/Ünïcode.txt", Size: 1, SHA256: "ab"}},
+	}
+	canonical, err := manifest.Canonical()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(canonical), "Ünïcode.txt") {
+		t.Fatalf("the canonical form escapes the text: %s", canonical)
+	}
+	if strings.Contains(string(canonical), `\u00dc`) {
+		t.Fatalf("the canonical form escapes the text: %s", canonical)
+	}
+}
+
+func TestThePublicKeyIsReadWithItsBanner(t *testing.T) {
+	text := "# ─────────────────────────────────────────────\n" +
+		"# MacXVM - MXGPU Release Trust Root (MIT)\n" +
+		"# https://github.com/shadow-x78/macxvm\n" +
+		"# ─────────────────────────────────────────────\n" +
+		"#\n" +
+		"# The public key that signs the MXGPU driver packages.\n" +
+		"\n" +
+		strings.Repeat("ab", ed25519.PublicKeySize) + "\n"
+	key, err := ParsePublicKey(text)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(key) != ed25519.PublicKeySize {
+		t.Fatalf("the key holds %d bytes", len(key))
+	}
+}
+
+func TestThePublicKeyOfTheRepositoryIsUsable(t *testing.T) {
+	raw, err := os.ReadFile("../../resources/mxgpu-release-public-key.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ParsePublicKey(string(raw)); err != nil {
+		t.Fatalf("the public key of the repository is not usable: %v", err)
 	}
 }

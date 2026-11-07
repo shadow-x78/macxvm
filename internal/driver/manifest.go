@@ -64,13 +64,21 @@ func (m *Manifest) Canonical() ([]byte, error) {
 }
 
 func SignManifest(manifest *Manifest, privateKey ed25519.PrivateKey) ([]byte, error) {
-	if len(privateKey) != ed25519.PrivateKeySize {
-		return nil, fmt.Errorf("the release key is not an Ed25519 private key")
-	}
 	if manifest.FormatVersion == 0 {
 		manifest.FormatVersion = PackageFormatVersion
 	}
-	canonical, err := manifest.Canonical()
+	raw, err := json.Marshal(manifest)
+	if err != nil {
+		return nil, err
+	}
+	return SignManifestBytes(raw, privateKey)
+}
+
+func SignManifestBytes(raw []byte, privateKey ed25519.PrivateKey) ([]byte, error) {
+	if len(privateKey) != ed25519.PrivateKeySize {
+		return nil, fmt.Errorf("the release key is not an Ed25519 private key")
+	}
+	canonical, err := Canonicalize(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -78,17 +86,11 @@ func SignManifest(manifest *Manifest, privateKey ed25519.PrivateKey) ([]byte, er
 	return ed25519.Sign(privateKey, signed), nil
 }
 
-func VerifyManifest(manifest *Manifest, signature []byte, publicKey ed25519.PublicKey) error {
+func VerifyManifest(raw []byte, signature []byte, publicKey ed25519.PublicKey) error {
 	if len(publicKey) != ed25519.PublicKeySize {
 		return fmt.Errorf("the release public key is not an Ed25519 public key")
 	}
-	if manifest.FormatVersion != PackageFormatVersion {
-		return fmt.Errorf("the package format %d is not supported", manifest.FormatVersion)
-	}
-	if manifest.KeyID == "" {
-		return fmt.Errorf("the manifest holds no key identity")
-	}
-	canonical, err := manifest.Canonical()
+	canonical, err := Canonicalize(raw)
 	if err != nil {
 		return err
 	}

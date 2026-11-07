@@ -284,19 +284,6 @@ func checkPlaceholders(lines [][]string, allowed map[string]bool) error {
 	return nil
 }
 
-func DropBinary(lines [][]string, qemuBinary string) [][]string {
-	out := make([][]string, len(lines))
-	copy(out, lines)
-	if len(out) == 0 || len(out[0]) == 0 {
-		return out
-	}
-	first := out[0][0]
-	if first == config.DefaultQemuBinary || (qemuBinary != "" && first == qemuBinary) {
-		out[0] = out[0][1:]
-	}
-	return out
-}
-
 func Expand(lines [][]string, ctx Context) ([]string, error) {
 	var out []string
 	for _, toks := range lines {

@@ -240,7 +240,13 @@ func driverBuild(args []string) error {
 	if err != nil {
 		return exitcode.New(exitcode.Generic, "cannot list the packages of the builder: %v", err)
 	}
-	if len(packages) == 0 {
+	var archives []string
+	for _, item := range packages {
+		if strings.HasSuffix(item, ".tar.gz") {
+			archives = append(archives, item)
+		}
+	}
+	if len(archives) == 0 {
 		return exitcode.New(exitcode.Generic, "the builder produced no package")
 	}
 	dest, err := filepath.Abs(filepath.Join("artifacts", "mxgpu", "package"))
@@ -250,8 +256,9 @@ func driverBuild(args []string) error {
 	if err := os.MkdirAll(dest, 0o700); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot create %s: %v", dest, err)
 	}
-	local := filepath.Join(dest, filepath.Base(packages[len(packages)-1]))
-	if err := remoteCopy(target, packages[len(packages)-1], local); err != nil {
+	remotePackage := archives[len(archives)-1]
+	local := filepath.Join(dest, filepath.Base(remotePackage))
+	if err := remoteCopy(target, remotePackage, local); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot fetch the package from the builder: %v", err)
 	}
 	key, err := releasePublicKey()

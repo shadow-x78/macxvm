@@ -182,7 +182,7 @@ func cmdGPUHost(opts gpuCLIOptions) error {
 	case opts.prepareReims:
 		return cmdPrepareReims(opts.runtime, opts.acceptHost)
 	}
-	return hostGPUStatus(opts.asJSON)
+	return hostGPUStatus(opts.asJSON, opts.passthrough)
 }
 
 func inspectGPU(cfg *config.VMConfig) gpuReport {
@@ -327,15 +327,13 @@ func bindDeviceToVFIO(address string) error {
 		if err := runRoot("modprobe", "-r", driver); err != nil {
 			fmt.Printf("the modules of %s stay loaded: %v\n", driver, err)
 		}
-		unbind := "echo " + address + " > /sys/bus/pci/drivers/" + driver + "/unbind"
-		if err := runRoot("sh", "-c", unbind); err != nil {
+		if err := writeRootFile("/sys/bus/pci/drivers/"+driver+"/unbind", address); err != nil {
 			return exitcode.New(exitcode.Generic, "cannot unbind %s from %s: %v", address, driver, err)
 		}
 	} else {
 		fmt.Printf("%s has no driver, the unbind is skipped\n", address)
 	}
-	bind := "echo " + address + " > /sys/bus/pci/drivers/vfio-pci/bind"
-	if err := runRoot("sh", "-c", bind); err != nil {
+	if err := writeRootFile("/sys/bus/pci/drivers/vfio-pci/bind", address); err != nil {
 		return exitcode.New(exitcode.Generic, "cannot bind %s to vfio-pci: %v", address, err)
 	}
 	fmt.Printf("%s is bound to vfio-pci\n", address)
@@ -538,10 +536,6 @@ func rewriteDisplayArgs(input, mode string) string {
 		}
 	}
 	return strings.Join(out, "\n")
-}
-
-func bochsArgs(input string) (string, bool) {
-	return bochsArgsAt(input, 1440, 900)
 }
 
 func bochsArgsAt(input string, width, height int) (string, bool) {

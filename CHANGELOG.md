@@ -113,6 +113,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The size gate of the CI moves from 8 MiB to 10 MiB, and the documented size
   of the binary follows it.
 
+### Fixed
+- The name of the machine of the destination of `macxvm migrate` is validated
+  like every other name of the tool, so a value that carries a shell
+  metacharacter cannot run a command on the destination host.
+- `macxvm migrate --live` sends the plan of the migration to the destination
+  next to the checkpoint of the guest, and the destination reads the plan from
+  the path of `--plan`. The path of the destination follows the environment of
+  the destination, so the two hosts agree without a helper that the project
+  does not ship. The destination refuses a plan that does not match its
+  session.
+- `macxvm gpu --unbind-vfio ADDRESS --restore-host` refuses to give the card
+  back to a driver that the state of the host does not name, instead of
+  binding it to the `nvidia` module whatever driver the card had. The card
+  stays bound to `vfio-pci` in that case.
+- The paths of the builder are quoted for its shell, in the commands that read
+  the checksum and the list of the packages and in the build of the driver.
+- The tool writes the address of a card into the file of its driver with an
+  argument vector, and not with a shell, as the rule 5 of the contribution
+  guide asks.
+- `macxvm gpu --passthrough` reports the readiness of the passthrough of the
+  host, and not only the one of a machine.
+- A failed upgrade of the schema of a machine is reported, instead of leaving
+  the old schema on the disk without a word.
+- The package of the driver is signed the way the tool reads it: the signature
+  covers the separator and the canonical form of the bytes of the manifest
+  file. Before this change every package that the project signed was refused
+  by the project itself.
+- `driver/installer/package.sh` writes the archive of the package
+  (`driver/dist/mxgpu-<key id>.tar.gz`), keeps a staging that holds a
+  signature, and keeps the SBOM of a signed staging so that the hash of the
+  manifest still matches it.
+- `macxvm driver build --builder` fetches the archive of the builder and not
+  its staging directory.
+- The tool reads the public key of the release with the banner and the notes
+  that the file carries, so `macxvm driver verify` and `macxvm driver build`
+  work again.
+- The package of the driver holds the three scripts that the guest runs, and
+  the scripts take the directory of the staging that the caller passes. The
+  manifest of the install is built by the JSON module, and the components that
+  the new package does not hold are removed from the guest.
+- The guest records the version of the driver that it installed, and the host
+  collects that manifest after the installation, so `macxvm migrate` reads the
+  version of the driver of the destination.
+
+### Audit
+- The doc comments of the five files that the GPU cycle added are removed, so
+  every code file carries only the credit banner of the project and the
+  directives of the tools, as the decision A50 asks.
+- The dead branch of the host report of the card and the unused helper of the
+  addresses are removed.
+- The three helpers that only a test called are removed, and their tests moved
+  to the functions that the code really calls. The parity test of the policy
+  of the applications moved next to the allowlist that it checks.
+- The output of the build of the driver is ignored, so a build leaves the
+  working tree clean.
+- The script of the hardware integration of the driver creates its machine
+  from the base alone, and removes it with the flag that the command knows.
+  The scripts of the test leave on a signal instead of continuing against a
+  machine that the cleanup already deleted.
+- The two makefiles carry the section titles of the project, like every other
+  configuration file of the repository.
+- The documentation names the resolution of 1440x900 that the tool uses by
+  default, and the size that the binary of this cycle has.
+
 ## [v0.9.0] - 2026-10-27
 
 This release follows v0.8.0 and holds the full audit, cleanup and the verified

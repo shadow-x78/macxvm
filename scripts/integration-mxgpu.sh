@@ -37,12 +37,13 @@ fi
 cleanup() {
     "$BIN" stop "$NAME" --force >/dev/null 2>&1 || true
     "$BIN" gpu --unbind-vfio --gpu "$GPU" --restore-host >/dev/null 2>&1 || true
-    "$BIN" delete "$NAME" --force >/dev/null 2>&1 || true
+    "$BIN" delete "$NAME" --yes >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
 
-"$BIN" create "$NAME" --base "$BASE" --profile cli \
-    --gpu-backend vfio --gpu "$GPU" --audio "$AUDIO" --host-gpu "$HOST_GPU" --cpu host
+"$BIN" create "$NAME" --base "$BASE"
 
 "$BIN" gpu --prepare-vfio --gpu "$GPU" --audio "$AUDIO" --host-gpu "$HOST_GPU" --accept-host-changes
 

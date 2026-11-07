@@ -23,14 +23,14 @@ func TestRewriteDisplayArgs(t *testing.T) {
 	}
 }
 
-func TestBochsArgsIdempotent(t *testing.T) {
+func TestBochsArgsAtIsIdempotent(t *testing.T) {
 	input := "qemu-system-x86_64 \\\n  -smbios type=2 \\\n  -vga none \\\n  -device bochs-display,vgamem=256M,xres=1440,yres=900 \\\n  -drive file=x \\\n"
-	out, changed := bochsArgs(input)
+	out, changed := bochsArgsAt(input, 1440, 900)
 	if changed {
-		t.Fatalf("bochsArgs rewrote an already optimized file: %s", out)
+		t.Fatalf("bochsArgsAt rewrote an already optimized file: %s", out)
 	}
 	if out != input {
-		t.Fatal("bochsArgs changed the input")
+		t.Fatal("bochsArgsAt changed the input")
 	}
 }
 

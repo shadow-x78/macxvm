@@ -544,8 +544,18 @@ func migrateLive(cfg *config.VMConfig, destination, destName string) error {
 		advanceSession(cfg, session, migration.SessionFailed)
 		return exitcode.New(exitcode.Generic, "cannot write the checkpoint of the migration: %v", err)
 	}
-	remoteDir := fmt.Sprintf("$(macxvm-path)/../vms/%s/migration", destName)
-	command := fmt.Sprintf("mkdir -p %s && cat > %s/checkpoint.bin", remoteDir, remoteDir)
+	remoteDir := remoteMigrationDir(destName)
+	planRaw, err := migration.EncodePlan(report.Plan)
+	if err != nil {
+		advanceSession(cfg, session, migration.SessionFailed)
+		return exitcode.New(exitcode.Generic, "cannot encode the migration plan: %v", err)
+	}
+	planCommand := fmt.Sprintf("umask 077 && mkdir -p %s && cat > %s/migration-plan.json", remoteDir, remoteDir)
+	if err := remoteRunStream(destination, planCommand, planRaw); err != nil {
+		advanceSession(cfg, session, migration.SessionFailed)
+		return exitcode.New(exitcode.Generic, "cannot send the migration plan to the destination: %v", err)
+	}
+	command := fmt.Sprintf("umask 077 && mkdir -p %s && cat > %s/checkpoint.bin", remoteDir, remoteDir)
 	if err := remoteRunStream(destination, command, checkpoint); err != nil {
 		advanceSession(cfg, session, migration.SessionFailed)
 		return exitcode.New(exitcode.Generic, "cannot send the checkpoint to the destination: %v", err)
@@ -728,9 +738,9 @@ func migrateIncomingCommand(args []string) error {
 	if err != nil {
 		return err
 	}
-	plan, err := migration.ReadPlan(cfg.Dir())
+	plan, err := migration.ReadPlanFile(*planPath)
 	if err != nil {
-		return exitcode.New(exitcode.Generic, "the destination has no migration plan: %v", err)
+		return exitcode.New(exitcode.NotFound, "the destination has no migration plan: %v", err)
 	}
 	if _, err := os.Stat(*checkpointPath); err != nil {
 		return exitcode.New(exitcode.NotFound, "the destination has no checkpoint: %v", err)
@@ -742,9 +752,13 @@ func migrateIncomingCommand(args []string) error {
 			MigrationUUID: plan.SourceVM,
 			Attempt:       1,
 			State:         migration.SessionPrepared,
+			PlanDigest:    plan.Digest(),
 			SourceVM:      plan.SourceVM,
 			Destination:   cfg.Name,
 		}
+	} else if session.PlanDigest != "" && session.PlanDigest != plan.Digest() {
+		return exitcode.New(exitcode.Generic,
+			"the migration plan of the destination does not match the session of the migration")
 	}
 	session.State = migration.SessionDestinationValid
 	if err := migration.WriteSession(cfg.Dir(), session); err != nil {
@@ -789,6 +803,11 @@ func migrationCommitCommand(args []string) error {
 	})
 	fmt.Printf("the migration of '%s' is committed on the destination\n", cfg.Name)
 	return nil
+}
+
+func remoteMigrationDir(destName string) string {
+	home := "${MACXVM_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/macxvm}"
+	return home + "/vms/" + sshx.ShellQuote(destName) + "/migration"
 }
 
 func remoteRunStream(destination, command string, payload []byte) error {
