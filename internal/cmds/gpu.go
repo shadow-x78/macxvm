@@ -4,7 +4,6 @@
 package cmds
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -103,7 +102,7 @@ func cmdGPU(args []string) error {
 		return err
 	}
 	if len(positional) == 0 {
-		return cmdGPUHost(fs, gpuCLIOptions{
+		return cmdGPUHost(gpuCLIOptions{
 			asJSON:        *asJSON,
 			status:        *status,
 			passthrough:   *passthrough,
@@ -168,7 +167,7 @@ type gpuCLIOptions struct {
 	sanitize      bool
 }
 
-func cmdGPUHost(fs *flag.FlagSet, opts gpuCLIOptions) error {
+func cmdGPUHost(opts gpuCLIOptions) error {
 	switch {
 	case opts.enableIOMMU:
 		return enableIOMMUOnHost()
@@ -182,9 +181,6 @@ func cmdGPUHost(fs *flag.FlagSet, opts gpuCLIOptions) error {
 		return cmdUnbindVFIO(opts.gpuPCI, opts.restoreHost)
 	case opts.prepareReims:
 		return cmdPrepareReims(opts.runtime, opts.acceptHost)
-	}
-	if opts.status || opts.asJSON || !opts.passthrough {
-		return hostGPUStatus(opts.asJSON)
 	}
 	return hostGPUStatus(opts.asJSON)
 }

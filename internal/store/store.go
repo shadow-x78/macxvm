@@ -106,7 +106,9 @@ func upgradeOnDisk(cfg *config.VMConfig) {
 	if err != nil || !current.NeedsUpgrade() {
 		return
 	}
-	_ = config.Save(cfg.Dir(), current)
+	if err := config.Save(cfg.Dir(), current); err != nil {
+		fmt.Fprintf(os.Stderr, "macxvm: warning: the configuration of '%s' keeps the old schema: %v\n", cfg.Name, err)
+	}
 }
 
 func Save(cfg *config.VMConfig) error {
@@ -245,8 +247,6 @@ func deleteVM(cfg *config.VMConfig, overlays []string) error {
 	return os.RemoveAll(Dir(name))
 }
 
-// verifyGPUReleased refuses the deletion of a machine whose devices are still
-// held by a running virtual machine.
 func verifyGPUReleased(cfg *config.VMConfig) error {
 	if !cfg.GPU.UsesGPU() {
 		return nil
@@ -449,8 +449,6 @@ func copyFile(src, dst string, perm os.FileMode) error {
 	return os.WriteFile(dst, b, perm)
 }
 
-// cloneOpenCore copies the configurations of the source, gives the clone its
-// own identity and builds private OpenCore images for it.
 func cloneOpenCore(src *config.VMConfig, staging string) error {
 	configs := map[string]*opencore.Dict{}
 	for _, stage := range stages.Names {

@@ -123,7 +123,6 @@ func Run() []Check {
 	return checks
 }
 
-// gpuChecks reports the host state of the machines that use a GPU backend.
 func gpuChecks() []Check {
 	vms, err := store.List()
 	if err != nil {

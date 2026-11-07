@@ -196,7 +196,6 @@ type ProbeReport struct {
 	Features map[string]string `json:"features,omitempty"`
 }
 
-// ProbeFeatures returns the features that the driver of the guest reported.
 func ProbeFeatures(cfg *config.VMConfig) map[string]string {
 	raw, err := os.ReadFile(cfg.File("driver/probe-report.json"))
 	if err != nil {

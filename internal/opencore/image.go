@@ -13,10 +13,8 @@ import (
 )
 
 const (
-	// ConfigPathInImage is the path of the configuration inside the EFI volume.
 	ConfigPathInImage = "/EFI/OC/config.plist"
-	// SectorSize is the size of a sector of a GPT disk.
-	SectorSize = 512
+	SectorSize        = 512
 )
 
 var efiSystemPartitionGUID = []byte{
@@ -24,13 +22,11 @@ var efiSystemPartitionGUID = []byte{
 	0xba, 0x4b, 0x00, 0xa0, 0xc9, 0x3e, 0xc9, 0x3b,
 }
 
-// ImageBuilder holds the tools that build the private OpenCore images.
 type ImageBuilder struct {
 	AssetsDir string
 	Runner    CommandRunner
 }
 
-// CommandRunner runs an external tool.
 type CommandRunner interface {
 	Run(name string, args ...string) error
 	Output(name string, args ...string) (string, error)
@@ -56,9 +52,6 @@ func (execRunner) Output(name string, args ...string) (string, error) {
 	return string(out), nil
 }
 
-// BuildStageImage copies the shared OpenCore asset image into the machine and
-// writes the configuration of the stage into it, so that every machine owns a
-// private image with its own identity.
 func (b ImageBuilder) BuildStageImage(vmDir, stage string, plist []byte) error {
 	if b.AssetsDir == "" {
 		return fmt.Errorf("the assets directory of the machine is missing")
@@ -122,7 +115,6 @@ func pathDir(path string) string {
 	return path[:idx]
 }
 
-// fatOffset returns the offset of the EFI volume inside a raw disk image.
 func fatOffset(path string) (int64, error) {
 	file, err := os.Open(path)
 	if err != nil {

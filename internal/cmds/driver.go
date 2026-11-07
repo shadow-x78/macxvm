@@ -18,6 +18,7 @@ import (
 
 	"github.com/shadow-x78/macxvm/internal/driver"
 	"github.com/shadow-x78/macxvm/internal/exitcode"
+	"github.com/shadow-x78/macxvm/internal/sshx"
 	"github.com/shadow-x78/macxvm/resources"
 )
 
@@ -224,7 +225,7 @@ func driverBuild(args []string) error {
 	fmt.Println("the sources arrived on the builder unchanged")
 	build := strings.Join([]string{
 		"set -e",
-		"cd " + remoteDir,
+		"cd " + sshx.ShellQuote(remoteDir),
 		"tar -xzf driver.tar.gz",
 		"cd driver",
 		"make build",
@@ -350,7 +351,8 @@ func remoteCopy(target, source, destination string) error {
 }
 
 func remoteChecksum(target, path string) (string, error) {
-	output, err := remoteRun(target, "shasum -a 256 "+path+" 2>/dev/null || sha256sum "+path)
+	quoted := sshx.ShellQuote(path)
+	output, err := remoteRun(target, "shasum -a 256 "+quoted+" 2>/dev/null || sha256sum "+quoted)
 	if err != nil {
 		return "", err
 	}
@@ -362,7 +364,7 @@ func remoteChecksum(target, path string) (string, error) {
 }
 
 func remoteList(target, path string) ([]string, error) {
-	output, err := remoteRun(target, "ls -1 "+path+" 2>/dev/null")
+	output, err := remoteRun(target, "ls -1 "+sshx.ShellQuote(path)+" 2>/dev/null")
 	if err != nil {
 		return nil, err
 	}

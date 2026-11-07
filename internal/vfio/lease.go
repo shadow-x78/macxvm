@@ -184,8 +184,6 @@ func (s *LeaseSet) Files() []*os.File {
 	return s.files
 }
 
-// SetOwnerPID records the process that holds the leases after the hand over to
-// QEMU, so that a stale lease is not mistaken for a free one.
 func (s *LeaseSet) SetOwnerPID(pid int) error {
 	if s == nil || pid <= 0 {
 		return nil
@@ -213,7 +211,6 @@ func (s *LeaseSet) SetOwnerPID(pid int) error {
 	return nil
 }
 
-// Holders returns the owners that hold the leases of the given keys.
 func Holders(keys []string) []LeaseOwner {
 	var out []LeaseOwner
 	for _, key := range keys {

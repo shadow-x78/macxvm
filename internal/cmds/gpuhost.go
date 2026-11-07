@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -295,10 +294,4 @@ func hostGPUStatus(asJSON bool) error {
 		fmt.Println("no GPU backend is prepared on the host")
 	}
 	return nil
-}
-
-func sortedAddresses(list []string) []string {
-	out := append([]string(nil), list...)
-	sort.Strings(out)
-	return out
 }

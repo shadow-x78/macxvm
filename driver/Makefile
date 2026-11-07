@@ -3,12 +3,16 @@
 # https://github.com/shadow-x78/macxvm
 # ─────────────────────────────────────────────
 
+# ── Paths ──
+
 SHELL := /bin/bash
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 BUILD := $(ROOT)/driver/build
 DIST := $(ROOT)/driver/dist
 ARTIFACTS := $(ROOT)/artifacts/mxgpu/package
 KEY_ID ?= mxgpu-release-2026
+
+# ── Targets ──
 
 .PHONY: all build test test-host package sbom clean
 
@@ -28,6 +32,8 @@ package:
 
 sbom:
 	@$(ROOT)/driver/installer/build.sh --sbom
+
+# ── Housekeeping ──
 
 clean:
 	rm -rf $(BUILD) $(DIST)
