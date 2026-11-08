@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.10.0] - 2026-11-08
+
 ### Added
 - The schema of a machine grew a `gpu` section (schema 2) with the backend
   (`none`, `vfio`, `reims`), the driver, the addresses of the card, of its
@@ -49,7 +51,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the state of the work and the evidence that is still missing.
 - `artifacts/mxgpu/execution-ledger.json`: the state of every task of the
   plan with its dependencies, its evidence and the reason of its failure.
-
 ### Changed
 - The `accel`, `optimize` and `finish` commands refuse a machine that owns
   a passed through card, and they write the stage file of the current stage
@@ -58,7 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The CI checks the credit banner of the sources of the driver, the syntax of
   every tracked shell script, and the lock file of the third party components
   through `make -C driver test-host`.
-
 ### Fixed
 - The addresses of the PCI devices of the host are read with their real form
   `0000:01:00.0`, so the discovery of the cards finds them again.
@@ -81,19 +81,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/ACCELERATION.md` and `docs/ACCELERATION_AR.md`: the complete map of
   the guest kexts, the native accelerators, the measured effect and the open
   acceleration targets.
-
 ### Measured
 - The system disk on NVMe instead of AHCI: a 512 MiB write with `fsync` went
   from 694 MiB/s to 984 MiB/s (1.42x) and a 512 MiB read from 6.6 GiB/s to
   10.1 GiB/s (1.55x). The guest reports `IONVMeFamily` loaded and
   `TRIM Support: Yes`.
-
 ### Changed
 - `docs/GPU.md` and `docs/GPU_AR.md` now state that macOS claims Apple's
   paravirtual GPU at `0x106b:0xeeee` with an `IOAccelerator` and the Metal
   plugin `AppleParavirtGPUMetal`, and that the absence of a virtio GPU driver
   is proven by the missing virtio device type `0x10` in `AppleVirtIO.kext`.
-
 ### Fixed
 - `macxvm gpu NAME --bind-vfio ADDRESS` no longer fails on a host that has no
   NVIDIA module loaded. The removal of the modules of the driver of the card
@@ -105,7 +102,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   other JSON output of the tool.
 - The validator of an args file rejects the forbidden flags with one dash and
   with two dashes, so `--display` cannot pass a check that rejects `-display`.
-
 ### Audit
 - The doc comments and the inline comments of the seven files that the
   acceleration cycle added are removed, so every code file carries only the
@@ -119,8 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.9.0] - 2026-10-27
 
-This release supersedes the unreleased v0.8.0 milestone and is the first tagged
-release after v0.6.0. It includes the full audit, cleanup and the verified
+This release follows v0.8.0 and holds the full audit, cleanup and the verified
 end-to-end installer run.
 
 ### Added
@@ -191,6 +186,59 @@ end-to-end installer run.
   no IOMMU groups and no macOS driver for the card.
 - `autoinstall` temporarily uses `vmware-svga` because Recovery accepts reliable
   absolute pointer input with it; `finish` switches to Bochs afterwards.
+
+## [v0.8.0] - 2026-10-27
+
+This release is the audit of the project of October 2026 and the fixes that
+came out of it. It holds the state of the tree between the tag `v0.7.0` and
+the tag `v0.8.0`.
+
+### Added
+- The tests of the owned process marker stand alone from the other packages, so
+  the marker of a machine is never confused with another one.
+- The policy of the applications of the guest stays in sync with the code by a
+  test of the resources.
+- The viewer of the VNC display opens by itself after the start of a machine.
+
+### Changed
+- The check of the banner of the project quotes its expansions, so a path with
+  a space does not break it.
+- The template of macOS lives in the reviewed resources of the project, and
+  the args file stays one executable command.
+- The contributor badges and the limit of the size of the binary follow the
+  state of the project.
+- The default workflow of the host is printed after the installation.
+- The decisions of the audit are recorded, and the template is validated.
+
+### Fixed
+- The installer selects only the whole internal disks of the guest.
+- The applications of the system are never removed, whatever the state of SIP
+  is, and only the process of the machine is signalled.
+- A configuration that names another machine is refused, and a machine never
+  falls back to the identity of another one.
+- The installer waits for the Terminal to close, stops only on a real Setup
+  Assistant screen, resumes without erasing the disk twice, and mounts the
+  shared installer read only.
+- A missing installer seed is reported instead of timing out, and the disk of
+  the installer is selected with the real values of `diskutil`.
+- The share of the host follows the patterns of the exclusion as globs, and
+  the shares are updated under the lock of the operation.
+- The compaction of the disk of a stopped machine uses a unique temporary
+  file, and `down --delete` works on a machine that is already stopped.
+- The options of the transport of rsync are quoted, so a path with a space
+  works.
+- The integration and the benchmarks run against the built binary.
+- The key of the host that the TOFU trust keeps is preserved, and the menu
+  bar is preferred for a target of a single word.
+- A machine does not start when no viewer of the VNC display is available,
+  and a failed benchmark is reported instead of a timing.
+- A machine whose configuration cannot be read is warned about instead of
+  being hidden.
+- `NAME` is documented as a placeholder.
+
+### Removed
+- The installer and the helper code that nothing referenced, the stub of the
+  level 3 of the slimming, and a screenshot that nothing used.
 
 ## [v0.7.0] - 2026-10-26
 
