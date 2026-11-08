@@ -34,9 +34,26 @@ jobs:
       - name: Check the lock file and the headers
         run: make -C driver test-host
 
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      kexts: ${{ steps.sources.outputs.kexts }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Look for the sources of the kext
+        id: sources
+        run: |
+          if [ -f driver/kexts/MXRM/Makefile ]; then
+            echo "kexts=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "kexts=false" >> "$GITHUB_OUTPUT"
+            echo "the sources of the kext are not in the repository yet, the builder job is skipped"
+          fi
+
   builder:
+    needs: detect
+    if: needs.detect.outputs.kexts == 'true'
     runs-on: macos-14
-    if: hashFiles('driver/kexts/MXRM/Makefile') != ''
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7

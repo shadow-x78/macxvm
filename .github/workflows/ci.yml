@@ -26,7 +26,12 @@ jobs:
       - name: Check the file headers
         run: ./scripts/check-headers.sh
       - name: Check shell syntax
-        run: bash -n $(git ls-files '*.sh')
+        run: |
+          while IFS= read -r script; do
+            bash -n "$script"
+          done < <(git ls-files '*.sh')
+      - name: Check the workflow files
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
       - name: Vet, test and build
         run: go vet ./... && go test ./... && make build
       - name: Check the lock file of the driver
