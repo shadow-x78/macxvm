@@ -486,6 +486,17 @@ the tag `v0.8.0`.
   machine that asks for the host processor does not fall back to the software
   emulation of the processor
 
+## [v0.2.2] - 2026-10-22
+
+### Fixed
+- The args file of the guest names the accelerator and attaches the network card
+  of the machine, and the documents of the args file follow it.
+- The fixes of the suite of the tests move into the release of 0.2.0.
+
+### Changed
+- The version of the tool is 0.2.2, and the documents of the slimming and of
+  the troubleshooting name it.
+
 ## [v0.2.1] - 2026-10-22
 
 ### Changed
