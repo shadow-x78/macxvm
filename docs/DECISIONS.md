@@ -2,7 +2,7 @@
 
 # Decisions Log - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.9.0-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.10.1-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -154,3 +154,4 @@ The whole project was audited in October 2026. The findings, the evidence and th
 | A102 | The plan of a migration travels with the checkpoint | The source writes the plan in the directory of the migration of the destination, next to the checkpoint of the guest, and the destination reads the plan from the path of `--plan`. The path of the destination follows its own environment, `${MACXVM_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/macxvm}/vms/NAME/migration`, so the two hosts agree without a helper that the project does not ship. The destination refuses a plan that does not match the digest of the session of the migration. |
 | A103 | The writes into sysfs leave the shell | The rule 5 asks for an argument vector, so the tool writes the address of a card into the file of its driver with `sudo tee` and the address on the standard input, instead of `sudo sh -c`. The address of a card is checked by the reader of the host before the write, and the driver comes from the host. |
 | A104 | The signature of a package covers the bytes of its manifest | The signature covers the separator `MXGPU-PACKAGE-v1\0` and the canonical form of the bytes of the file `manifest.json`, and the verifier reads those same bytes. The two sides of the signature cannot drift apart any more: the shell that signs a package writes the canonical form of its own file, and the tool that verifies it reads the file of the package. The order of the list of the files stays the order of the file, so any change of the file breaks the signature. |
+| A105 | The workflows are checked before they run | GitHub refuses a workflow file that breaks its schema, and it refuses it silently: the run fails in zero seconds, without a job and without a log, and the other workflows stay green. The CI therefore checks every workflow file with `actionlint`, pinned to the version `v1.7.7`, so a file that GitHub refuses is caught by the CI and not by the next push. The builder of the driver waits for the answer of a job of its own, because `hashFiles` is not available at the level of a job, and the macOS runner is not started while the sources of the kext are missing. |

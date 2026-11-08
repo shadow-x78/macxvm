@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- The workflow of the driver called `hashFiles` at the level of the job, where
+  GitHub does not allow it, so GitHub refused the whole file and every run of
+  it failed in zero seconds without a single job. The sources of the kext are
+  looked for in a job of their own now, which hands the answer to the builder
+  through `needs`, so the macOS runner is not started while the sources are
+  missing.
+
+### Changed
+- The CI checks the workflow files with `actionlint`, so a file that GitHub
+  refuses is caught by the CI and not by the next push, and the check of the
+  syntax of the shell scripts quotes the name of every file.
+
 ## [v0.10.1] - 2026-11-08
 
 ### Fixed
