@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The guest records the version of the driver that it installed, and the host
   collects that manifest after the installation, so `macxvm migrate` reads the
   version of the driver of the destination.
+
 ### Audit
 - The doc comments of the five files that the GPU cycle added are removed, so
   every code file carries only the credit banner of the project and the
@@ -104,29 +105,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `macxvm migrate NAME --to USER@HOST [--check|--live|--cancel]`: the
   compatibility report, the live migration and the cancel of a session, with
   the states of the plan and the rules of the rollback.
-- The host wide leases of the cards: a lock on every address and on every
-  IOMMU group of a machine, handed to QEMU so that it lives as long as the
-  machine runs. Two machines can never own the same card, and the stale
-  lease of a dead process is taken over.
-- `driver/`: the tree of the driver with its lock file of the third party
-  components, the notes of the research, the interface of the kernel
-  extension, the scripts of the installer and the matrix of the tests.
-- `docs/DRIVER.md`, `docs/DRIVER_AR.md`, `docs/MIGRATION.md` and
-  `docs/MIGRATION_AR.md`: the package of the driver and the migration, with
-  the state of the work and the evidence that is still missing.
-- `artifacts/mxgpu/execution-ledger.json`: the state of every task of the
-  plan with its dependencies, its evidence and the reason of its failure.
-### Changed
-- The `accel`, `optimize` and `finish` commands refuse a machine that owns
-  a passed through card, and they write the stage file of the current stage
-  instead of the old `args.txt`. The virtio balloon is never added to a
-  machine that owns a card.
-- The CI checks the credit banner of the sources of the driver, the syntax of
-  every tracked shell script, and the lock file of the third party components
-  through `make -C driver test-host`.
-### Fixed
-- The addresses of the PCI devices of the host are read with their real form
-  `0000:01:00.0`, so the discovery of the cards finds them again.
 - `macxvm accel NAME [--check] [--apply] [--re] [--json]`: reads the IOKit
   personalities of the running guest, compares them with the devices of the
   machine, and reports what macOS drives natively and what it ignores. The
@@ -143,20 +121,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The tool refuses to bind the only display device of the host.
 - `macxvm doctor` reports the IOMMU state of the host and the command that
   fixes it.
+- The host wide leases of the cards: a lock on every address and on every
+  IOMMU group of a machine, handed to QEMU so that it lives as long as the
+  machine runs. Two machines can never own the same card, and the stale
+  lease of a dead process is taken over.
+- `driver/`: the tree of the driver with its lock file of the third party
+  components, the notes of the research, the interface of the kernel
+  extension, the scripts of the installer and the matrix of the tests.
+- `docs/DRIVER.md`, `docs/DRIVER_AR.md`, `docs/MIGRATION.md` and
+  `docs/MIGRATION_AR.md`: the package of the driver and the migration, with
+  the state of the work and the evidence that is still missing.
 - `docs/ACCELERATION.md` and `docs/ACCELERATION_AR.md`: the complete map of
   the guest kexts, the native accelerators, the measured effect and the open
   acceleration targets.
-### Measured
-- The system disk on NVMe instead of AHCI: a 512 MiB write with `fsync` went
-  from 694 MiB/s to 984 MiB/s (1.42x) and a 512 MiB read from 6.6 GiB/s to
-  10.1 GiB/s (1.55x). The guest reports `IONVMeFamily` loaded and
-  `TRIM Support: Yes`.
+- `artifacts/mxgpu/execution-ledger.json`: the state of every task of the
+  plan with its dependencies, its evidence and the reason of its failure.
+
 ### Changed
+- The `accel`, `optimize` and `finish` commands refuse a machine that owns
+  a passed through card, and they write the stage file of the current stage
+  instead of the old `args.txt`. The virtio balloon is never added to a
+  machine that owns a card.
 - `docs/GPU.md` and `docs/GPU_AR.md` now state that macOS claims Apple's
   paravirtual GPU at `0x106b:0xeeee` with an `IOAccelerator` and the Metal
   plugin `AppleParavirtGPUMetal`, and that the absence of a virtio GPU driver
   is proven by the missing virtio device type `0x10` in `AppleVirtIO.kext`.
+- The CI checks the credit banner of the sources of the driver, the syntax of
+  every tracked shell script, and the lock file of the third party components
+  through `make -C driver test-host`.
+
 ### Fixed
+- The addresses of the PCI devices of the host are read with their real form
+  `0000:01:00.0`, so the discovery of the cards finds them again.
 - `macxvm gpu NAME --bind-vfio ADDRESS` no longer fails on a host that has no
   NVIDIA module loaded. The removal of the modules of the driver of the card
   is best effort, the unbind and the bind keep failing hard, and the driver
@@ -167,6 +163,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   other JSON output of the tool.
 - The validator of an args file rejects the forbidden flags with one dash and
   with two dashes, so `--display` cannot pass a check that rejects `-display`.
+
+### Measured
+- The system disk on NVMe instead of AHCI: a 512 MiB write with `fsync` went
+  from 694 MiB/s to 984 MiB/s (1.42x) and a 512 MiB read from 6.6 GiB/s to
+  10.1 GiB/s (1.55x). The guest reports `IONVMeFamily` loaded and
+  `TRIM Support: Yes`.
+
 ### Audit
 - The doc comments and the inline comments of the seven files that the
   acceleration cycle added are removed, so every code file carries only the
@@ -177,70 +180,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   block of the project, like every other file of the repository.
 - The size gate of the CI moves from 8 MiB to 10 MiB, and the documented size
   of the binary follows it.
-
-### Fixed
-- The name of the machine of the destination of `macxvm migrate` is validated
-  like every other name of the tool, so a value that carries a shell
-  metacharacter cannot run a command on the destination host.
-- `macxvm migrate --live` sends the plan of the migration to the destination
-  next to the checkpoint of the guest, and the destination reads the plan from
-  the path of `--plan`. The path of the destination follows the environment of
-  the destination, so the two hosts agree without a helper that the project
-  does not ship. The destination refuses a plan that does not match its
-  session.
-- `macxvm gpu --unbind-vfio ADDRESS --restore-host` refuses to give the card
-  back to a driver that the state of the host does not name, instead of
-  binding it to the `nvidia` module whatever driver the card had. The card
-  stays bound to `vfio-pci` in that case.
-- The paths of the builder are quoted for its shell, in the commands that read
-  the checksum and the list of the packages and in the build of the driver.
-- The tool writes the address of a card into the file of its driver with an
-  argument vector, and not with a shell, as the rule 5 of the contribution
-  guide asks.
-- `macxvm gpu --passthrough` reports the readiness of the passthrough of the
-  host, and not only the one of a machine.
-- A failed upgrade of the schema of a machine is reported, instead of leaving
-  the old schema on the disk without a word.
-- The package of the driver is signed the way the tool reads it: the signature
-  covers the separator and the canonical form of the bytes of the manifest
-  file. Before this change every package that the project signed was refused
-  by the project itself.
-- `driver/installer/package.sh` writes the archive of the package
-  (`driver/dist/mxgpu-<key id>.tar.gz`), keeps a staging that holds a
-  signature, and keeps the SBOM of a signed staging so that the hash of the
-  manifest still matches it.
-- `macxvm driver build --builder` fetches the archive of the builder and not
-  its staging directory.
-- The tool reads the public key of the release with the banner and the notes
-  that the file carries, so `macxvm driver verify` and `macxvm driver build`
-  work again.
-- The package of the driver holds the three scripts that the guest runs, and
-  the scripts take the directory of the staging that the caller passes. The
-  manifest of the install is built by the JSON module, and the components that
-  the new package does not hold are removed from the guest.
-- The guest records the version of the driver that it installed, and the host
-  collects that manifest after the installation, so `macxvm migrate` reads the
-  version of the driver of the destination.
-
-### Audit
-- The doc comments of the five files that the GPU cycle added are removed, so
-  every code file carries only the credit banner of the project and the
-  directives of the tools, as the decision A50 asks.
-- The dead branch of the host report of the card and the unused helper of the
-  addresses are removed.
-- The three helpers that only a test called are removed, and their tests moved
-  to the functions that the code really calls. The parity test of the policy
-  of the applications moved next to the allowlist that it checks.
-- The output of the build of the driver is ignored, so a build leaves the
-  working tree clean.
-- The script of the hardware integration of the driver creates its machine
-  from the base alone, and removes it with the flag that the command knows.
-  The scripts of the test leave on a signal instead of continuing against a
-  machine that the cleanup already deleted.
-- The two makefiles carry the section titles of the project, like every other
-  configuration file of the repository.
-- The documentation names the resolution of 1440x900 that the tool uses by
-  default, and the size that the binary of this cycle has.
 
 ## [v0.9.0] - 2026-10-27
 
@@ -269,6 +208,16 @@ end-to-end installer run.
 - Application set defaults are now `default`; `personal` remains accepted as a
   compatibility alias. `apps-default.txt` replaces the old policy file name.
 
+### Performance
+- The CPU model now exposes `avx2`, `fma`, `bmi1`, `bmi2` and `sha-ni`. A live
+  check confirms the guest CPUID lists AVX2, FMA, BMI1/2 and SHA.
+- The default `cli` profile is 6 vCPU / 12 GiB / 64 GiB. A parallel workload
+  dropped from 18.4 s at 4 vCPU to 6.3 s at 8 vCPU.
+- The default display is 1440x900 instead of 1920x1080: idle `WindowServer` CPU
+  fell from 7.5% to 2.5%. `optimize --width/--height` chooses another mode.
+- `-cpu host` was tested and fails to boot on this host; it is documented as
+  unsupported rather than recommended.
+
 ### Audit
 - Moved the default macOS machine template, CPU models and pinned asset URLs
   from Go constants into reviewed data resources.
@@ -287,16 +236,6 @@ end-to-end installer run.
   and rsync quoting.
 - A literal `NAME` argument is now rejected with a message that points at
   `macxvm list`, instead of a generic invalid-name error.
-
-### Performance
-- The CPU model now exposes `avx2`, `fma`, `bmi1`, `bmi2` and `sha-ni`. A live
-  check confirms the guest CPUID lists AVX2, FMA, BMI1/2 and SHA.
-- The default `cli` profile is 6 vCPU / 12 GiB / 64 GiB. A parallel workload
-  dropped from 18.4 s at 4 vCPU to 6.3 s at 8 vCPU.
-- The default display is 1440x900 instead of 1920x1080: idle `WindowServer` CPU
-  fell from 7.5% to 2.5%. `optimize --width/--height` chooses another mode.
-- `-cpu host` was tested and fails to boot on this host; it is documented as
-  unsupported rather than recommended.
 
 ### CI
 - Split the opt-in KVM test into its own `integration` workflow. Push and pull
@@ -339,6 +278,10 @@ the tag `v0.8.0`.
 - The default workflow of the host is printed after the installation.
 - The decisions of the audit are recorded, and the template is validated.
 
+### Removed
+- The installer and the helper code that nothing referenced, the stub of the
+  level 3 of the slimming, and a screenshot that nothing used.
+
 ### Fixed
 - The installer selects only the whole internal disks of the guest.
 - The applications of the system are never removed, whatever the state of SIP
@@ -364,10 +307,6 @@ the tag `v0.8.0`.
 - A machine whose configuration cannot be read is warned about instead of
   being hidden.
 - `NAME` is documented as a placeholder.
-
-### Removed
-- The installer and the helper code that nothing referenced, the stub of the
-  level 3 of the slimming, and a screenshot that nothing used.
 
 ## [v0.7.0] - 2026-10-26
 
@@ -476,18 +415,18 @@ the tag `v0.8.0`.
 
 ## [v0.4.1] - 2026-10-23
 
+### Added
+- feat: a share measures the folder and the free space of the guest, and it
+  refuses a copy that does not fit, because a copy that fills the disk of the
+  guest leaves a machine that does not boot
+- feat: `share add --exclude PATTERN` adds a pattern to leave out
+
 ### Fixed
 - fix: a share leaves out the caches, the build trees, the repositories of git
   and the images of a machine, and it always leaves out the state directory of
   MacXVM, so that a copy of a home directory cannot copy the disk of the
   machine into the guest
 - fix: `share sync` and `share push` start a machine that is stopped
-
-### Added
-- feat: a share measures the folder and the free space of the guest, and it
-  refuses a copy that does not fit, because a copy that fills the disk of the
-  guest leaves a machine that does not boot
-- feat: `share add --exclude PATTERN` adds a pattern to leave out
 
 ## [v0.4.0] - 2026-10-23
 
@@ -553,14 +492,14 @@ the tag `v0.8.0`.
 
 ## [v0.2.2] - 2026-10-22
 
+### Changed
+- The version of the tool is 0.2.2, and the documents of the slimming and of
+  the troubleshooting name it.
+
 ### Fixed
 - The args file of the guest names the accelerator and attaches the network card
   of the machine, and the documents of the args file follow it.
 - The fixes of the suite of the tests move into the release of 0.2.0.
-
-### Changed
-- The version of the tool is 0.2.2, and the documents of the slimming and of
-  the troubleshooting name it.
 
 ## [v0.2.1] - 2026-10-22
 
@@ -568,6 +507,15 @@ the tag `v0.8.0`.
 - the version of the tool and the badges of the documents are 0.2.1
 
 ## [v0.2.0] - 2026-10-22
+
+### Added
+- feat: `macxvm doctor` reports whether QEMU can use the KVM accelerator and
+  whether it selects KVM on its own, and it names the accelerator to add when
+  it does not
+
+### Changed
+- the console log of a machine is written with the mode 0600
+- `macxvm down --delete` names the base of the project file in its message
 
 ### Fixed
 - fix: a trailing backslash at the end of a line of the args file is dropped
@@ -589,15 +537,6 @@ the tag `v0.8.0`.
   the host that runs the tests. The check of the binary and the probe of the
   accelerator are replaced by the tests, so that the suite passes on a host
   without QEMU
-
-### Changed
-- the console log of a machine is written with the mode 0600
-- `macxvm down --delete` names the base of the project file in its message
-
-### Added
-- feat: `macxvm doctor` reports whether QEMU can use the KVM accelerator and
-  whether it selects KVM on its own, and it names the accelerator to add when
-  it does not
 
 ### Security
 - the name of a stored configuration is validated when it is read, so that a
