@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.10.2] - 2026-11-09
+
 ### Fixed
 - The workflow of the driver called `hashFiles` at the level of the job, where
   GitHub does not allow it, so GitHub refused the whole file and every run of
@@ -14,11 +16,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   looked for in a job of their own now, which hands the answer to the builder
   through `needs`, so the macOS runner is not started while the sources are
   missing.
+- Seventeen pages of the documentation named the version 0.9.0 in their badge,
+  and one named 0.5.3, while the tool is at 0.10.1. Every badge carries the
+  version of the release now.
+- The Arabic README named a binary of 7.8 MB, and the binary is 8,966,304
+  bytes, which is the 8.55 MB that the English README names.
 
 ### Changed
 - The CI checks the workflow files with `actionlint`, so a file that GitHub
   refuses is caught by the CI and not by the next push, and the check of the
   syntax of the shell scripts quotes the name of every file.
+- The section of every release of this file holds one block per section, and
+  the entries of the audit cycle live only in v0.10.1. The section of v0.10.0
+  repeated twenty of them, and it stacked three `Fixed` blocks, two `Changed`
+  blocks and two `Audit` blocks.
 
 ## [v0.10.1] - 2026-11-08
 
