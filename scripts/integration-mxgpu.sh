@@ -13,6 +13,7 @@ fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASE="${1:-}"
+ASSETS="${MXGPU_ASSETS:-}"
 GPU="${MXGPU_GPU_BDF:-0000:01:00.0}"
 AUDIO="${MXGPU_AUDIO_BDF:-0000:01:00.1}"
 HOST_GPU="${MXGPU_HOST_GPU_BDF:-0000:02:00.0}"
@@ -22,6 +23,17 @@ BIN="$ROOT/bin/macxvm"
 if [ -z "$BASE" ]; then
     echo "usage: integration-mxgpu.sh SEALED_BASE" >&2
     exit 2
+fi
+
+if [ -z "$ASSETS" ]; then
+    echo "the hardware integration needs MXGPU_ASSETS, the directory of the boot assets" >&2
+    echo "prepare it with 'macxvm image prepare BASE --assets DIR' on the host" >&2
+    exit 2
+fi
+
+if [ ! -d "$ASSETS" ]; then
+    echo "the assets directory $ASSETS is missing" >&2
+    exit 1
 fi
 
 if [ ! -x "$BIN" ]; then
@@ -43,7 +55,14 @@ trap cleanup EXIT
 trap 'cleanup; exit 130' INT
 trap 'cleanup; exit 143' TERM
 
-"$BIN" create "$NAME" --base "$BASE"
+"$BIN" create "$NAME" --assets "$ASSETS" \
+    --gpu-backend vfio --gpu "$GPU" --audio "$AUDIO" --host-gpu "$HOST_GPU"
+
+backend="$("$BIN" status "$NAME" --json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("gpu",{}).get("backend",""))')"
+if [ "$backend" != "vfio" ]; then
+    echo "the machine $NAME does not carry the vfio backend (it reports '$backend')" >&2
+    exit 1
+fi
 
 "$BIN" gpu --prepare-vfio --gpu "$GPU" --audio "$AUDIO" --host-gpu "$HOST_GPU" --accept-host-changes
 

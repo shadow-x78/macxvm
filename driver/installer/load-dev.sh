@@ -37,8 +37,8 @@ fi
 
 declare -a loaded=()
 unload() {
-    for kext in ${loaded[@]+"${loaded[@]}"}; do
-        kextunload -b "$kext" >/dev/null 2>&1 || true
+    for identifier in ${loaded[@]+"${loaded[@]}"}; do
+        kextunload -b "$identifier" >/dev/null 2>&1 || true
     done
 }
 trap unload EXIT
@@ -49,12 +49,17 @@ for kext in "$BUILD"/*.kext; do
         echo "the kext $name does not carry the identity $IDENTITY" >&2
         exit 1
     fi
+    identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$kext/Contents/Info.plist" 2>/dev/null)"
+    if [ -z "$identifier" ]; then
+        echo "the kext $name carries no bundle identifier" >&2
+        exit 1
+    fi
     echo "loading $name"
     if ! kextload -C "$(id -u)" "$kext"; then
         echo "the load of $name failed; the recovery display stays available" >&2
         exit 1
     fi
-    loaded+=("$kext")
+    loaded+=("$identifier")
 done
 
 trap - EXIT

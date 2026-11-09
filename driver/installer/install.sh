@@ -10,6 +10,7 @@ SOURCE="${1:-}"
 TARGET="${2:-/Library/Extensions}"
 BACKUP_ROOT="/var/root/macxvm-backups"
 BACKUP="$BACKUP_ROOT/$(date -u +%Y%m%dT%H%M%SZ)"
+INSTALLER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ "$(uname -s)" != "Darwin" ]; then
     echo "the driver is installed in a macOS guest" >&2
@@ -37,6 +38,13 @@ if [ ! -f "$STAGING/manifest.json" ]; then
     echo "the package holds no manifest" >&2
     exit 1
 fi
+
+if [ ! -f "$INSTALLER_DIR/verify.sh" ]; then
+    echo "the package holds no verify.sh; the installation refuses a package that it cannot check" >&2
+    exit 1
+fi
+
+/bin/sh "$INSTALLER_DIR/verify.sh" "$STAGING"
 
 mkdir -p "$BACKUP"
 for item in MXRM.kext MXFB.kext MXAccel.kext MXAGDC.kext MXMTLDriver.bundle; do

@@ -18,6 +18,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/sshx"
 	"github.com/shadow-x78/macxvm/internal/stages"
 	"github.com/shadow-x78/macxvm/internal/store"
+	"github.com/shadow-x78/macxvm/resources"
 )
 
 func activeStageFile(cfg *config.VMConfig) string {
@@ -138,10 +139,23 @@ func guestInstallCommand(transaction, archive string) string {
 		"sudo /usr/bin/install -m 0444 -o root -g wheel " + archive + " \"$ROOT/package.tar.gz\"",
 		"sudo /bin/chmod 0755 \"$ROOT/staging\"",
 		"sudo /usr/bin/tar -xzf \"$ROOT/package.tar.gz\" -C \"$ROOT/staging\"",
-		"sudo /bin/sh \"$ROOT/staging/verify.sh\" \"$ROOT/staging\"",
-		"sudo /bin/sh \"$ROOT/staging/install.sh\" \"$ROOT/staging\"",
+		"sudo /usr/bin/install -m 0444 -o root -g wheel /dev/stdin \"$ROOT/trust-root.txt\" <<'MACXVM_KEY'\n" +
+			releasePublicKeyText() + "\nMACXVM_KEY",
+		"sudo MACXVM_TRUST_ROOT=\"$ROOT/trust-root.txt\" /bin/sh \"$ROOT/staging/install.sh\" \"$ROOT/staging\"",
 	}
 	return strings.Join(lines, "\n")
+}
+
+func releasePublicKeyText() string {
+	var out []string
+	for _, line := range strings.Split(resources.MXGPUReleasePublicKey, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		out = append(out, trimmed)
+	}
+	return strings.Join(out, "\n")
 }
 
 func guestUninstallCommand(transaction string) string {

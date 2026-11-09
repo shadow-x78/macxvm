@@ -49,13 +49,26 @@ fi
 
 mkdir -p "$DIST"
 STAGING="$DIST/mxgpu-staging"
+STAMP_FILE="$DIST/mxgpu-staging.stamp"
 ARCHIVE="$DIST/mxgpu-$KEY_ID.tar.gz"
 
-if [ ! -f "$STAGING/manifest.sig" ]; then
-    if [ ! -d "$BUILD" ]; then
-        echo "the driver is not built; run 'make -C driver build' on the builder" >&2
+build_stamp() {
+    find "$BUILD" -type f -print0 |
+        sort -z |
+        xargs -0 shasum -a 256 |
+        shasum -a 256 |
+        awk '{print $1}'
+}
+
+STAMP="$(build_stamp)"
+
+if [ -f "$STAGING/manifest.sig" ]; then
+    if [ ! -f "$STAMP_FILE" ] || [ "$(cat "$STAMP_FILE")" != "$STAMP" ]; then
+        echo "the staging directory holds the signature of a different build" >&2
+        echo "remove $STAGING before the package of a new build, or run 'make -C driver clean'" >&2
         exit 1
     fi
+else
     rm -rf "$STAGING"
     mkdir -p "$STAGING"
 
@@ -64,6 +77,7 @@ if [ ! -f "$STAGING/manifest.sig" ]; then
     cp "$DRIVER/NOTICE" "$STAGING/NOTICE"
     cp "$DRIVER/third_party.lock.json" "$STAGING/third_party.lock.json"
     cp "$DRIVER/installer/install.sh" "$DRIVER/installer/verify.sh" "$DRIVER/installer/uninstall.sh" "$STAGING/"
+    printf '%s\n' "$STAMP" >"$STAMP_FILE"
 fi
 
 (
