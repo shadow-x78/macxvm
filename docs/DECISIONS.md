@@ -2,7 +2,7 @@
 
 # Decisions Log - MacXVM
 
-[![Version](https://img.shields.io/badge/version-0.10.2-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.10.3-007AFF?style=flat-square&logo=semver)](../CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square)](../LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=flat-square&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=flat-square&logo=linux)
@@ -155,3 +155,4 @@ The whole project was audited in October 2026. The findings, the evidence and th
 | A103 | The writes into sysfs leave the shell | The rule 5 asks for an argument vector, so the tool writes the address of a card into the file of its driver with `sudo tee` and the address on the standard input, instead of `sudo sh -c`. The address of a card is checked by the reader of the host before the write, and the driver comes from the host. |
 | A104 | The signature of a package covers the bytes of its manifest | The signature covers the separator `MXGPU-PACKAGE-v1\0` and the canonical form of the bytes of the file `manifest.json`, and the verifier reads those same bytes. The two sides of the signature cannot drift apart any more: the shell that signs a package writes the canonical form of its own file, and the tool that verifies it reads the file of the package. The order of the list of the files stays the order of the file, so any change of the file breaks the signature. |
 | A105 | The workflows are checked before they run | GitHub refuses a workflow file that breaks its schema, and it refuses it silently: the run fails in zero seconds, without a job and without a log, and the other workflows stay green. The CI therefore checks every workflow file with `actionlint`, pinned to the version `v1.7.7`, so a file that GitHub refuses is caught by the CI and not by the next push. The builder of the driver waits for the answer of a job of its own, because `hashFiles` is not available at the level of a job, and the macOS runner is not started while the sources of the kext are missing. |
+| A106 | Two releases follow v0.10.1 | A signed tag never moves, so the five commits that followed `v0.10.1` were divided by their subject: the repair of the build of GitHub, the check of the workflow files in the CI, the one block per section in the changelog and the badges and the size of the Arabic README became `v0.10.2`, and the four findings of the review of the scripts of the driver became `v0.10.3`. Every release carries its own version in the binary, in the Makefile and in the badge of every page, its own section in the changelog, and a signed annotated tag on the commit that raises the version. |

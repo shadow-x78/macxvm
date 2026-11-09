@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.10.3] - 2026-11-09
 
 ### Fixed
+- The installer of the guest, the packager, the hardware integration script
+  and the cleanup of the developer load carry the four repairs of the findings
+  of the review of the cycle.
 - The developer load script unloaded the kexts by bundle identifier but
   recorded the path of the kext, so the cleanup of a failed load unloaded
   nothing. It reads the identifier with `PlistBuddy` and unloads by it.

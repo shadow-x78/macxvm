@@ -12,7 +12,7 @@ import (
 	"github.com/shadow-x78/macxvm/internal/exitcode"
 )
 
-var Version = "0.10.2"
+var Version = "0.10.3"
 
 type Command struct {
 	Name    string
