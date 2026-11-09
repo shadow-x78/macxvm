@@ -7,7 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.10.3] - 2026-11-09
+
+### Fixed
+- The developer load script unloaded the kexts by bundle identifier but
+  recorded the path of the kext, so the cleanup of a failed load unloaded
+  nothing. It reads the identifier with `PlistBuddy` and unloads by it.
+
+### Security
+- The installer of the guest verifies the Ed25519 signature of the manifest of
+  a package before it copies a kext into `/Library/Extensions`, against a
+  trust root that the host writes outside the package. The previous pass had
+  left the hash comparison alone, and it read the manifest of the package
+  itself, so an archive that carried its own manifest passed.
+- The hardware integration script creates its machine with the vfio backend
+  and stops when the machine does not report it. It created a machine from a
+  sealed base, and a clone has no GPU backend, so the only hardware test of
+  the passthrough tested the plain path.
+- The packager records the hash of the build and refuses to archive a staging
+  directory that belongs to another build, so an archive never holds the
+  kexts of a previous build under the signature of that build.
+
 ## [v0.10.2] - 2026-11-09
+
+### Changed
+- The CI checks the workflow files with `actionlint`, so a file that GitHub
+  refuses is caught by the CI and not by the next push, and the check of the
+  syntax of the shell scripts quotes the name of every file.
+- The section of every release of this file holds one block per section, and
+  the entries of the audit cycle live only in v0.10.1. The section of v0.10.0
+  repeated twenty of them, and it stacked three `Fixed` blocks, two `Changed`
+  blocks and two `Audit` blocks.
 
 ### Fixed
 - The workflow of the driver called `hashFiles` at the level of the job, where
@@ -21,15 +51,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version of the release now.
 - The Arabic README named a binary of 7.8 MB, and the binary is 8,966,304
   bytes, which is the 8.55 MB that the English README names.
-
-### Changed
-- The CI checks the workflow files with `actionlint`, so a file that GitHub
-  refuses is caught by the CI and not by the next push, and the check of the
-  syntax of the shell scripts quotes the name of every file.
-- The section of every release of this file holds one block per section, and
-  the entries of the audit cycle live only in v0.10.1. The section of v0.10.0
-  repeated twenty of them, and it stacked three `Fixed` blocks, two `Changed`
-  blocks and two `Audit` blocks.
 
 ## [v0.10.1] - 2026-11-08
 
