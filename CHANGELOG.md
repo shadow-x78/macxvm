@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.10.5] - 2026-11-10
+
+### Changed
+- The builder job of the driver workflow runs on `macos-14` on every push and
+  does work that is available today: it checks the syntax of every installer
+  script and it runs the packaging self-test. The job was skipped on every run
+  because the sources of the kext are not in the repository, so the workflow
+  reported a green run that never touched macOS.
+- The packaging self-test builds a synthetic package, signs it with the Ed25519
+  key of the Go standard library, and proves on the platform of the guest that
+  `verify.sh` accepts the genuine package and refuses a package without a
+  signature, a tampered payload, a package of another key and a missing trust
+  root. The steps that build the kext stay conditional on the sources, so the
+  job is green today and builds the kext the day it arrives.
+
 ## [v0.10.4] - 2026-11-10
 
 ### Changed
