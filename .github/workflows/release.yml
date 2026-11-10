@@ -1,0 +1,128 @@
+# ─────────────────────────────────────────────
+# MacXVM - Release Workflow (MIT)
+# https://github.com/shadow-x78/macxvm
+# ─────────────────────────────────────────────
+
+name: release
+
+# ── Triggers ──
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'the tag to publish, for example v0.10.6'
+        required: true
+
+# ── Permissions ──
+permissions:
+  contents: write
+
+# ── Jobs ──
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.mod
+
+      - name: Resolve the tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF#refs/tags/}"
+          fi
+          case "$tag" in
+          v[0-9]*.[0-9]*.[0-9]*) ;;
+          *) echo "the tag $tag is not a release tag" >&2; exit 1 ;;
+          esac
+          {
+            echo "tag=$tag"
+            echo "version=${tag#v}"
+            echo "binary=macxvm-$tag-linux-amd64"
+          } >>"$GITHUB_OUTPUT"
+
+      - name: Check the version of the tree
+        run: |
+          tag="${{ steps.tag.outputs.tag }}"
+          version="${{ steps.tag.outputs.version }}"
+          declared="$(grep -o 'var Version = "[^"]*"' internal/cmds/cmds.go | sed 's/.*"\(.*\)"/\1/')"
+          if [ "$declared" != "$version" ]; then
+            echo "the tree declares $declared and the tag says $version" >&2
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$tag" HEAD; then
+            echo "the tag $tag is not in the history of the checked out commit" >&2
+            exit 1
+          fi
+          echo "the tree declares $declared, the same as the tag"
+
+      - name: Build the release binary
+        run: |
+          version="${{ steps.tag.outputs.version }}"
+          binary="${{ steps.tag.outputs.binary }}"
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -trimpath -ldflags "-s -w -X github.com/shadow-x78/macxvm/internal/cmds.Version=$version" \
+            -o "$binary" ./cmd/macxvm
+          chmod 0755 "$binary"
+          ./"$binary" version
+          sha256sum "$binary" >"$binary.sha256"
+          cat "$binary.sha256"
+
+      - name: Check the size of the binary
+        run: |
+          binary="${{ steps.tag.outputs.binary }}"
+          size=$(stat -c %s "$binary")
+          echo "the binary is $size bytes"
+          test "$size" -lt 10485760
+
+      - name: Extract the release notes of the tag
+        id: notes
+        run: |
+          version="${{ steps.tag.outputs.version }}"
+          python3 - "$version" >notes.md <<'PY'
+          import io, re, sys
+
+          version = sys.argv[1]
+          text = io.open("CHANGELOG.md", encoding="utf-8").read()
+          heading = "## [v%s]" % version
+          start = text.find(heading)
+          if start < 0:
+              sys.stderr.write("the changelog holds no section for v%s\n" % version)
+              sys.exit(1)
+          rest = text[start + len(heading):]
+          end = rest.find("\n## [")
+          section = rest if end < 0 else rest[:end]
+          section = section.lstrip()
+          if section.startswith("-"):
+              section = section.split("\n", 1)[1] if "\n" in section else ""
+          section = section.lstrip()
+          if not section.strip():
+              sys.stderr.write("the section of v%s is empty\n" % version)
+              sys.exit(1)
+          sys.stdout.write(section.rstrip() + "\n")
+          PY
+          echo "notes:"; head -5 notes.md
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.tag.outputs.tag }}"
+          binary="${{ steps.tag.outputs.binary }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --title "MacXVM $tag" --notes-file notes.md
+          else
+            gh release create "$tag" --title "MacXVM $tag" --notes-file notes.md
+          fi
+          gh release upload "$tag" "$binary" "$binary.sha256" --clobber
+          gh release view "$tag" --json name,url --jq '"published " + .name + ": " + .url'
