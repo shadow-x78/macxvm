@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.10.7] - 2026-11-10
+
+### Added
+- The workflow `release` publishes a release for every tag: it builds the
+  static binary, checks that the version of the tree is the number of the tag,
+  takes the notes from the section of the changelog, and uploads the binary and
+  its checksum. A tag that carries no release is invisible on the page of the
+  project, and eleven tags from v0.2.2 to v0.10.6 had none while the last
+  release was v0.9.0.
+
 ## [v0.10.6] - 2026-11-10
 
 ### Fixed
