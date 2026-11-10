@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.10.4] - 2026-11-10
+
+### Changed
+- The README of both languages opens with what the tool is, what the host
+  must have, the installation and the five steps of the first machine, and
+  every step says what it does and what the user must do by hand. The credits
+  that held the first line of the page and the hundred lines of the licence
+  and of the args file that came before the first command moved out of the
+  way, and the depth lives in the guides.
+- The command reference moved out of the README into `docs/COMMANDS.md` and
+  `docs/COMMANDS_AR.md`, so the entry page stays short and the reference
+  stays complete.
+
+### Fixed
+- The documentation said the `cli` profile is 4 vCPU and 8192 MiB, and the
+  code raised it to 6 vCPU and 12288 MiB in v0.9.0. The README, both
+  architecture guides and the decision A66 name the values of the code now.
+- The usage line of `macxvm optimize` did not name the `--width` and
+  `--height` flags that the command accepts.
+
 ## [v0.10.3] - 2026-11-09
 
 ### Fixed
