@@ -34,8 +34,8 @@ jobs:
       - name: Check the lock file and the headers
         run: make -C driver test-host
 
-  builder:
-    runs-on: macos-14
+  scripts:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -47,30 +47,25 @@ jobs:
           while IFS= read -r script; do
             bash -n "$script"
           done < <(git ls-files 'driver/installer/*.sh')
-      - name: Run the packaging self-test on macOS
-        run: go run ./driver/tests/packaging/main.go
-      - name: Look for the sources of the kext
-        id: sources
+      - name: Run the packaging self-test
         run: |
-          if [ -f driver/kexts/MXRM/Makefile ]; then
-            echo "kexts=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "kexts=false" >> "$GITHUB_OUTPUT"
-            echo "the sources of the kext are not in the repository yet, the kext steps are skipped"
+          report="$(go run ./driver/tests/packaging/main.go)"
+          printf '%s\n' "$report"
+          [ "$(printf '%s\n' "$report" | grep -c '\[ok\]')" -eq 5 ]
+      - name: Check the guard of a stale staging directory
+        run: |
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          mkdir -p "$work/driver/build" "$work/driver/dist" "$work/driver/installer" "$work/artifacts/mxgpu/package"
+          cp driver/installer/*.sh "$work/driver/installer/"
+          printf '{"components":[]}\n' >"$work/driver/third_party.lock.json"
+          printf 'notice\n' >"$work/driver/NOTICE"
+          printf 'one\n' >"$work/driver/build/payload"
+          bash "$work/driver/installer/package.sh" mxgpu-release-2026 >/dev/null
+          printf 'signature\n' >"$work/driver/dist/mxgpu-staging/manifest.sig"
+          printf 'two\n' >"$work/driver/build/payload"
+          if bash "$work/driver/installer/package.sh" mxgpu-release-2026 >/dev/null 2>&1; then
+            echo "the packager archived a staging directory of another build" >&2
+            exit 1
           fi
-      - name: Build and test the driver
-        if: steps.sources.outputs.kexts == 'true'
-        env:
-          ARCHS: x86_64
-          SDKROOT: macosx
-        run: make -C driver build test
-      - name: Build the package
-        if: steps.sources.outputs.kexts == 'true'
-        run: make -C driver package
-      - name: Upload the package
-        if: steps.sources.outputs.kexts == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: mxgpu-driver
-          path: driver/dist/*.tar.gz
-          if-no-files-found: error
+          echo "the packager refuses the signature of another build"
