@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its checksum. A tag that carries no release is invisible on the page of the
   project, and eleven tags from v0.2.2 to v0.10.6 had none while the last
   release was v0.9.0.
+- The documentation of the size of the binary names the toolchain: the same
+  tree is 8,966,304 bytes with Go 1.27 and 7,209,112 bytes with the Go 1.22
+  that `go.mod` declares and that the release workflow uses.
 
 ## [v0.10.6] - 2026-11-10
 

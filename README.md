@@ -254,7 +254,7 @@ These are logical device sizes, not promises about free space inside APFS or abo
 | Operation | Measured on the machine that builds this project |
 |---|---|
 | `list`, `status` | 3 ms |
-| Release binary | 8,966,304 bytes, static `linux/amd64` |
+| Release binary | 7,209,112 bytes with Go 1.22, static `linux/amd64` |
 | Clone of a sealed base | under 1 s, a few hundred KiB on disk |
 | Idle cost on the host | no process of MacXVM stays alive |
 
