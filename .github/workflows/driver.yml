@@ -34,25 +34,7 @@ jobs:
       - name: Check the lock file and the headers
         run: make -C driver test-host
 
-  detect:
-    runs-on: ubuntu-latest
-    outputs:
-      kexts: ${{ steps.sources.outputs.kexts }}
-    steps:
-      - uses: actions/checkout@v7
-      - name: Look for the sources of the kext
-        id: sources
-        run: |
-          if [ -f driver/kexts/MXRM/Makefile ]; then
-            echo "kexts=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "kexts=false" >> "$GITHUB_OUTPUT"
-            echo "the sources of the kext are not in the repository yet, the builder job is skipped"
-          fi
-
   builder:
-    needs: detect
-    if: needs.detect.outputs.kexts == 'true'
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v7
@@ -60,14 +42,33 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.mod
+      - name: Check the syntax of the installer scripts
+        run: |
+          while IFS= read -r script; do
+            bash -n "$script"
+          done < <(git ls-files 'driver/installer/*.sh')
+      - name: Run the packaging self-test on macOS
+        run: go run ./driver/tests/packaging/main.go
+      - name: Look for the sources of the kext
+        id: sources
+        run: |
+          if [ -f driver/kexts/MXRM/Makefile ]; then
+            echo "kexts=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "kexts=false" >> "$GITHUB_OUTPUT"
+            echo "the sources of the kext are not in the repository yet, the kext steps are skipped"
+          fi
       - name: Build and test the driver
+        if: steps.sources.outputs.kexts == 'true'
         env:
           ARCHS: x86_64
           SDKROOT: macosx
         run: make -C driver build test
       - name: Build the package
+        if: steps.sources.outputs.kexts == 'true'
         run: make -C driver package
       - name: Upload the package
+        if: steps.sources.outputs.kexts == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: mxgpu-driver
