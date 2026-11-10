@@ -105,7 +105,7 @@ create ──► start ──► (slim, tools, xcode) ──► stop ──► b
                                               build / run
 ```
 
-- `image prepare` verifies versioned assets and builds a GPT disk in staging, converts once to qcow2, checks it, then atomically publishes the VM. The default `cli` profile is 4 vCPUs / 8192 MiB / 64 GiB logical disk; `xcode` remains an explicit 4 / 8192 / 100 alternative.
+- `image prepare` verifies versioned assets and builds a GPT disk in staging, converts once to qcow2, checks it, then atomically publishes the VM. The default `cli` profile is 6 vCPUs / 12288 MiB / 64 GiB logical disk; `xcode` remains an explicit 4 / 8192 / 100 alternative.
 - `create NAME --base BASE` clones a sealed base without reinstalling. Every VM gets an independent NVRAM copy. `--replace` replaces stopped VMs; `--force` only overrides resource limits.
 - `autoinstall` drives OpenCore, Recovery Terminal, exact-size disk erase, license (explicit flag), target disk and Install, then waits for the first Setup Assistant page. It uses QMP screendumps plus OCR and vncdo pointer/keyboard input.
 - `finish` resumes after the manual account/Remote Login steps: key, sudoers, Dark, power, slim level 1, Bochs display, app preview/removal, verification and optional seal.

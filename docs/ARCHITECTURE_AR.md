@@ -105,7 +105,7 @@ create ──► start ──► (slim, tools, xcode) ──► stop ──► b
                                               build / run
 ```
 
-- `image prepare` يتحقق من أصول مفصولة حسب الإصدار، ويبني GPT في staging، ويحول مرة واحدة إلى qcow2، ويفحصه ثم ينشر ذريًا. `cli` افتراضيًا 4 vCPU / 8192 MiB / 64 GiB منطقية، و`xcode` بديل صريح 4 / 8192 / 100.
+- `image prepare` يتحقق من أصول مفصولة حسب الإصدار، ويبني GPT في staging، ويحول مرة واحدة إلى qcow2، ويفحصه ثم ينشر ذريًا. `cli` افتراضيًا 6 vCPU / 12288 MiB / 64 GiB منطقية، و`xcode` بديل صريح 4 / 8192 / 100.
 - `create NAME --base BASE` يستنسخ أساسًا مختومًا دون إعادة تثبيت، ولكل VM نسخة NVRAM مستقلة. `--replace` يستبدل جهازًا متوقفًا، و`--force` لتجاوز حدود الموارد التجريبية فقط.
 - `autoinstall` يقود OpenCore ثم Recovery Terminal ثم مسح القرص المطابق ثم الترخيص (بعلم صريح) ثم القرص ثم Install، وينتظر أول صفحة Setup Assistant. يستخدم QMP screendump مع OCR وvncdo للإدخال.
 - `finish` يستأنف بعد الحساب وRemote Login اليدويين: المفتاح وsudoers وDark والطاقة وslim level 1 وعرض Bochs ومعاينة التطبيقات والحذف الاختياري والتحقق والختم الاختياري.

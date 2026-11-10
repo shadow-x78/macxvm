@@ -67,7 +67,7 @@ func init() {
 	register(Command{
 		Name:    "optimize",
 		Group:   "Machines",
-		Usage:   "macxvm optimize NAME [--check]",
+		Usage:   "macxvm optimize NAME [--check] [--width N] [--height N]",
 		Summary: "switch a stopped VM to the macOS-supported Bochs display path",
 		Run:     cmdOptimize,
 	})
