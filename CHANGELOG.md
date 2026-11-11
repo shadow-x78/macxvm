@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.10.8] - 2026-11-11
+
+### Fixed
+- The device id of the audio function of every OpenCore configuration held the
+  base64 `TVcAAAAAAAAA=`, which carries one `=` too many for the eight bytes it
+  encodes, so every machine of the `vfio` and the `reims` backend failed to be
+  created with `the plist holds invalid base64 data`. The six configurations
+  hold `TVcAAAAAAAA=` now, and a test parses every configuration that the
+  project ships.
+- The installer of Apple was attached read-only to a disk, and QEMU 10 refuses a
+  read-only block node there, so `macxvm autoinstall` could not start at all on
+  QEMU 10 and the machine died with `Block node is read-only`. The media is
+  attached with a snapshot now, which keeps every write of the guest in a
+  throwaway overlay and leaves the shared image intact.
+- The ROM of the `reims` runtime is optional now, because the probe device of
+  the runtime needs none.
+
+### Added
+- The device of `driver/qemu` presents the identity of the Apple paravirtual
+  graphics adapter, `0x106b:0xeeee`, answers every register with zero and logs
+  every access, and `driver/qemu/build-runtime.sh` builds the QEMU that carries
+  it. It measures whether macOS binds the driver of Apple to that identity.
+
+### Measured
+- The guest enumerated the function on its bus, at slot 4 with the identity
+  `106b:eeee`, the class `0x0380` and a BAR of 4096 bytes, and macOS Recovery
+  made **no** access to it. The identity alone does not bind the driver of
+  Apple, so the register contract has to come from the traces of a guest that
+  binds it, and that guest needs the framework of Apple on the host.
+
 ## [v0.10.7] - 2026-11-10
 
 ### Added
