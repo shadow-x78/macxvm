@@ -64,8 +64,10 @@ func resolveGPUConfig(fs *flag.FlagSet, backend, gpu, audio, hostGPU string, sin
 			return config.GPUConfig{}, exitcode.New(exitcode.Usage,
 				"--rom belongs to the vfio backend; the reims runtime owns its own ROM")
 		}
-		if _, err := argsfile.ReimsROM(reimsRuntime); err != nil {
-			return config.GPUConfig{}, exitcode.New(exitcode.Usage, "%v", err)
+		if _, err := os.Stat(argsfile.ReimsROMPath(reimsRuntime)); err == nil {
+			if _, err := argsfile.ReimsROM(reimsRuntime); err != nil {
+				return config.GPUConfig{}, exitcode.New(exitcode.Usage, "%v", err)
+			}
 		}
 	}
 	return out, nil

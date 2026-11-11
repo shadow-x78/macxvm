@@ -67,7 +67,30 @@ var knownPlaceholders = map[string]bool{
 	"USB3_VENDOR": true, "USB3_PRODUCT": true, "USB3_ADDR_OPT": true,
 	"USB4_VENDOR": true, "USB4_PRODUCT": true, "USB4_ADDR_OPT": true,
 	"REIMS_ROM": true, "REIMS_RESOLUTION": true,
+	"REIMS_WIDTH": true, "REIMS_HEIGHT": true,
 	"CPU_MODEL": true,
+}
+
+// SplitResolution turns "1920x1080" into its two parts.
+func SplitResolution(value string) (string, string, error) {
+	parts := strings.Split(strings.ToLower(strings.TrimSpace(value)), "x")
+	if len(parts) != 2 {
+		return "", "", exitcode.New(exitcode.BadArgsFile,
+			"the reims resolution %q must look like 1920x1080", value)
+	}
+	for _, part := range parts {
+		if part == "" {
+			return "", "", exitcode.New(exitcode.BadArgsFile,
+				"the reims resolution %q must look like 1920x1080", value)
+		}
+		for _, r := range part {
+			if r < '0' || r > '9' {
+				return "", "", exitcode.New(exitcode.BadArgsFile,
+					"the reims resolution %q must look like 1920x1080", value)
+			}
+		}
+	}
+	return parts[0], parts[1], nil
 }
 
 var runtimePlaceholders = func() map[string]bool {
@@ -221,10 +244,17 @@ func ValidateFlags(lines [][]string) error {
 	}
 	for _, toks := range lines {
 		for _, tok := range toks {
-			if strings.Contains(tok, "BaseSystem.img") && !strings.Contains(tok, "readonly=on") {
-				return exitcode.New(exitcode.BadArgsFile,
-					"the shared BaseSystem.img must be mounted with readonly=on, or a guest can corrupt it")
+			if !strings.Contains(tok, "BaseSystem.img") {
+				continue
 			}
+			// The image is shared between every machine, so the guest must not
+			// write to it. A read-only node is refused by QEMU 10 on a disk,
+			// and a snapshot keeps every write in a throwaway overlay.
+			if strings.Contains(tok, "readonly=on") || strings.Contains(tok, "snapshot=on") {
+				continue
+			}
+			return exitcode.New(exitcode.BadArgsFile,
+				"the shared BaseSystem.img must be mounted with readonly=on or snapshot=on, or a guest can corrupt it")
 		}
 	}
 	return nil
@@ -592,6 +622,15 @@ func placeholderValue(name string, ctx Context) (string, error) {
 		return ctx.ReimsROM, nil
 	case "REIMS_RESOLUTION":
 		return ctx.ReimsResolution, nil
+	case "REIMS_WIDTH", "REIMS_HEIGHT":
+		width, height, err := SplitResolution(ctx.ReimsResolution)
+		if err != nil {
+			return "", err
+		}
+		if name == "REIMS_WIDTH" {
+			return width, nil
+		}
+		return height, nil
 	}
 	if value, ok := usbPlaceholder(name, ctx); ok {
 		return value, nil

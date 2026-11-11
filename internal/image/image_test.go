@@ -333,7 +333,10 @@ func TestArgsTemplateMountsInstallMediaReadOnly(t *testing.T) {
 	found := false
 	for _, line := range install {
 		for _, tok := range line {
-			if strings.Contains(tok, "readonly=on") {
+			// A read-only node is refused by QEMU 10 on a disk, and a snapshot
+			// keeps every write of the guest in a throwaway overlay. Both keep
+			// the shared image intact.
+			if strings.Contains(tok, "readonly=on") || strings.Contains(tok, "snapshot=on") {
 				found = true
 			}
 		}

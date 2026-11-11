@@ -31,7 +31,7 @@ qemu-system-x86_64 \
   -device virtio-net-pci,netdev=net0,mac={{MAC}} \
 #install -drive id=InstallMedia,if=none,file={{ASSETS}}/BaseSystem.img,format=raw,readonly=on
 #install -device ide-hd,bus=sata.3,drive=InstallMedia
-#when REIMS_ROM -device apple-gfx-pci,romfile={{REIMS_ROM}}
+#when REIMS_RESOLUTION -device apple-gfx-probe,width={{REIMS_WIDTH}},height={{REIMS_HEIGHT}}
 #when USB1_VENDOR -device usb-host,vendorid=0x{{USB1_VENDOR}},productid=0x{{USB1_PRODUCT}}{{USB1_ADDR_OPT}},bus=xhci.0
 #when USB2_VENDOR -device usb-host,vendorid=0x{{USB2_VENDOR}},productid=0x{{USB2_PRODUCT}}{{USB2_ADDR_OPT}},bus=xhci.0
 #when USB3_VENDOR -device usb-host,vendorid=0x{{USB3_VENDOR}},productid=0x{{USB3_PRODUCT}}{{USB3_ADDR_OPT}},bus=xhci.0
