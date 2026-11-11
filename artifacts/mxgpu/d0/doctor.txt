@@ -1,0 +1,47 @@
+HOST
+  [ok]    host system        Linux x86_64
+  [ok]    /dev/kvm           readable and writable
+  [ok]    CPU                vmx
+  [ok]    QEMU               QEMU 10.2
+  [ok]    QEMU KVM           KVM is available; the generated args include
+                               -accel kvm
+  [ok]    ignore_msrs        ignore_msrs is enabled
+  [warn]  IOMMU              no IOMMU group, so no PCI device can be
+                               passed through (run: macxvm gpu NAME
+                               --enable-iommu, then reboot)
+  [ok]    tools              ssh, scp, rsync and ssh-keygen
+  [ok]    autoinstall tools  tesseract, vncdo and an ISO builder
+  [ok]    disk               181 GiB free
+  [ok]    memory             31860 MiB total, 6250 MiB available
+  [ok]    machines           none
+
+Legal notice
+
+Running macOS in a virtual machine is only permitted by Apple's macOS license
+on Apple-branded hardware. Running macOS under QEMU/KVM on a PC violates that
+license, and Apple has enforced it in court. MacXVM ships no Apple software,
+firmware, keys or boot loaders; it only launches what you provide, and you are
+responsible for complying with Apple's license terms. The compliant options are
+a Mac (use the Apple-hardware specification) or a rented Mac in the cloud.
+
+The guest is an x86_64 macOS. Apple supports Intel Macs up to macOS 26, so the
+macOS version and the Xcode version must be chosen together from the Xcode
+release notes. The supported display is a Bochs framebuffer with the macOS
+AppleBochVGAFB driver at 1440x900; it is 2D only, so the iOS Simulator and
+Metal apps remain software rendered. RTX passthrough is not supported by macOS. macOS system updates inside such a virtual
+machine can break booting, so MacXVM disables automatic updates and you should
+not run system updates in the guest.
+
+The boot assets are yours: the machine definition, the bootloader, the firmware
+and the macOS installer image come from you, for example by following the
+documentation of the open-source projects OSX-KVM (github.com/kholia/OSX-KVM) or
+ultimate-macOS-KVM (github.com/Coopydood/ultimate-macOS-KVM). MacXVM copies
+none of their content into the repository. Only when you explicitly run
+macxvm image prepare does it fetch versioned assets into your state directory,
+verify their signatures or hashes, and it never accepts Apple's license or
+automates the manual macOS installation.
+
+MacXVM is an independent open-source project, not affiliated with or endorsed
+by Apple Inc. macOS, Xcode and iOS are trademarks of Apple Inc. MacXVM does not
+distribute any Apple software; the user supplies and is responsible for all
+Apple software and for complying with Apple's license terms.

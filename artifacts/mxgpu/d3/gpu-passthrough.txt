@@ -1,0 +1,27 @@
+IOMMU groups: 0
+  0000:00:00.0 8086:4648 driver=no driver
+  0000:00:01.0 8086:460d driver=pcieport
+  0000:00:06.0 8086:09ab driver=no driver
+  0000:00:08.0 8086:464f driver=no driver
+  0000:00:0a.0 8086:467d driver=intel_vsec
+  0000:00:0e.0 8086:467f driver=vmd
+  0000:00:14.0 8086:7a60 driver=xhci_hcd
+  0000:00:14.2 8086:7a27 driver=no driver
+  0000:00:16.0 8086:7a68 driver=mei_me
+  0000:00:17.0 8086:09ab driver=no driver
+  0000:00:1c.0 8086:7a38 driver=pcieport
+  0000:00:1f.0 8086:7a06 driver=no driver
+  0000:00:1f.3 8086:7a50 driver=snd_hda_intel
+  0000:00:1f.4 8086:7a23 driver=i801_smbus
+  0000:00:1f.5 8086:7a24 driver=intel-spi
+  0000:01:00.0 10de:2d05 driver=nvidia
+  0000:01:00.1 10de:22eb driver=snd_hda_intel
+  0000:02:00.0 10ec:8125 driver=r8169
+no GPU backend is prepared on the host
+PASSTHROUGH
+  IOMMU groups: 0
+  vfio-pci available: false
+  0000:01:00.0 10de:2d05 driver=nvidia
+  macOS has no driver for the NVIDIA GeForce RTX 5060, so a passed through card stays unused by the guest
+  - the kernel exposes no IOMMU group, run 'macxvm gpu NAME --enable-iommu' and reboot
+  - the vfio-pci module is not loaded, run 'sudo modprobe vfio-pci'

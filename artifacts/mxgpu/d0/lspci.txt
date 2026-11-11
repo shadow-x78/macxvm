@@ -1,0 +1,21 @@
+0000:00:00.0 Host bridge [0600]: Intel Corporation Device [8086:4648] (rev 02)
+0000:00:01.0 PCI bridge [0604]: Intel Corporation 12th Gen Core Processor PCI Express x16 Controller #1 [8086:460d] (rev 02)
+0000:00:06.0 System peripheral [0880]: Intel Corporation RST VMD Managed Controller [8086:09ab]
+0000:00:08.0 System peripheral [0880]: Intel Corporation 12th Gen Core Processor Gaussian & Neural Accelerator [8086:464f] (rev 02)
+0000:00:0a.0 Signal processing controller [1180]: Intel Corporation Platform Monitoring Technology [8086:467d] (rev 01)
+0000:00:0e.0 RAID bus controller [0104]: Intel Corporation Volume Management Device NVMe RAID Controller [8086:467f]
+0000:00:14.0 USB controller [0c03]: Intel Corporation 700 Series Chipset Family USB 3.2 Gen 2x2 (20 Gbs) xHCI Host Controller [8086:7a60] (rev 11)
+0000:00:14.2 RAM memory [0500]: Intel Corporation 700 Series Chipset Family Shared SRAM [8086:7a27] (rev 11)
+0000:00:16.0 Communication controller [0780]: Intel Corporation 700 Series Chipset Family CSME HECI #1 [8086:7a68] (rev 11)
+0000:00:17.0 System peripheral [0880]: Intel Corporation RST VMD Managed Controller [8086:09ab]
+0000:00:1c.0 PCI bridge [0604]: Intel Corporation 700 Series Chipset Family PCIe Root Port #1 [8086:7a38] (rev 11)
+0000:00:1f.0 ISA bridge [0601]: Intel Corporation B760 Chipset eSPI Controller [8086:7a06] (rev 11)
+0000:00:1f.3 Audio device [0403]: Intel Corporation 700 Series Chipset Family HD Audio [8086:7a50] (rev 11)
+0000:00:1f.4 SMBus [0c05]: Intel Corporation 700 Series Chipset Family SMBus [8086:7a23] (rev 11)
+0000:00:1f.5 Serial bus controller [0c80]: Intel Corporation 700 Series Chipset Family SPI (flash) Controller [8086:7a24] (rev 11)
+0000:01:00.0 VGA compatible controller [0300]: NVIDIA Corporation GB206 [GeForce RTX 5060] [10de:2d05] (rev a1)
+0000:01:00.1 Audio device [0403]: NVIDIA Corporation GB206 High Definition Audio Controller [10de:22eb] (rev a1)
+0000:02:00.0 Ethernet controller [0200]: Realtek Semiconductor Co., Ltd. RTL8125 2.5GbE Controller [10ec:8125] (rev 05)
+10000:e0:06.0 PCI bridge [0604]: Intel Corporation 12th Gen Core Processor PCI Express x4 Controller #0 [8086:464d] (rev 02)
+10000:e0:17.0 SATA controller [0106]: Intel Corporation 700 Series Chipset Family SATA Controller (AHCI) [8086:7a62] (rev 11)
+10000:e1:00.0 Non-Volatile memory controller [0108]: Kingston Technology Company, Inc. NV3 NVMe SSD [SM2268XT2] (DRAM-less) [2646:5028] (rev 03)
