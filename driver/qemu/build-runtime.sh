@@ -60,14 +60,16 @@ install -m 0755 qemu-system-x86_64 "$RUNTIME/bin/qemu-system-x86_64"
 
 # The data of the build is a set of links to the tree of the build, so the
 # copies are dereferenced: the runtime outlives the tree of the build.
-for rom in "$PWD"/../pc-bios/*.bin "$PWD"/../pc-bios/*.rom; do
+BIOS="$WORK/qemu-$SOURCE/pc-bios"
+rm -f "$RUNTIME/bin/"*.bin "$RUNTIME/bin/"*.rom 2>/dev/null || true
+for rom in "$BIOS"/*.bin "$BIOS"/*.rom; do
     [ -e "$rom" ] || continue
     cp -L "$rom" "$RUNTIME/bin/" 2>/dev/null || true
 done
 
-if [ -d "$PWD"/../pc-bios/keymaps ]; then
+if [ -d "$BIOS/keymaps" ]; then
     rm -rf "$RUNTIME/bin/keymaps"
-    cp -rL "$PWD"/../pc-bios/keymaps "$RUNTIME/bin/"
+    cp -rL "$BIOS/keymaps" "$RUNTIME/bin/"
 fi
 
 echo

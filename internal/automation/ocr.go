@@ -154,7 +154,15 @@ func (s Screen) HasCompact(phrase string) bool {
 	if want == "" {
 		return false
 	}
-	have := strings.ReplaceAll(normalize(s.Text), " ", "")
+	var b strings.Builder
+	if len(s.Words) > 0 {
+		for _, word := range s.Words {
+			b.WriteString(normalize(word.Text))
+		}
+	} else {
+		b.WriteString(normalize(s.Text))
+	}
+	have := strings.ReplaceAll(b.String(), " ", "")
 	return strings.Contains(have, want)
 }
 

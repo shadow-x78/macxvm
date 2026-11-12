@@ -148,37 +148,30 @@ func (i *Installer) eraseMatchedDisk() error {
 	if err := i.Session.Type(command); err != nil {
 		return err
 	}
-	if !i.Session.WaitForCompact("setup.sh", 10*time.Second) {
-		if err := i.ensureTerminal(); err != nil {
-			return err
-		}
-		if err := i.Session.Type(command); err != nil {
-			return err
-		}
-		if !i.Session.WaitForCompact("setup.sh", 10*time.Second) {
-			return fmt.Errorf("the seed command did not reach the Terminal prompt; last screen: %s",
-				trim(i.Session.last.Text, 300))
-		}
-	}
+	// The reader of the screen cannot be trusted to read the line that was
+	// typed: the font of the Terminal is small and it confuses the letters of
+	// a path. The result of the seed is the authority, not the echo of the
+	// command, so the command is sent and its result is awaited.
 	if err := i.Session.Enter(); err != nil {
 		return err
 	}
-	_, screen, err := i.Session.WaitFor([]string{
+	_, screen, ok := i.Session.WaitForCompact([]string{
 		"RESULT 777", "RESULT 111", "RESULT 222", "RESULT 333",
 		"No such file", "not found",
 	}, 3*time.Minute)
-	if err != nil {
-		return fmt.Errorf("disk erase did not report a result: %w", err)
+	if !ok {
+		return fmt.Errorf("disk erase did not report a result; last screen: %s",
+			trim(i.Session.last.Text, 300))
 	}
 	switch {
-	case screen.Has("RESULT 777"):
+	case screen.HasCompact("RESULT 777"):
 		i.logf("internal disk erased and formatted APFS")
 		return nil
 	case seedMissing(screen):
 		return fmt.Errorf("installer seed is not mounted at %s", SeedScript)
-	case screen.Has("RESULT 222"):
+	case screen.HasCompact("RESULT 222"):
 		return fmt.Errorf("no internal disk matches the expected %d GiB; nothing was erased", i.VM.DiskGiB)
-	case screen.Has("RESULT 333"):
+	case screen.HasCompact("RESULT 333"):
 		return fmt.Errorf("more than one internal disk matches %d GiB; nothing was erased", i.VM.DiskGiB)
 	default:
 		return fmt.Errorf("diskutil eraseDisk failed; nothing else was attempted")
@@ -380,7 +373,7 @@ func (i *Installer) Resume() error {
 }
 
 func seedMissing(screen Screen) bool {
-	return screen.Has("No such file") || screen.Has("not found")
+	return screen.HasCompact("No such file") || screen.HasCompact("not found")
 }
 
 func recoveryVisible(screen Screen) bool {

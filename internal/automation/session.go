@@ -121,20 +121,25 @@ func (s *Session) WaitFor(phrases []string, timeout time.Duration) (string, Scre
 	}
 }
 
-// WaitForCompact waits until the phrase is on the screen, ignoring the spaces
-// and the punctuation. It gives the guest the time it needs to draw what was
-// typed, which a single capture does not.
-func (s *Session) WaitForCompact(phrase string, timeout time.Duration) bool {
+// WaitForCompact waits until one of the phrases is on the screen, ignoring
+// the spaces and the punctuation. The font of the Terminal of macOS Recovery
+// is small, and the reader confuses the letters of a path, so the lines of
+// that window are compared with the spaces and the punctuation ignored.
+func (s *Session) WaitForCompact(phrases []string, timeout time.Duration) (string, Screen, bool) {
 	deadline := time.Now().Add(timeout)
 	for {
 		screen, err := s.Capture()
-		if err == nil && screen.HasCompact(phrase) {
-			return true
+		if err == nil {
+			for _, phrase := range phrases {
+				if screen.HasCompact(phrase) {
+					return phrase, screen, true
+				}
+			}
 		}
 		if time.Now().After(deadline) {
-			return false
+			return "", s.last, false
 		}
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(2 * time.Second)
 	}
 }
 
