@@ -96,6 +96,15 @@ driver, MXGPU, and the host tooling of that work is in place:
 | `vfio` | the guest | the real card, driven by MXGPU once the driver exists |
 | `reims` | the host | a shared virtual card, with a native window on the host |
 
+The `reims` mode is the only path that can give macOS a graphics card it has
+a driver for, because it presents the identity of the paravirtual adapter of
+Apple instead of the identity of NVIDIA. The runtime of that mode carries a
+probe device today: it announces the identity, it answers every register with
+zero and it logs every access, so the binding of the driver of macOS can be
+measured. It renders nothing. The window on the host, and the register
+contract that the driver of Apple expects, are the work that follows, and the
+traces of the guest are the input of that work.
+
 ```bash
 macxvm create NAME --gpu-backend vfio --gpu 0000:01:00.0 \
   --audio 0000:01:00.1 --host-gpu 0000:02:00.0 --cpu host
