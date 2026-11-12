@@ -14,7 +14,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SOURCE="${MXGPU_QEMU_VERSION:-10.2.2}"
-WORK="${MXGPU_QEMU_WORK:-$ROOT/driver/qemu/work}"
+WORK="${MXGPU_QEMU_WORK:-$HOME/.local/share/macxvm/qemu-work}"
 RUNTIME="${MXGPU_RUNTIME:-$HOME/.local/share/macxvm/reims}"
 PATCH="$ROOT/driver/qemu/qemu-apple-gfx-probe.patch"
 
@@ -42,7 +42,7 @@ cd build
 
 if [ ! -f build.ninja ]; then
     echo "configuring the build..."
-    ../qemu-"$SOURCE"/configure \
+    ../configure \
         --target-list=x86_64-softmmu \
         --enable-slirp \
         --disable-werror \
@@ -58,13 +58,16 @@ echo "installing the runtime..."
 mkdir -p "$RUNTIME/bin" "$RUNTIME/share"
 install -m 0755 qemu-system-x86_64 "$RUNTIME/bin/qemu-system-x86_64"
 
+# The data of the build is a set of links to the tree of the build, so the
+# copies are dereferenced: the runtime outlives the tree of the build.
 for rom in "$PWD"/../pc-bios/*.bin "$PWD"/../pc-bios/*.rom; do
     [ -e "$rom" ] || continue
-    install -m 0644 "$rom" "$RUNTIME/bin/" 2>/dev/null || true
+    cp -L "$rom" "$RUNTIME/bin/" 2>/dev/null || true
 done
 
 if [ -d "$PWD"/../pc-bios/keymaps ]; then
-    cp -r "$PWD"/../pc-bios/keymaps "$RUNTIME/bin/"
+    rm -rf "$RUNTIME/bin/keymaps"
+    cp -rL "$PWD"/../pc-bios/keymaps "$RUNTIME/bin/"
 fi
 
 echo

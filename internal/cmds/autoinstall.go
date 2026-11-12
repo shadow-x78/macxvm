@@ -6,6 +6,7 @@ package cmds
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -82,7 +83,7 @@ func cmdAutoInstall(args []string) error {
 		defer session.Close()
 		installer := automation.Installer{Session: session, VM: cfg, AcceptLicense: *acceptLicense, Log: os.Stdout, Timeout: time.Duration(*timeout) * time.Minute}
 		if err := installer.Resume(); err != nil {
-			return exitcode.New(exitcode.Generic, "autoinstall stopped: %v", err)
+			return exitcode.New(exitcode.Generic, "autoinstall stopped: %v%s", err, saveAutomationEvidence(session, err))
 		}
 		if display, ok := runstate.VNC(cfg); ok {
 			openViewerBestEffort(cfg, display, *noOpen)
@@ -134,7 +135,7 @@ func cmdAutoInstall(args []string) error {
 		},
 	}
 	if err := installer.Run(); err != nil {
-		return exitcode.New(exitcode.Generic, "autoinstall stopped: %v", err)
+		return exitcode.New(exitcode.Generic, "autoinstall stopped: %v%s", err, saveAutomationEvidence(session, err))
 	}
 	return recordSetupReady(cfg)
 }
@@ -181,4 +182,16 @@ func setSeedArgs(cfg *config.VMConfig) error {
 		return exitcode.New(exitcode.Generic, "cannot write args.txt: %v", err)
 	}
 	return nil
+}
+
+// saveAutomationEvidence keeps the frames of the run in the directory of the
+// machine, so a failure of the automation can be read instead of guessed.
+func saveAutomationEvidence(session *automation.Session, failure error) string {
+	if session == nil {
+		return ""
+	}
+	if err := session.SaveEvidence(failure.Error()); err != nil {
+		return fmt.Sprintf("; the evidence of the run could not be written: %v", err)
+	}
+	return fmt.Sprintf("; the frames of the run are in %s", filepath.Join(session.EvidenceDir(), "automation"))
 }

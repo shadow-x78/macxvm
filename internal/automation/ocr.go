@@ -146,6 +146,18 @@ func (s Screen) Has(phrase string) bool {
 	return ok
 }
 
+// HasCompact reports whether the phrase is on the screen when the spaces and
+// the punctuation are ignored. The reader of a terminal drops the dot of a
+// file name often, so "setup.sh" can arrive as "setupsh".
+func (s Screen) HasCompact(phrase string) bool {
+	want := strings.ReplaceAll(normalize(phrase), " ", "")
+	if want == "" {
+		return false
+	}
+	have := strings.ReplaceAll(normalize(s.Text), " ", "")
+	return strings.Contains(have, want)
+}
+
 func OCR(path string, tesseract string) (Screen, error) {
 	if tesseract == "" {
 		tesseract = "tesseract"

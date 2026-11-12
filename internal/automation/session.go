@@ -4,6 +4,7 @@
 package automation
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -29,6 +30,7 @@ type Session struct {
 	display   int
 	seq       int
 	last      Screen
+	frames    []string
 }
 
 func Open(cfg *config.VMConfig) (*Session, error) {
@@ -83,7 +85,6 @@ func (s *Session) Capture() (Screen, error) {
 	}
 	s.seq++
 	path := filepath.Join(s.dir, fmt.Sprintf("screen-%04d.ppm", s.seq))
-	defer os.Remove(path)
 	if err := s.client.Screendump(path); err != nil {
 		return s.last, fmt.Errorf("cannot capture the guest screen: %w", err)
 	}
@@ -92,6 +93,7 @@ func (s *Session) Capture() (Screen, error) {
 		return s.last, err
 	}
 	s.last = screen
+	s.keepFrame(path)
 	return screen, nil
 }
 
@@ -117,6 +119,66 @@ func (s *Session) WaitFor(phrases []string, timeout time.Duration) (string, Scre
 		}
 		time.Sleep(2 * time.Second)
 	}
+}
+
+// WaitForCompact waits until the phrase is on the screen, ignoring the spaces
+// and the punctuation. It gives the guest the time it needs to draw what was
+// typed, which a single capture does not.
+func (s *Session) WaitForCompact(phrase string, timeout time.Duration) bool {
+	deadline := time.Now().Add(timeout)
+	for {
+		screen, err := s.Capture()
+		if err == nil && screen.HasCompact(phrase) {
+			return true
+		}
+		if time.Now().After(deadline) {
+			return false
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
+// keepFrame keeps the frames of the last steps of the run, so a failure can
+// be read instead of guessed.
+func (s *Session) keepFrame(path string) {
+	s.frames = append(s.frames, path)
+	for len(s.frames) > 30 {
+		_ = os.Remove(s.frames[0])
+		s.frames = s.frames[1:]
+	}
+}
+
+// EvidenceDir returns the directory of the machine where the frames of a run
+// are kept.
+func (s *Session) EvidenceDir() string {
+	if s.cfg == nil {
+		return ""
+	}
+	return s.cfg.Dir()
+}
+
+// SaveEvidence copies the frames of the run and the text of the last screen
+// into the directory of the machine, so a failure leaves a trace.
+func (s *Session) SaveEvidence(reason string) error {
+	if s.cfg == nil {
+		return errors.New("the session has no machine")
+	}
+	dir := filepath.Join(s.cfg.Dir(), "automation")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+	for _, frame := range s.frames {
+		raw, err := os.ReadFile(frame)
+		if err != nil {
+			continue
+		}
+		if err := os.WriteFile(filepath.Join(dir, filepath.Base(frame)), raw, 0o600); err != nil {
+			return err
+		}
+	}
+	text := fmt.Sprintf("reason: %s\ndisplay: %d\nscreen: %s\n",
+		reason, s.display, trim(s.last.Text, 4000))
+	return os.WriteFile(filepath.Join(dir, "screen.txt"), []byte(text), 0o600)
 }
 
 func (s *Session) ClickPhrase(phrase string) error {

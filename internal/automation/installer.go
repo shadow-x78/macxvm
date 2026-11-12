@@ -102,10 +102,24 @@ func (i *Installer) bootToRecovery() error {
 	}
 }
 
+// promptPhrases are the prompts that the Terminal of macOS Recovery shows.
+var promptPhrases = []string{"bash-3.2#", "sh-3.2#", "root#"}
+
+// ensureTerminal makes sure that a prompt of the Terminal is on the screen,
+// and opens one when the guest closed it.
+func (i *Installer) ensureTerminal() error {
+	if _, _, err := i.Session.WaitFor(promptPhrases, 2*time.Second); err == nil {
+		return nil
+	}
+	return i.openTerminal()
+}
+
 func (i *Installer) openTerminal() error {
 	if screen, err := i.Session.Capture(); err == nil {
-		if screen.Has("bash-3.2#") || screen.Has("sh-3.2#") || screen.Has("root#") {
-			return i.Session.FocusCenter()
+		for _, prompt := range promptPhrases {
+			if screen.Has(prompt) {
+				return i.Session.FocusCenter()
+			}
 		}
 	}
 	deadline := time.Now().Add(2 * time.Minute)
@@ -113,7 +127,7 @@ func (i *Installer) openTerminal() error {
 		if i.Session.TryClick("Utilities") {
 			time.Sleep(time.Second)
 			if i.Session.TryClick("Terminal") {
-				if _, _, err := i.Session.WaitFor([]string{"bash-3.2#", "sh-3.2#", "root#"}, 30*time.Second); err == nil {
+				if _, _, err := i.Session.WaitFor(promptPhrases, 30*time.Second); err == nil {
 					return i.Session.FocusCenter()
 				}
 			}
@@ -128,21 +142,22 @@ func (i *Installer) openTerminal() error {
 func (i *Installer) eraseMatchedDisk() error {
 	i.logf("selecting and erasing only the internal disk matching %d GiB", i.VM.DiskGiB)
 	command := "sh " + SeedScript
-	if err := i.Session.FocusCenter(); err != nil {
+	if err := i.ensureTerminal(); err != nil {
 		return err
 	}
 	if err := i.Session.Type(command); err != nil {
 		return err
 	}
-	if !i.Session.Typed("setup.sh") {
-		if err := i.Session.FocusCenter(); err != nil {
+	if !i.Session.WaitForCompact("setup.sh", 10*time.Second) {
+		if err := i.ensureTerminal(); err != nil {
 			return err
 		}
 		if err := i.Session.Type(command); err != nil {
 			return err
 		}
-		if !i.Session.Typed("setup.sh") {
-			return fmt.Errorf("the seed command did not reach the Terminal prompt")
+		if !i.Session.WaitForCompact("setup.sh", 10*time.Second) {
+			return fmt.Errorf("the seed command did not reach the Terminal prompt; last screen: %s",
+				trim(i.Session.last.Text, 300))
 		}
 	}
 	if err := i.Session.Enter(); err != nil {
