@@ -114,7 +114,7 @@ Prefer to keep it in the repository? `make build` leaves the binary at `./bin/ma
 <a id="first-machine"></a>
 ## Run your first machine
 
-This is the whole flow, in order. It takes about an hour, most of it waiting for Apple's installer.
+This is the whole flow, in order. The installation itself is the long part: the installer of Apple estimates **one to five hours** on a virtual disk, and it shows its own estimate on the screen.
 
 ```bash
 # 1. Download the boot files and create the machine (about 1 GB of downloads).
@@ -124,7 +124,7 @@ macxvm image prepare macos --profile cli
 macxvm autoinstall macos --yes --accept-license
 ```
 
-Step 2 drives the macOS Recovery installer for you: it erases the matching disk, accepts the licence when you pass `--accept-license`, installs, reboots, and **stops at the first Setup Assistant page**. It never creates an account and never stores a password. Expect 40 to 90 minutes; `--timeout MINUTES` raises the default limit of 240 minutes.
+Step 2 drives the macOS Recovery installer for you: it erases the matching disk, accepts the licence when you pass `--accept-license`, installs, reboots, and **stops at the first Setup Assistant page**. It never creates an account and never stores a password. The run stops when the installer reaches the first Setup Assistant page, and `--timeout MINUTES` raises the default limit of 240 minutes.
 
 ```bash
 # 3. Finish Setup Assistant yourself, in the screen window.

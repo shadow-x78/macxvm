@@ -61,8 +61,15 @@ qemu-system-x86_64 \
   -netdev {{NETDEV}} \
   -device virtio-net-pci,netdev=net0,mac={{MAC}}
 
-#install -drive file={{ASSETS}}/installer.img,format=raw
+#install -drive file={{ASSETS}}/installer.img,format=raw,snapshot=on
 ```
+
+The image of the installer is shared between every machine, so it must be
+attached with `readonly=on` or with `snapshot=on`; a writable image is
+modified by the guest and breaks the manifest of every machine. QEMU 10
+refuses a read-only block node on a disk, so the snapshot is the form that the
+emulator of the reference host accepts: the writes of the guest stay in an
+overlay that is discarded with the machine, and the shared image is untouched.
 
 <a id="placeholders"></a>
 ## Placeholders

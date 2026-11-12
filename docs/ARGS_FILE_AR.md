@@ -61,8 +61,14 @@ qemu-system-x86_64 \
   -netdev {{NETDEV}} \
   -device virtio-net-pci,netdev=net0,mac={{MAC}}
 
-#install -drive file={{ASSETS}}/installer.img,format=raw
+#install -drive file={{ASSETS}}/installer.img,format=raw,snapshot=on
 ```
+
+صورة المثبت مشتركة بين كل الأجهزة، فيجب أن تُركَّب بـ`readonly=on` أو
+بـ`snapshot=on`؛ فالصورة القابلة للكتابة يعدّلها الضيف وتكسر بيان كل جهاز.
+وQEMU 10 يرفض عقدة كتلة للقراءة فقط على قرص، فالـsnapshot هو الشكل الذي يقبله
+المحاكي على المضيف المرجعي: تبقى كل كتابات الضيف في طبقة تُمحى مع الجهاز،
+وتبقى الصورة المشتركة كما هي.
 
 <a id="placeholders"></a>
 ## العناصر النائبة
