@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.10.9] - 2026-11-12
+
+### Fixed
+- The installer automation typed the command of the seed correctly and the
+  guest showed it, but the font of the Terminal of macOS Recovery is small and
+  the reader of the screen confused the letters of the path:
+  `volumes/macxvm/setup.sh` arrived as `volunes/macxvn/seotup.sh`. The
+  automation compared the screen with the name of the script, so it stopped
+  with `the seed command did not reach the Terminal prompt` while the guest
+  waited for a key that never came. The command is sent and the result of the
+  seed is awaited now, because the result is the authority and the echo of the
+  command is not, and the lines of the Terminal are compared with the spaces
+  and the punctuation ignored.
+- The Terminal is reopened when the guest closed it, the frames of the run are
+  kept in the directory of the machine when the run fails, and the error names
+  that directory, so a failure can be read instead of guessed.
+
+### Measured
+- The installation now runs to the end on the host of the reference: the disk is
+  erased and formatted APFS, the licence is accepted, the target is selected
+  and the installer of macOS starts.
+
 ## [v0.10.8] - 2026-11-11
 
 ### Fixed

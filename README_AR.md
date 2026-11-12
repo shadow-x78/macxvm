@@ -23,7 +23,7 @@
 
 شغل ضيوف macOS خفيفين مع Xcode على مضيف Linux.
 
-[![الإصدار](https://img.shields.io/badge/version-0.10.8-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![الإصدار](https://img.shields.io/badge/version-0.10.9-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![الترخيص](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![المنصة](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -256,7 +256,7 @@ qemu-system-x86_64 \
 | العملية | مقيسة على الجهاز الذي يبني هذا المشروع |
 |---|---|
 | `list` و`status` | 3 مللي ثانية |
-| الملف التنفيذي | 7,213,208 بايت مع Go 1.22، ثابت `linux/amd64` |
+| الملف التنفيذي | 7,217,304 بايت مع Go 1.22، ثابت `linux/amd64` |
 | نسخة من أساس مختوم | أقل من ثانية، وبضعة مئات كيلوبايت على القرص |
 | التكلفة عند الخمول | لا تبقى أي عملية لـMacXVM حية |
 

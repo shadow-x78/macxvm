@@ -23,7 +23,7 @@ MacXVM is an independent open-source project, not affiliated with or endorsed by
 
 Run slim macOS guests with Xcode on a Linux host.
 
-[![Version](https://img.shields.io/badge/version-0.10.8-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.10.9-007AFF?style=for-the-badge&logo=semver)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-1D1D1F?style=for-the-badge)](LICENSE)
 ![Go](https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go)
 ![Platform](https://img.shields.io/badge/platform-Linux%20x86__64-5E5CE6?style=for-the-badge&logo=linux)
@@ -254,7 +254,7 @@ These are logical device sizes, not promises about free space inside APFS or abo
 | Operation | Measured on the machine that builds this project |
 |---|---|
 | `list`, `status` | 3 ms |
-| Release binary | 7,213,208 bytes with Go 1.22, static `linux/amd64` |
+| Release binary | 7,217,304 bytes with Go 1.22, static `linux/amd64` |
 | Clone of a sealed base | under 1 s, a few hundred KiB on disk |
 | Idle cost on the host | no process of MacXVM stays alive |
 
